@@ -42,6 +42,8 @@ print(foo(1000000))
 # 1.0689892768859863
 ```
 
+Python is the bottleneck I'd guess. See the two other cases below.
+
 ```lisp
 (defparameter double-list (loop for i below 256
                              collect (+ i 0.1d0)))
@@ -61,7 +63,7 @@ print(foo(1000000))
 ;;   63,995,904 bytes consed
 ```
 
-### 1024x1024 long vector
+### 1024x1024
 
 ```py
 a = np.random.random((1024, 1024)) 
@@ -73,8 +75,10 @@ def foo(num):
     np.multiply(a, b, out = c) 
   return time.time() - start 
 print(foo(10000))
-# 38.02268934249878
+# 13.556719779968262
 ```
+
+Twice as fast - a bit better than expectations.
 
 ```lisp
 (defparameter double-list (loop for i below 1024
@@ -97,7 +101,44 @@ print(foo(10000))
 ;;   1,277,952 bytes consed
 ```
 
-Honestly, this difference was rather dramatic. For 1000-times loop, python takes somewhere between 1.3 sec and 2.3 sec. While Common Lisp takes between 0.6 and 0.8 seconds.
+### 1024x1024x32
+
+```py
+a = np.random.random((1024, 1024, 32)) 
+b = np.random.random((1024, 1024, 32)) 
+c = np.zeros((1024, 1024, 32))
+def foo(num): 
+  start = time.time() 
+  for i in range(num): 
+    np.multiply(a, b, out = c) 
+  return time.time() - start 
+print(foo(100))
+# 5.072538375854492
+```
+
+This one's within the expected 'under 2 times' faster bracket.
+
+```lisp
+(defparameter double-list (loop for i below 1024
+                             collect (loop for j below 1024
+                                        collect (loop for k below 32
+                                                   collect (+ i j k 0.1d0)))))
+(defparameter arr-a (make-array '(1024 1024 32) :initial-contents double-list
+                                :element-type 'double-float))
+(defparameter arr-b (make-array '(1024 1024 32) :initial-contents double-list
+                                :element-type 'double-float))
+(defparameter arr-c (make-array '(1024 1024 32) :initial-element 0.0d0
+                                :element-type 'double-float))
+(time (loop for i below 100
+         do (d* arr-a arr-b arr-c)))
+;; Evaluation took:
+;;   3.115 seconds of real time
+;;   3.115278 seconds of total run time (3.115278 user, 0.000000 system)
+;;   100.00% CPU
+;;   6,878,583,088 processor cycles
+;;   32,768 bytes consed
+```
+
 
 ## Acknowledgements
 
@@ -105,5 +146,5 @@ Honestly, this difference was rather dramatic. For 1000-times loop, python takes
 - [u/love5an](https://www.reddit.com/user/love5an/) and [u/neil-lindquist](https://www.reddit.com/user/neil-lindquist/) for the required hand-holding and the [gist](https://gist.github.com/Lovesan/660866b96a2632b900359333a251cc1c).
   - Paul Khuong for [some](https://pvk.ca/Blog/2013/06/05/fresh-in-sbcl-1-dot-1-8-sse-intrinsics/) [blog posts](https://pvk.ca/Blog/2014/08/16/how-to-define-new-intrinsics-in-sbcl/).
 - [guicho271828](https://github.com/guicho271828) for attempting an [SBCL Wiki](https://github.com/guicho271828/sbcl-wiki/wiki).
-
+- It's possible that I could have forgotten to mention somebody - so... yeah... happy number crunching!
 
