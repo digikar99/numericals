@@ -5,4 +5,6 @@
   :depends-on ("sbcl-numericals"
                "fiveam"
                "alexandria")
-  :components ((:file "sbcl-numericals")))
+  :components ((:file "package")
+               (:file "doubles")
+               (:file "singles")))

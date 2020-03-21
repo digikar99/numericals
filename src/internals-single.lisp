@@ -1,13 +1,13 @@
 (in-package :sb-vm)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defknown (f8-ref) ((simple-array single-float (*))
+  (defknown (s8-ref) ((simple-array single-float (*))
                       (integer 0 #.most-positive-fixnum))
       (simd-pack-256 single-float)
       (movable foldable flushable always-translatable)
     :overwrite-fndb-silently t)
-  (define-vop (f8-ref)
-    (:translate f8-ref)
+  (define-vop (s8-ref)
+    (:translate s8-ref)
     (:args (v :scs (descriptor-reg))
            (i :scs (any-reg)))
     (:arg-types simple-array-single-float
@@ -20,14 +20,14 @@
                       dest
                       (make-ea-for-float-ref v i 0 16
                                              :scale (ash 16 (- n-fixnum-tag-bits))))))
-  (defknown f8-set ((simple-array single-float (*))
+  (defknown s8-set ((simple-array single-float (*))
                     (integer 0 #.most-positive-fixnum)
                     (simd-pack-256 single-float))
       (simd-pack-256 single-float)
       (always-translatable)
     :overwrite-fndb-silently t)
-  (define-vop (f8-set)
-    (:translate f8-set)
+  (define-vop (s8-set)
+    (:translate s8-set)
     (:args (v :scs (descriptor-reg))
            (i :scs (any-reg))
            (x :scs (single-avx2-reg)))
@@ -46,18 +46,25 @@
 
 
 (in-package :sbcl-numericals.internals)
-(declaim (inline f8-ref))
-(defun f8-ref (vec i)
-  (declare (optimize (speed 3))
-           (type (simple-array single-float) vec)
-           (type fixnum i))
-  (sb-vm::f8-ref vec (* 2 i)))
-(declaim (inline (setf f8-ref)))
-(defun (setf f8-ref) (new-value vec i)
-  (declare (optimize (speed 3))
-           (type (simple-array single-float) vec)
-           (type fixnum i))
-  (sb-vm::f8-set vec (* 2 i) new-value))
+(defmacro s8-ref (vec i)
+  (if (zerop (sb-c::policy-quality sb-c::*policy* 'safety))
+      ;; this is expected to happen at compile time!
+      ;; safety should affect speed by about 5-10%
+      `(sb-vm::s8-ref ,vec (* 2 ,i))
+      (let ((len (gensym)))
+        `(let ((,len (length ,vec)))
+           (if (<= (+ (* 8 ,i) 8) ,len)
+               (sb-vm::s8-ref ,vec (* 2 ,i))
+               (sb-int:invalid-array-index-error ,vec (+ (* 8 ,i) 7) ,len))))))
+
+(defmacro s8-set (vec i new-value)
+  (if (zerop (sb-c::policy-quality sb-c::*policy* 'safety))
+      `(sb-vm::s8-set ,vec (* 2 ,i) ,new-value)
+      (let ((len (gensym)))
+        `(let ((,len (length ,vec)))
+           (if (<= (+ (* 8 ,i) 8) ,len)
+               (sb-vm::s8-set ,vec (* 2 ,i) ,new-value)
+               (sb-int:invalid-array-index-error ,vec (+ (* 8 ,i) 7) ,len))))))
 
 
 
@@ -101,11 +108,15 @@
          (let ((vec-a (array-storage-vector array-a))
                (vec-b (array-storage-vector array-b))
                (vec-r (array-storage-vector result-array)))
-           (loop for i below (ceiling (length vec-a) 8)
-              do (setf (f8-ref vec-r i)
-                       (,internals-symbol (f8-ref vec-a i)
-                                          (f8-ref vec-b i)))
-              finally (return result-array)))))))
+           (loop for i below (floor (length vec-a) 8)
+              do (s8-set vec-r i (,internals-symbol (s8-ref vec-a i)
+                                                    (s8-ref vec-b i)))
+              finally
+                (loop for j from (* 8 (1- i)) below (length vec-a)
+                   do (setf (aref vec-r j)
+                            (,op (aref vec-a j)
+                                 (aref vec-b j))))
+                (return result-array)))))))
 
 (define-single-vectorized-op - s vsubps)
 (define-single-vectorized-op + s vaddps)
