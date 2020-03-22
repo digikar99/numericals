@@ -3,11 +3,24 @@
 
 (defpackage :sbcl-numericals
   (:use :cl)
-  (:export :s-
-           :s+
-           :s*
-           :s/
-           :d-
-           :d+
-           :d*
-           :d/))
+  (:export
+
+   ;; AVX array operations 
+   :s-
+   :s+
+   :s*
+   :s/
+   :d-
+   :d+
+   :d*
+   :d/
+
+   ;; SSE array operations
+   :s2-
+   :s2+
+   :s2*
+   :s2/
+   :d2-
+   :d2+
+   :d2*
+   :d2/))

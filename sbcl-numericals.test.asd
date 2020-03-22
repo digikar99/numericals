@@ -6,5 +6,7 @@
                "fiveam"
                "alexandria")
   :components ((:file "package")
-               (:file "doubles")
-               (:file "singles")))
+               (:file "avx-double")
+               (:file "avx-single")
+               (:file "sse-double")
+               (:file "sse-single")))

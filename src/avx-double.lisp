@@ -16,14 +16,20 @@
     (:results (dest :scs (double-avx2-reg)))
     (:result-types simd-pack-256-double)
     (:policy :fast-safe)
+    ;; EA below stands for effective address. 
+    ;; To understand the role of each arg, see the source code for float-ref-ea at
+    ;; https://github.com/sbcl/sbcl/blob/master/src/compiler/x86/array.lisp
+    ;; and consider the (EA = base + index * scale + offset * element_size) model.
     (:generator 1
                 (inst vmovups
                       dest
-                      (make-ea-for-float-ref v i 0 32
-                                             :scale (ash 16 (- n-fixnum-tag-bits))))))
+                      (make-ea-for-float-ref v i 0 0
+                                             :scale (ash 8 (- n-fixnum-tag-bits))))))
+
   (defknown d4-set ((simple-array double-float (*))
                     (integer 0 #.most-positive-fixnum)
                     (simd-pack-256 double-float))
+      ;; (integer 0 #.most-positive-fixnum)
       (simd-pack-256 double-float)
       (always-translatable)
     :overwrite-fndb-silently t)
@@ -35,36 +41,26 @@
     (:arg-types simple-array-double-float
                 tagged-num
                 simd-pack-256-double)
-    (:results (result :scs (double-avx2-reg)))
-    (:result-types simd-pack-256-double)
     (:policy :fast-safe)
     (:generator 1
                 (inst vmovups
-                      (make-ea-for-float-ref v i 0 16
-                                             :scale (ash 16 (- n-fixnum-tag-bits)))
-                      x)
-                (move result x))))
+                      (make-ea-for-float-ref v i 0 0
+                                             :scale (ash 8 (- n-fixnum-tag-bits)))
+                      x))))
 
 (in-package :sbcl-numericals.internals)
-
-;;; What's a better way than macros to take safety into account?
-(defmacro d4-ref (vec i)
-  (if (zerop (sb-c::policy-quality sb-c::*policy* 'safety))
-      `(sb-vm::d4-ref ,vec (* 2 ,i))
-      (let ((len (gensym)))
-        `(let ((,len (length ,vec)))
-           (if (<= (+ (* 4 ,i) 4) ,len)
-               (sb-vm::d4-ref ,vec (* 2 ,i))
-               (sb-int:invalid-array-index-error ,vec (+ (* 4 ,i) 3) ,len))))))
-
-(defmacro d4-set (vec i new-value)
-  (if (zerop (sb-c::policy-quality sb-c::*policy* 'safety))
-      `(sb-vm::d4-set ,vec (* 2 ,i) ,new-value)
-      (let ((len (gensym)))
-        `(let ((,len (length ,vec)))
-           (if (<= (+ (* 4 ,i) 4) ,len)
-               (sb-vm::d4-set ,vec (* 2 ,i) ,new-value)
-               (sb-int:invalid-array-index-error ,vec (+ (* 4 ,i) 3) ,len))))))
+(declaim (inline d4-ref))
+(defun d4-ref (vec i)
+  (declare (optimize (speed 3))
+           (type (simple-array double-float) vec)
+           (type fixnum i))
+  (sb-vm::d4-ref vec i))
+(declaim (inline (setf d4-ref)))
+(defun (setf d4-ref) (new-value vec i)
+  (declare (optimize (speed 3))
+           (type (simple-array double-float) vec)
+           (type fixnum i))
+  (sb-vm::d4-set vec i new-value))
 
 (defmacro define-double-vectorized-op (op prefix assembly-equivalent)
   (let  ((sb-vm-symbol (intern (concatenate 'string "%D4" (symbol-name op))
@@ -98,25 +94,24 @@
          (declare (optimize (speed 3)))
          (,sb-vm-symbol simd-256-a simd-256-b))
        (defun ,sbcl-numericals-symbol (array-a array-b result-array)
-         (declare (optimize (speed 3) (safety 3))
+         (declare (optimize (speed 3))
                   (type (simple-array double-float) array-a array-b result-array))
          (if (not (and (equalp (array-dimensions array-a) (array-dimensions array-b))
                        (equalp (array-dimensions array-a) (array-dimensions result-array))))
              (error "Arrays cannot have different dimensions!"))
-         (let ((vec-a (array-storage-vector array-a))
-               (vec-b (array-storage-vector array-b))
-               (vec-r (array-storage-vector result-array)))
-           (loop for i below (floor (length vec-a) 4)                
-              do (d4-set vec-r i (,internals-symbol (d4-ref vec-a i)
-                                                    (d4-ref vec-b i)))
+         (let* ((vec-a (array-storage-vector array-a))
+                (vec-b (array-storage-vector array-b))
+                (vec-r (array-storage-vector result-array)))
+           (loop for i fixnum below (- (length vec-a) 4) by 4
+              do (setf (d4-ref vec-r i)
+                       (,internals-symbol (d4-ref vec-a i)
+                                          (d4-ref vec-b i)))
               finally
-                (progn
-                  (loop for j from (* 4 (1- i)) below (length vec-a)
-                     do 
-                       (setf (aref vec-r j)
-                             (,op (aref vec-a j)
-                                  (aref vec-b j))))
-                  (return result-array))))))))
+                (loop for j from i below (length vec-a)
+                   do (setf (aref vec-r j)
+                            (,op (aref vec-a j)
+                                 (aref vec-b j))))
+                (return result-array)))))))
 
 (define-double-vectorized-op - d vsubpd)
 (define-double-vectorized-op + d vaddpd)

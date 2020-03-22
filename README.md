@@ -11,134 +11,43 @@ PS: This library began as a [reddit post](https://www.reddit.com/r/lisp/comments
 
 ## So far...
 
-We only have the operations `s+ s- s* s/` working on single float simple array,
-and the corresponding `d+ d- d* d/` working on double float simple arrays; all using SIMD, not tested
-for arrays without 4/8 multiple sizes. See [sbcl-numericals.lisp](src/sbcl-numericals.lisp).
-There are no tests yet either.
+Currently, we only have the operations `s+ s- s* s/` working on single float simple array,
+and the corresponding `d+ d- d* d/` working on double float simple arrays; all using
+AVX instructions.
+
+In addition, there are the SSE instructions `s2+ s2- s2* s2/` and `d2+ d2- d2* d2/`.
 
 ## How does this compare to other numerical libraries?
 
 For one, we are currently very limited in features. For the full realm of possibilities, see [Introduction
 to Intel Advanced Vector Extensions](https://software.intel.com/en-us/articles/introduction-to-intel-advanced-vector-extensions).
 
-However, because, numpy still uses SSE, and we are using AVX, we do happen to be about 3 times
-faster in these basic operations. In theory, a speed-up of less than 2 is expected, since
-the amount of human resources that go into something like numpy is potentially 10s of times
-greater than the resources spent on SBCL and this library; and so, numpy would be expected to
-be faster.
+Because numpy still uses SSE, and we are using AVX, we did expect to be less than twice as fast.
 
-### 256-long vector
+It turns out that for small arrays and large loops, python stands as the bottleneck. The equivalent using AVX in SBCL is about 50% faster than SSE in SBCL. Both outperform python.
 
-```py
-a = np.random.random((256)) 
-b = np.random.random((256)) 
-c = np.zeros((256))
-def foo(num): 
-  start = time.time() 
-  for i in range(num): 
-    np.multiply(a, b, out = c) 
-  return time.time() - start 
-print(foo(1000000))
-# 1.0689892768859863
-```
+For larger arrays, as can be read by searching for "sse vs avx performance boost" on the
+web, the performance boost is only obtainable if memory is not the bottleneck (= your arrays
+fit in the cache).
 
-Python is the bottleneck I'd guess. See the two other cases below.
+The performance benefits also differ from one operation to another. Certain AVX operations carry a larger latency, thus eliminating any performance boost arising out of additional parallelism.
 
-```lisp
-(defparameter double-list (loop for i below 256
-                             collect (+ i 0.1d0)))
-(defparameter arr-a (make-array '(256) :initial-contents double-list
-                                :element-type 'double-float))
-(defparameter arr-b (make-array '(256) :initial-contents double-list
-                                :element-type 'double-float))
-(defparameter arr-c (make-array '(256) :initial-element 0.0d0
-                                :element-type 'double-float))
-(time (loop for i below 1000000
-         do (d* arr-a arr-b arr-c)))
-;; Evaluation took:
-;;   0.137 seconds of real time
-;;   0.137595 seconds of total run time (0.137595 user, 0.000000 system)
-;;   100.73% CPU
-;;   303,799,698 processor cycles
-;;   63,995,904 bytes consed
-```
+Addition is probably the best case scenario below.
 
-### 1024x1024
+#### Comparing Numpy with SBCL (for addition)
 
-```py
-a = np.random.random((1024, 1024)) 
-b = np.random.random((1024, 1024)) 
-c = np.zeros((1024, 1024))
-def foo(num): 
-  start = time.time() 
-  for i in range(num): 
-    np.multiply(a, b, out = c) 
-  return time.time() - start 
-print(foo(10000))
-# 13.556719779968262
-```
+<img src="benchmark/plot_log.svg" style="margin:auto; width:60%;"/>
 
-Twice as fast - a bit better than expectations.
+#### Comparing AVX with SSE 
 
-```lisp
-(defparameter double-list (loop for i below 1024
-                             collect (loop for j below 1024
-                                        collect (+ i j 0.1d0))))
-(defparameter arr-a (make-array '(1024 1024) :initial-contents double-list
-                                :element-type 'double-float))
-(defparameter arr-b (make-array '(1024 1024) :initial-contents double-list
-                                :element-type 'double-float))
-(defparameter arr-c (make-array '(1024 1024) :initial-element 0.0d0
-                                :element-type 'double-float))
+<img src="benchmark/100.svg" style="margin:auto; width:60%;"/>
 
-(time (loop for i below 10000
-         do (d* arr-a arr-b arr-c)))
-;; Evaluation took:
-;;   6.713 seconds of real time
-;;   6.712866 seconds of total run time (6.712866 user, 0.000000 system)
-;;   100.00% CPU
-;;   14,822,035,318 processor cycles
-;;   1,277,952 bytes consed
-```
+<img src="benchmark/1000.svg" style="margin:auto; width:60%;"/>
 
-### 1024x1024x32
+<img src="benchmark/10000.svg" style="margin:auto; width:60%;"/>
 
-```py
-a = np.random.random((1024, 1024, 32)) 
-b = np.random.random((1024, 1024, 32)) 
-c = np.zeros((1024, 1024, 32))
-def foo(num): 
-  start = time.time() 
-  for i in range(num): 
-    np.multiply(a, b, out = c) 
-  return time.time() - start 
-print(foo(100))
-# 5.072538375854492
-```
-
-This one's within the expected 'under 2 times' faster bracket.
-
-```lisp
-(defparameter double-list (loop for i below 1024
-                             collect (loop for j below 1024
-                                        collect (loop for k below 32
-                                                   collect (+ i j k 0.1d0)))))
-(defparameter arr-a (make-array '(1024 1024 32) :initial-contents double-list
-                                :element-type 'double-float))
-(defparameter arr-b (make-array '(1024 1024 32) :initial-contents double-list
-                                :element-type 'double-float))
-(defparameter arr-c (make-array '(1024 1024 32) :initial-element 0.0d0
-                                :element-type 'double-float))
-(time (loop for i below 100
-         do (d* arr-a arr-b arr-c)))
-;; Evaluation took:
-;;   3.115 seconds of real time
-;;   3.115278 seconds of total run time (3.115278 user, 0.000000 system)
-;;   100.00% CPU
-;;   6,878,583,088 processor cycles
-;;   32,768 bytes consed
-```
-
+*The following plots can be generated by using code-snippets from the [benchmark](./benchmark) 
+directory.*
 
 ## Acknowledgements
 
