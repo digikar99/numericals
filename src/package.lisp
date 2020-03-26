@@ -1,11 +1,12 @@
 (defpackage :sbcl-numericals.internals
-  (:use :cl :sb-c :sb-ext :sb-vm))
+  (:use :cl :sb-c :sb-ext :sb-vm :alexandria)
+  (:export :define-binary-vectorized-op :move))
 
 (defpackage :sbcl-numericals
-  (:use :cl)
+  (:use :cl :sbcl-numericals.internals)
   (:export
 
-   ;; AVX array operations 
+   ;; AVX2 based array operations 
    :s-
    :s+
    :s*
@@ -15,7 +16,7 @@
    :d*
    :d/
 
-   ;; SSE array operations
+   ;; SSE based array operations
    :s2-
    :s2+
    :s2*

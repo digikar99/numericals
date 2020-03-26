@@ -5,8 +5,4 @@
   :depends-on ("sbcl-numericals"
                "fiveam"
                "alexandria")
-  :components ((:file "package")
-               (:file "avx-double")
-               (:file "avx-single")
-               (:file "sse-double")
-               (:file "sse-single")))
+  :components ((:file "tests")))
