@@ -1,5 +1,5 @@
 (defpackage :sbcl-numericals.internals
-  (:use :cl :sb-c :sb-ext :sb-vm :alexandria)
+  (:use :cl :sb-c :sb-ext :sb-vm :alexandria :iterate)
   (:export :define-binary-vectorized-op :move))
 
 (defpackage :sbcl-numericals
@@ -15,6 +15,9 @@
    :d+
    :d*
    :d/
+
+   :ddot
+   :sdot
 
    ;; SSE based array operations
    :s2-

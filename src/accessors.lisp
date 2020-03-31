@@ -24,8 +24,8 @@
     (:generator 1
                 (inst movups
                       dest
-                      (make-ea-for-float-ref v i 0 0
-                                             :scale (ash 8 (- n-fixnum-tag-bits))))))
+                      (float-ref-ea v i 0 0
+                                    :scale (ash 8 (- n-fixnum-tag-bits))))))
 
   (defknown d2-set ((simple-array double-float (*))
                     (integer 0 #.most-positive-fixnum)
@@ -44,8 +44,8 @@
     (:policy :fast-safe)
     (:generator 1
                 (inst movups
-                      (make-ea-for-float-ref v i 0 0
-                                             :scale (ash 8 (- n-fixnum-tag-bits)))
+                      (float-ref-ea v i 0 0
+                                    :scale (ash 8 (- n-fixnum-tag-bits)))
                       x)))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;; s4-ref | s4-set ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -66,8 +66,8 @@
     (:generator 1
                 (inst vmovups
                       dest
-                      (make-ea-for-float-ref v i 0 0
-                                             :scale (ash 4 (- n-fixnum-tag-bits))))))
+                      (float-ref-ea v i 0 0
+                                    :scale (ash 4 (- n-fixnum-tag-bits))))))
   
   (defknown s4-set ((simple-array single-float (*))
                     (integer 0 #.most-positive-fixnum)
@@ -88,8 +88,8 @@
     (:policy :fast-safe)
     (:generator 1
                 (inst vmovups
-                      (make-ea-for-float-ref v i 0 0
-                                             :scale (ash 4 (- n-fixnum-tag-bits)))
+                      (float-ref-ea v i 0 0
+                                    :scale (ash 4 (- n-fixnum-tag-bits)))
                       x)
                 (move result x)))
 
@@ -111,8 +111,8 @@
     (:generator 1
                 (inst vmovups
                       dest
-                      (make-ea-for-float-ref v i 0 0
-                                             :scale (ash 8 (- n-fixnum-tag-bits))))))
+                      (float-ref-ea v i 0 0
+                                    :scale (ash 8 (- n-fixnum-tag-bits))))))
 
   (defknown d4-set ((simple-array double-float (*))
                     (integer 0 #.most-positive-fixnum)
@@ -131,8 +131,8 @@
     (:policy :fast-safe)
     (:generator 1
                 (inst vmovups
-                      (make-ea-for-float-ref v i 0 0
-                                             :scale (ash 8 (- n-fixnum-tag-bits)))
+                      (float-ref-ea v i 0 0
+                                    :scale (ash 8 (- n-fixnum-tag-bits)))
                       x)))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;; s8-ref | s8-set ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -153,8 +153,8 @@
     (:generator 1
                 (inst vmovups
                       dest
-                      (make-ea-for-float-ref v i 0 0
-                                             :scale (ash 4 (- n-fixnum-tag-bits))))))
+                      (float-ref-ea v i 0 0
+                                    :scale (ash 4 (- n-fixnum-tag-bits))))))
   (defknown s8-set ((simple-array single-float (*))
                     (integer 0 #.most-positive-fixnum)
                     (simd-pack-256 single-float))
@@ -174,8 +174,8 @@
     (:policy :fast-safe)
     (:generator 1
                 (inst vmovups
-                      (make-ea-for-float-ref v i 0 0
-                                             :scale (ash 4 (- n-fixnum-tag-bits)))
+                      (float-ref-ea v i 0 0
+                                    :scale (ash 4 (- n-fixnum-tag-bits)))
                       x)
                 (move result x))))
 

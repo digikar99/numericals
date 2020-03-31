@@ -9,6 +9,8 @@ SBCL needs more documentation - think Emacs! But knowledge exists in people's he
 
 PS: This library began as a [reddit post](https://www.reddit.com/r/lisp/comments/fkfgjn/sbcl_with_simd_how_to_optimize_sseavx2_to_pointer/), that, in turn, was triggered by [this reddit post](https://www.reddit.com/r/lisp/comments/fjmm6y/deep_learning_with_gpus/).
 
+This should work with the latest [SBCL (get from git)](https://github.com/sbcl/sbcl); there was [a bug with AVX2 even as recently as SBCL 2.0.3](https://www.reddit.com/r/lisp/comments/fsbbqe/sbcl_with_simd_dpps_vs_vdpps_simd_dot_product/). The build is fairly easy: `sh make.sh && sh run-sbcl.sh # or install.sh`.
+
 ## So far...
 
 Currently, we only have the operations `s+ s- s* s/` working on single float simple array,

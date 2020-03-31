@@ -6,4 +6,5 @@
   :components ((:file "package")
                (:file "accessors")
                (:file "internals")
-               (:file "sbcl-numericals")))
+               (:file "sbcl-numericals")
+               (:file "dot")))

@@ -157,8 +157,39 @@
                                         (map-array ',op arr-a7 arr-b7 arr-r7))))))))
 
 (define-avx2-single-tests
-    (+ s+)
-    (- s-)
+  (+ s+)
+  (- s-)
   (* s*)
   (/ s/))
+
+(defun dot (array-a array-b)
+  (let ((array-c (make-array (array-dimensions array-a) :initial-element 0)))
+    (map-array '* array-a array-b array-c)
+    (reduce '+ array-c :initial-value 0)))
+
+(defun almost-= (a b)
+  (<= (abs (/ (- a b) (+ a b)))
+      1e-7))
+
+(test sdot
+  (loop for size from 32 to 35 do
+       (let ((arr-a (make-array size
+                                :initial-contents (loop for i below size collect (+ i 1000.1))
+                                :element-type 'single-float))
+             (arr-b (make-array size
+                                :initial-contents (loop for i below size collect (+ i 1000.2))
+                                :element-type 'single-float)))
+         (is (almost-= (dot arr-a arr-b)
+                       (sdot arr-a arr-b))))))
+
+(test ddot
+  (loop for size from 32 to 33 do
+       (let ((arr-a (make-array size
+                                :initial-contents (loop for i below size collect (+ i 1000.1d0))
+                                :element-type 'double-float))
+             (arr-b (make-array size
+                                :initial-contents (loop for i below size collect (+ i 1000.2d0))
+                                :element-type 'double-float)))
+         (is (almost-= (dot arr-a arr-b)
+                       (ddot arr-a arr-b))))))
 

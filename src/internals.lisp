@@ -1,6 +1,5 @@
 (in-package :sbcl-numericals.internals)
 
-
 ;;; See https://gist.github.com/Lovesan/660866b96a2632b900359333a251cc1c
 ;;; for a tutorial on what this macro is up to.
 
@@ -11,12 +10,12 @@
                                        (dest &rest args)
                                        &body assembly-instructions)
   (with-gensyms (vop-name
-                 vop-wrapper-name                 
                  loop-var
                  loop-final-var)
     (destructuring-bind (register-type
                          simd-pack-type
                          vop-arg-type
+                         vop-wrapper-name
                          array-type
                          loop-step-size
                          vector-accessor)
@@ -24,24 +23,36 @@
           ('(:double :avx2) (list 'sb-vm::double-avx2-reg
                                   '(simd-pack-256 double-float)
                                   'sb-vm::simd-pack-256-double
+                                  (intern (concatenate 'string "D4"
+                                                       (symbol-name base-op))
+                                          :sbcl-numericals.internals)
                                   '(simple-array double-float)
                                   4
                                   'd4-ref))
           ('(:single :avx2) (list 'sb-vm::single-avx2-reg
                                   '(simd-pack-256 single-float)
                                   'sb-vm::simd-pack-256-single
+                                  (intern (concatenate 'string "S8"
+                                                       (symbol-name base-op))
+                                          :sbcl-numericals.internals)
                                   '(simple-array single-float)
                                   8
                                   's8-ref))
           ('(:double :sse) (list 'sb-vm::double-sse-reg
                                  '(simd-pack double-float)
                                  'sb-vm::simd-pack-double
+                                 (intern (concatenate 'string "D2"
+                                                      (symbol-name base-op))
+                                         :sbcl-numericals.internals)
                                  '(simple-array double-float)
                                  2
                                  'd2-ref))
           ('(:single :sse) (list 'sb-vm::single-sse-reg
                                  '(simd-pack single-float)
                                  'sb-vm::simd-pack-single
+                                 (intern (concatenate 'string "S4"
+                                                      (symbol-name base-op))
+                                         :sbcl-numericals.internals)
                                  '(simple-array single-float)
                                  4
                                  's4-ref)))
