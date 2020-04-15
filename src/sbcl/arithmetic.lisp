@@ -3,6 +3,13 @@
 (in-package :numericals.sbcl)
 
 (macro-when (member :avx2 sb-impl:+internal-features+)
+  
+  (define-constant +single-simd-zeros+
+      (apply #'%make-simd-pack-256-single (make-list 8 :initial-element 0.0))
+    :test (lambda (a b)
+            (equalp (multiple-value-list (%simd-pack-256-singles a))
+                    (multiple-value-list (%simd-pack-256-singles b)))))
+
   (eval-when (:compile-toplevel :load-toplevel :execute)
     (defknown %simd-single-+ ((simd-pack-256 single-float) (simd-pack-256 single-float))
         (simd-pack-256 single-float)
@@ -18,9 +25,6 @@
       (:result-types simd-pack-256-single)
       (:generator 1 ;; what should be the cost?
                   (inst vaddps dest a b))))
-
-  #.(defconstant +single-simd-zeros+
-      (apply #'%make-simd-pack-256-single (make-list 8 :initial-element 0.0)))
 
   (defparameter simd
     (apply #'%make-simd-pack-256-single (loop for i below 8 collect (coerce i 'single-float))))
