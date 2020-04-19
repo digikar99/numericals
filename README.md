@@ -1,5 +1,8 @@
 # sbcl-numericals
 
+README was last updated for [this commit](https://github.com/digikar99/sbcl-numericals/commit/142c47f54512fd1b2a57aa52cd30b52e8181a4e5).
+
+THIS PROJECT IS (VERY) UNSTABLE YET. THINGS ARE SUBJECT TO CHANGE.
 
 ## Background
 
