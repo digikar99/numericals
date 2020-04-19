@@ -2,14 +2,14 @@
 
 (defun use-array-element-type (element-type)
   (ecase element-type
-    (:single '(translate-to-simd-single simd-single-1d-aref +simd-single-1d-aref-stride+ single-float))
-    (:double '(translate-to-simd-double simd-double-1d-aref +simd-double-1d-aref-stride+ double-float))))
+    (single-float '(translate-to-simd-single simd-single-1d-aref +simd-single-1d-aref-stride+ single-float))
+    (double-float '(translate-to-simd-double simd-double-1d-aref +simd-double-1d-aref-stride+ double-float))))
 
 (defparameter *simd-single-operation-translation-plist*
   '(cl:+ simd-single-+
     cl:- simd-single--
     cl:* simd-single-*
-    cl:/ simd-single/))
+    cl:/ simd-single-/))
 
 (defun simd-single-op (op) (getf *simd-single-operation-translation-plist* op))
 
@@ -57,6 +57,7 @@ This is expanded to a form effective as:
         (simd-single-+ (simd-single-1d-aref a loop-var)
                        (simd-single-* (simd-single-1d-aref b loop-var)
                                       (simd-single-1d-aref c loop-var))))"
+  (setq element-type (second element-type))
   (with-gensyms (1d-storage-array
                  loop-var
                  final-loop-var)
@@ -79,6 +80,35 @@ This is expanded to a form effective as:
                        do (setf (aref ,1d-storage-array ,final-loop-var)
                                 ,(translate-to-base body final-loop-var element-type))))
          ,result-array))))
+
+(defun single-+ (result a b)
+  (declare (optimize (speed 3))
+           (type array result a b))
+  (with-simd-operations 'single-float result (+ a b)))
+
+(defun single-- (result a b)
+  (declare (optimize (speed 3))
+           (type array result a b))
+  (with-simd-operations 'single-float result (- a b)))
+
+(defun single-* (result a b)
+  (declare (optimize (speed 3))
+           (type array result a b))
+  (with-simd-operations 'single-float result (* a b)))
+
+(defun single-/ (result a b)
+  (declare (optimize (speed 3))
+           (type array result a b))
+  (with-simd-operations 'single-float result (/ a b)))
+
+(defun-c non-broadcast-operation (operation type)
+  (intern (concatenate 'string
+                       (ecase type
+                         (single-float "SINGLE")
+                         (double-float "DOUBLE")
+                         (fixnum "FIXNUM"))
+                       "-" (symbol-name operation))
+          :numericals.internals))
 
 ;; (let ((size 1048576))
 ;;   (defparameter a (make-array size :element-type 'single-float

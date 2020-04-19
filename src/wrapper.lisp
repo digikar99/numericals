@@ -114,22 +114,47 @@ keyword args. For example
     `(defun ,name (type broadcast-dimensions result &rest args)
        (declare (optimize (speed 3)))
        (ecase type
-         ,@(loop for type in '(single-float double-float fixnum)
-              collect `(,type
-                        (ecase (length broadcast-dimensions)
-                          ,@(loop for i from 1 to *max-broadcast-dimensions*
-                               collect
-                                 `(,i ,(let ((specialized-op
-                                              (specialized-operation operation type i)))
-                                         `(loop while (cddr args)
-                                             for a = (car args)
-                                             do (,specialized-op result result a)
-                                               (setq args (cdr args))
-                                             finally
-                                               (if (cdr args) ; given (cddr args) is null
-                                                   (,specialized-op result (car args) (cadr args))
-                                                   (,specialized-op result result (car args)))
-                                               (return result)))))))))))
+         ,@(loop for type in '(single-float)
+              collect
+                `(,type
+                  (ecase (length broadcast-dimensions)
+                    ,@(loop for i from 1 to *max-broadcast-dimensions*
+                         collect
+                           `(,i ,(let ((specialized-op
+                                        (specialized-operation operation type i))
+                                       (non-broadcast-op
+                                        (non-broadcast-operation operation type)))
+                                   `(loop while (cddr args)
+                                       for a = (car args)
+                                       do
+                                         (if (equalp (array-dimensions result)
+                                                     (array-dimensions a))
+                                             (,non-broadcast-op result result a)
+                                             (,specialized-op result result a))
+                                         (setq args (cdr args))
+                                       finally
+                                         (if (cdr args) ; given (cddr args) is null
+                                             (if (and (equalp
+                                                       (array-dimensions result)
+                                                       (array-dimensions (car args)))
+                                                      (equalp
+                                                       (array-dimensions result)
+                                                       (array-dimensions (cadr args))))
+                                                 (,non-broadcast-op result
+                                                                    (car args)
+                                                                    (cadr args))
+                                                 (,specialized-op result
+                                                                  (car args)
+                                                                  (cadr args)))
+                                             (if (equalp (array-dimensions result)
+                                                         (array-dimensions (car args)))
+                                                 (,non-broadcast-op result
+                                                                    result
+                                                                    (car args))
+                                                 (,specialized-op result
+                                                                  result
+                                                                  (car args))))
+                                         (return result)))))))))))
 
   (define-broadcast-operation %+ +)
   (define-broadcast-operation %- -)
