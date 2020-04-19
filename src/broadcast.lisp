@@ -6,46 +6,33 @@
         (t `(the fixnum (+ (the fixnum ,(car args))
                            ,(macroexpand `(fixnum-+ ,@(cdr args))))))))
 
-(defmacro double-float-+ (&rest args)
-  (cond ((null args) 0.0d0)
-        ((null (cdr args)) `(the double-float ,(car args)))
-        (t `(the double-float (+ (the double-float ,(car args))
-                                 ,(macroexpand `(double-float-+ ,@(cdr args))))))))
+(defun-c symbols (prefix n)
+  (loop for dim below n
+     for i = (intern (concatenate 'string prefix (write-to-string dim))
+                     :numericals.internals)
+     collect i))
 
-(defmacro single-float-+ (&rest args)
-  (cond ((null args) 0.0)
-        ((null (cdr args)) `(the single-float ,(car args)))
-        (t `(the single-float (+ (the single-float ,(car args))
-                                 ,(macroexpand `(single-float-+ ,@(cdr args))))))))
+(defun-c index-calculation-code (num-dimensions)
+  (loop for s in (symbols "S" num-dimensions)
+     for i in (symbols "I" num-dimensions)
+     collect (list '* s i)))
 
-(eval-when (:compile-toplevel)
-  (defun symbols (prefix n)
-    (loop for dim below n
-       for i = (intern (concatenate 'string prefix (write-to-string dim))
-                       :numericals.internals)
-       collect i))
-
-  (defun index-calculation-code (num-dimensions)
-    (loop for s in (symbols "S" num-dimensions)
-       for i in (symbols "I" num-dimensions)
-       collect (list '* s i)))
-
-  (defun strides (n factor reversed-actual-dimension-symbols
-                  reversed-required-dimension-symbols
-                  reversed-stride-symbols)
-    (when (> n 0)
-      (with-gensyms ()
-        (let ((first (car reversed-actual-dimension-symbols)))
-          `(progn
-             ;; assume sanity checking is done by callers
-             (setq ,(car reversed-stride-symbols) (if (= 1 ,first) 0 ,factor))
-             ,(strides (1- n)
-                       (if (and (numberp factor) (= 1 factor))
-                           first
-                           `(the (signed-byte 31) (* ,factor ,first)))
-                       (cdr reversed-actual-dimension-symbols)
-                       (cdr reversed-required-dimension-symbols)
-                       (cdr reversed-stride-symbols))))))))
+(defun-c strides (n factor reversed-actual-dimension-symbols
+                    reversed-required-dimension-symbols
+                    reversed-stride-symbols)
+  (when (> n 0)
+    (with-gensyms ()
+      (let ((first (car reversed-actual-dimension-symbols)))
+        `(progn
+           ;; assume sanity checking is done by callers
+           (setq ,(car reversed-stride-symbols) (if (= 1 ,first) 0 ,factor))
+           ,(strides (1- n)
+                     (if (and (numberp factor) (= 1 factor))
+                         first
+                         `(the (signed-byte 31) (* ,factor ,first)))
+                     (cdr reversed-actual-dimension-symbols)
+                     (cdr reversed-required-dimension-symbols)
+                     (cdr reversed-stride-symbols)))))))
 
 (defmacro with-broadcast (type num-dimensions broadcast-fn-name array
                           (&rest required-dimensions) &body body)
@@ -62,9 +49,7 @@
         (simd-broadcast-aref (ecase type
                                (single-float 'simd-single-broadcast-1d-aref)
                                (double-float 'simd-double-broadcast-1d-aref)))
-        (aref (ecase type
-                (single-float 'single-1d-aref)
-                (double-float 'double-1d-aref)))
+        (aref 'aref)
         (broadcast-fn-name-simd (intern (concatenate 'string
                                                      (symbol-name broadcast-fn-name)
                                                      "-SIMD"))))
@@ -106,8 +91,7 @@
                     (if (zerop ,(car reversed-stride-symbols))
                         ;; Doing this is more performant than keeping separate branches
                         (,simd-broadcast-aref ,vector ,index-code)
-                        (,simd-aref ,vector ,index-code))
-                    ))
+                        (,simd-aref ,vector ,index-code))))
              (declare (inline ,broadcast-fn-name (setf ,broadcast-fn-name)
                               (setf ,broadcast-fn-name-simd)
                               ,broadcast-fn-name-simd)
@@ -167,20 +151,51 @@
                                                   (b-ref ,@loop-symbols i))))))))))))
          result))))
 
-(define-nd-broadcast-operation single-1d-+ 1 'single-float 'simd-single-+ 'single-float-+)
-(define-nd-broadcast-operation single-2d-+ 2 'single-float 'simd-single-+ 'single-float-+)
-(define-nd-broadcast-operation single-3d-+ 3 'single-float 'simd-single-+ 'single-float-+)
-(define-nd-broadcast-operation single-4d-+ 4 'single-float 'simd-single-+ 'single-float-+)
+(defun-c specialized-operation (operation type num-dimensions)
+  (intern (concatenate 'string
+                       (ecase type
+                         (single-float "SINGLE")
+                         (double-float "DOUBLE")
+                         (fixnum "FIXNUM"))
+                       "-" (write-to-string num-dimensions) "D-" (symbol-name operation))
+          :numericals.internals))
 
-;; (let ((size 1048576))
+(defmacro define-nd-broadcast-operations (type simd-op base-op)
+  `(progn
+     ,@(loop for i from 1 to *max-broadcast-dimensions*
+          ;; assume quoted!
+          for specialized-op-name = (specialized-operation (second base-op)
+                                                           (second type)
+                                                           i)
+          collect `(define-nd-broadcast-operation
+                       ,specialized-op-name
+                       ,i
+                     ,type
+                     ,simd-op
+                     ,base-op))))
+
+(define-nd-broadcast-operations 'single-float 'simd-single-+ '+)
+(define-nd-broadcast-operations 'single-float 'simd-single-- '-)
+(define-nd-broadcast-operations 'single-float 'simd-single-* '*)
+(define-nd-broadcast-operations 'single-float 'simd-single-/ '/)
+
+;; (let ((size 128))
 ;;   (defparameter a (nu:asarray (make-list size :initial-element 0.1)))
 ;;   (defparameter b (nu:asarray (make-list size :initial-element 0.2)))
 ;;   (defparameter c (nu:zeros size)))
 
-;; (let ((size 3))
+;; (let ((size 1024))
 ;;   (defparameter a (nu:asarray (list (make-list size :initial-element 0.1))))
 ;;   (defparameter b (nu:asarray (make-list size :initial-element '(0.2))))
 ;;   (defparameter c (nu:zeros size size)))
+
+;; (let ((size 64)
+;;       (size-2 32))
+;;   (let ((a (nu:zeros 1 size-2 size))
+;;         (b (nu:zeros size size-2 1))
+;;         (c (nu:zeros size size-2 size)))
+;;     (time (loop repeat 1000
+;;              do (nu:+ a b :out c)))))
 
 ;; (let ((size 64)
 ;;       (size-2 32))
@@ -188,30 +203,13 @@
 ;;   (defparameter b (nu:zeros size size-2 1))
 ;;   (defparameter c (nu:zeros size size-2 size)))
 
+;; (let ((size 64))
+;;   (defparameter a (nu:zeros size size size))
+;;   (defparameter b (nu:zeros size size size))
+;;   (defparameter c (nu:zeros size size size)))
+
+
 ;; (let ((size 16))
 ;;   (defparameter a (nu:zeros 1 size size size))
 ;;   (defparameter b (nu:zeros size size size 1))
 ;;   (defparameter c (nu:zeros size size size size)))
-
-;;; This, too, needs to be generated using macros, to handle *max-broadcast-dimensions*.
-;; (defun single-1d-+ (result a b)
-;;   (declare (optimize (speed 3))
-;;            (type (simple-array single-float (*)) a b result))
-;;   ;; assume RESULT, A and B are broadcast-compatible - to be checked by the caller.
-;;   (let ((broadcast-dimensions (array-dimensions result)))
-;;     (destructuring-bind (b0) broadcast-dimensions
-;;       (declare (type fixnum b0))
-;;       (let ((b0-s (- b0 +simd-single-1d-aref-stride+)))
-;;         (with-single-broadcast 1 r-ref result broadcast-dimensions
-;;           (with-single-broadcast 1 a-ref a broadcast-dimensions
-;;             (with-single-broadcast 1 b-ref b broadcast-dimensions
-;;               (loop for i0 fixnum below b0-s by +simd-single-1d-aref-stride+
-;;                  do (setf (r-ref i0 i0)
-;;                           (simd-single-+ (a-ref t i0)
-;;                                          (b-ref t i0)))                         
-;;                  finally
-;;                    (loop for i fixnum from i0 below b0
-;;                       do (setf (r-ref nil i)
-;;                                (single-float-+ (a-ref nil i)
-;;                                                (b-ref nil i)))))))))))
-;;   result)

@@ -4,6 +4,13 @@
   ;; better way to restrict the value?
   "Can only be one of FIXNUM, SINGLE-FLOAT, or DOUBLE-FLOAT.")
 
+(defparameter *max-broadcast-dimensions* 4)
+;; several macros need to be re-expanded for change in this to be reflected.
+
+(defmacro defun-c (name lambda-list &body body)
+  `(eval-when (:compile-toplevel)
+     (defun ,name ,lambda-list ,@body)))
+
 (defun split-at-keywords (args)
   "Example: (1 2 3 :a 2 :b 3) => ((1 2 3) (:a 2 :b 3))"
   (if args
@@ -67,6 +74,15 @@ Examples:
   (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
     (make-array dimensions :element-type type
                 :initial-element (cast type 0))))
+
+(defun nu:ones (&rest args)
+  "ARGS: (&rest array-dimensions &key (type *type*))
+Examples: 
+  (zeros 2 3)
+  (zeros 3 3 :type 'fixnum)"
+  (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
+    (make-array dimensions :element-type type
+                :initial-element (cast type 1))))
 
 (defun nu:asarray (array-like &key (type *type*))
   (make-array (nu:shape array-like)

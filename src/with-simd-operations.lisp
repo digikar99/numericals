@@ -6,7 +6,10 @@
     (:double '(translate-to-simd-double simd-double-1d-aref +simd-double-1d-aref-stride+ double-float))))
 
 (defparameter *simd-single-operation-translation-plist*
-  '(cl:+ simd-single-+))
+  '(cl:+ simd-single-+
+    cl:- simd-single--
+    cl:* simd-single-*
+    cl:/ simd-single/))
 
 (defun simd-single-op (op) (getf *simd-single-operation-translation-plist* op))
 

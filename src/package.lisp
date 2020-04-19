@@ -80,9 +80,13 @@
    :astype
    :asarray
    :zeros
+   :ones
    :shape
 
-   :+))
+   :+
+   :-
+   :/
+   :*))
 
 (trivial-package-local-nicknames:add-package-local-nickname :nu :numericals
                                                             :numericals.internals)
