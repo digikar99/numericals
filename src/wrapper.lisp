@@ -76,13 +76,16 @@ keyword args. For example
        (destructuring-bind (args (&key (out nil out-supplied-p)
                                        (type *type*)))
            (split-at-keywords args)
-         (let (broadcast-dimensions
+         (let ((broadcast-dimensions nil)
+               (orig-args args)
                (some-array-p (some 'array-like-p args)))
            (if some-array-p
                (progn
                  (setq args (mapcar (curry 'ensure-array type) args))
                  (setq broadcast-dimensions
                        (nth-value 1 (apply 'broadcast-compatible-p args)))
+                 (unless broadcast-dimensions
+                   (error "Cannot broadcast ~D together" orig-args))
                  (when out-supplied-p
                    ;; Might do some checks with TYPE-SUPPLIED-P as well.
                    (assert (arrayp out) nil

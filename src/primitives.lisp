@@ -1,5 +1,7 @@
 (in-package :numericals.internals)
 
+;;; DO NOT INLINE CODE UNLESS NECESSARY
+
 (defparameter *type* 'single-float
   ;; better way to restrict the value?
   "Can only be one of FIXNUM, SINGLE-FLOAT, or DOUBLE-FLOAT.")
@@ -8,7 +10,7 @@
 ;; several macros need to be re-expanded for change in this to be reflected.
 
 (defmacro defun-c (name lambda-list &body body)
-  `(eval-when (:compile-toplevel)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
      (defun ,name ,lambda-list ,@body)))
 
 (defun split-at-keywords (args)
@@ -73,7 +75,7 @@ Examples:
   (zeros 3 3 :type 'fixnum)"
   (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
     (make-array dimensions :element-type type
-                :initial-element (cast type 0))))
+                :initial-element (%cast type 0))))
 
 (defun nu:ones (&rest args)
   "ARGS: (&rest array-dimensions &key (type *type*))
@@ -88,3 +90,11 @@ Examples:
   (make-array (nu:shape array-like)
               :element-type type
               :initial-contents (cast type array-like)))
+
+(defmacro nu:with-inline (&body body)
+  `(let ()
+     (declare (inline ,@(iter (for symbol in-package :numericals external-only t)
+                              (when (and (fboundp symbol)
+                                         (not (macro-function symbol)))
+                                (collect symbol)))))
+     ,@body))

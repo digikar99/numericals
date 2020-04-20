@@ -56,6 +56,9 @@
 
 (in-package :numericals.internals)
 
+;;; DO NOT INLINE CODE UNLESS NECESSARY.
+;;; This makes it harder for the user to debug.
+;;; Instead, use the with-inline macro provided
 (declaim (inline single-1d-aref
                  (setf single-1d-aref)
                  double-1d-aref
@@ -75,7 +78,9 @@
 
    :with-broadcast
    :with-simd-operations
+   :with-inline
    :array-like-p
+   :aref
    
    :astype
    :asarray

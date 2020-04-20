@@ -1,19 +1,20 @@
 (in-package :numericals.internals)
 
-(defun use-array-element-type (element-type)
+(defun-c use-array-element-type (element-type)
   (ecase element-type
     (single-float '(translate-to-simd-single simd-single-1d-aref +simd-single-1d-aref-stride+ single-float))
     (double-float '(translate-to-simd-double simd-double-1d-aref +simd-double-1d-aref-stride+ double-float))))
 
-(defparameter *simd-single-operation-translation-plist*
-  '(cl:+ simd-single-+
-    cl:- simd-single--
-    cl:* simd-single-*
-    cl:/ simd-single-/))
+(eval-when (:compile-toplevel)
+  (defparameter *simd-single-operation-translation-plist*
+    '(cl:+ simd-single-+
+      cl:- simd-single--
+      cl:* simd-single-*
+      cl:/ simd-single-/)))
 
-(defun simd-single-op (op) (getf *simd-single-operation-translation-plist* op))
+(defun-c simd-single-op (op) (getf *simd-single-operation-translation-plist* op))
 
-(defun translate-to-simd-single (body loop-var)
+(defun-c translate-to-simd-single (body loop-var)
   "Returns BODY with OP replaced with corresponding SIMD-SINGLE-OP, 
 and each symbol S replaced with (SIMD-SINGLE-1D-AREF S LOOP-VAR)."
   (cond ((null body) ())
@@ -25,7 +26,7 @@ and each symbol S replaced with (SIMD-SINGLE-1D-AREF S LOOP-VAR)."
            (error "~D could not be translated to SIMD-OP" (car body))))
         (t (error "Non-exhaustive!"))))
 
-(defun collect-symbols (body)
+(defun-c collect-symbols (body)
   (cond ((null body) ())
         ((symbolp body) (list body))
         ((listp body)
@@ -36,7 +37,7 @@ and each symbol S replaced with (SIMD-SINGLE-1D-AREF S LOOP-VAR)."
              (error "~D could not be translated to SIMD-OP" (car body))))
         (t (error "Non-exhaustive!"))))
 
-(defun translate-to-base (body loop-var element-type)
+(defun-c translate-to-base (body loop-var element-type)
   "Returns BODY with symbol S not in the CAR replaced with (THE ELEMENT-TYPE (AREF S LOOP-VAR)).
 Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
   (cond ((null body) ())
