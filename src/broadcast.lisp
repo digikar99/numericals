@@ -17,22 +17,22 @@
      for i in (symbols "I" num-dimensions)
      collect `(the fixnum (* ,s ,i))))
 
-(defun-c strides (n factor reversed-actual-dimension-symbols
-                    reversed-required-dimension-symbols
-                    reversed-stride-symbols)
+(defun-c broadcast-strides (n factor reversed-actual-dimension-symbols
+                              reversed-required-dimension-symbols
+                              reversed-stride-symbols)
   (when (> n 0)
     (with-gensyms ()
       (let ((first (car reversed-actual-dimension-symbols)))
         `(progn
            ;; assume sanity checking is done by callers
            (setq ,(car reversed-stride-symbols) (if (= 1 ,first) 0 ,factor))
-           ,(strides (1- n)
-                     (if (and (numberp factor) (= 1 factor))
-                         first
-                         `(the (signed-byte 31) (* ,factor ,first)))
-                     (cdr reversed-actual-dimension-symbols)
-                     (cdr reversed-required-dimension-symbols)
-                     (cdr reversed-stride-symbols)))))))
+           ,(broadcast-strides (1- n)
+                               (if (and (numberp factor) (= 1 factor))
+                                   first
+                                   `(the (signed-byte 31) (* ,factor ,first)))
+                               (cdr reversed-actual-dimension-symbols)
+                               (cdr reversed-required-dimension-symbols)
+                               (cdr reversed-stride-symbols)))))))
 
 ;; Examples for final codes generated from the broadcast are given near the bottom
 ;; of this file in the form of comments.
@@ -72,10 +72,10 @@
            ;; For an iterative version of calculating strides, 
            ;; see the function %broadcast-compatible-p
            ;; Perhaps, also https://ipython-books.github.io/46-using-stride-tricks-with-numpy/
-           ,(strides num-dimensions 1
-                     reversed-actual-dimension-symbols
-                     reversed-required-dimension-symbols
-                     reversed-stride-symbols)
+           ,(broadcast-strides num-dimensions 1
+                               reversed-actual-dimension-symbols
+                               reversed-required-dimension-symbols
+                               reversed-stride-symbols)
            ;; (unless (= ,num-dimensions (length ,required-dimensions))
            ;;   (error "Length of ~D is supposed to be ~D" ,required-dimensions ,num-dimensions)))
            ;; The most obvious way to calculate the "true" index, as stated 
