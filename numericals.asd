@@ -14,4 +14,5 @@
                (:file "primitives")
                (:file "broadcast")
                (:file "with-simd-operations")
-               (:file "wrapper")))
+               (:file "wrapper")
+               (:file "aref")))
