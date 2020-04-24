@@ -10,10 +10,13 @@
 ;; The closest thing, perhaps, would be to add an iteration macro do-aref
 ;; or an iterate clause, or both.
 
-;; The following implementation happens to be about 10 times faster than select:select.
+;; The following implementation happens to be about 5 times faster than select:select.
 ;; However, in the absence of further optimizations (= compiler-macros)
 ;; this is just as slow in the case reducible to cl:aref.
 
+;; This is also about 5 times slower than numpy. While this does not use SIMD,
+;; it's not clear how to use it. And this is regardless of SIMD. At moments,
+;; when numpy can use SIMD (= data is local), numpy is about 20 times faster!
 
 (declaim (inline tp))
 (defun-c tp (object) (eq t object))
@@ -56,7 +59,7 @@
            step))
 
 (progn
-  (defmacro define-aref ()
+  (defmacro define-aref-ref ()
     `(defun nu:aref (&rest args)
        "ARGS: (array &rest subscripts &key out)
 Examples: (array '(t t 3) :out out)."
@@ -97,55 +100,48 @@ Examples: (array '(t t 3) :out out)."
                                                               collect
                                                                 `(elt normalized-subscripts
                                                                       ,j)))))))))))))))
-  (define-aref))
+  (define-aref-ref))
 
-(defmacro nested-db (max-depth current-depth indices out-array out-array-indices array
-                     array-indices
-                     start-symbols end-symbols step-symbols
-                     oa-stride-symbols a-stride-symbols)
-  (if (= max-depth current-depth)
-      `(progn
-         ;; performance! eliminate repeated calls to remove-if
-         (setf (aref ,out-array ,@(remove-if 'null out-array-indices))
-               (aref ,array ,@array-indices)))
-      (let ((start (elt start-symbols current-depth))
-            (end (elt end-symbols current-depth))
-            (step (elt step-symbols current-depth))
-            (index (elt indices current-depth))
-            (a-stride (elt a-stride-symbols current-depth))
-            (oa-stride (elt a-stride-symbols current-depth)))
-        `(if (listp ,index)
-             (destructuring-bind (,start ,end ,step)
-                 ,index
-               (loop for ,(elt array-indices current-depth) fixnum
-                  from ,start
-                  below ,end
-                  by ,a-stride
-                  for ,(elt out-array-indices current-depth) fixnum from 0
-                  do ,(macroexpand-1 `(nested-db ,max-depth ,(1+ current-depth)
-                                                 ,indices
-                                                 ,out-array
-                                                 ,out-array-indices
-                                                 ,array
-                                                 ,array-indices
-                                                 ,start-symbols
-                                                 ,end-symbols
-                                                 ,step-symbols))))
-             ,(macroexpand-1 `(nested-db ,max-depth ,(1+ current-depth)
-                                         ,indices
-                                         ,out-array
-                                         ,(progn
-                                            (let ((l (copy-list out-array-indices)))
-                                              (setf (elt l current-depth) nil)
-                                              l))
-                                         ,array
-                                         ,(progn
-                                            (let ((l (copy-list array-indices)))
-                                              (setf (elt l current-depth) index)
-                                              l))
-                                         ,start-symbols
-                                         ,end-symbols
-                                         ,step-symbols))))))
+(progn
+  (defmacro define-aref-set ()
+    `(defun (setf nu:aref) (new-value array &rest subscripts)
+       "ARGS: (array &rest subscripts &key out)
+Examples: (array '(t t 3) :out out)."
+       (declare (optimize (speed 3))
+                (type list subscripts))
+       (setq subscripts
+             (nconc subscripts
+                    (make-list (- (length (array-dimensions array))
+                                  (length subscripts))
+                               :initial-element t)))
+       (if (apply 'aref-applicable-p array subscripts)
+           (setf (apply #'aref array subscripts) new-value)
+           (let ((normalized-subscripts (apply 'normalize-subscripts
+                                               array subscripts))
+                 (num-dim (length (array-dimensions array))))
+             (declare (type list normalized-subscripts))
+             (unless (equalp (loop for subscript in subscripts
+                                for normalized-subscript in normalized-subscripts
+                                unless (numberp subscript)
+                                collect (apply 'required-array-size
+                                               normalized-subscript))
+                             (array-dimensions new-value))
+               (error "~D is not compatible with stated dimensions!" new-value))
+             (ecase (array-element-type array)
+               ,@(loop for type in '(single-float double-float fixnum)
+                    collect
+                      `(,type
+                        (ecase num-dim
+                          ,@(loop for i from 1 to *max-broadcast-dimensions*
+                               collect `(,i
+                                         (setf (apply #',(specialized-operation 'aref type i)
+                                                      array
+                                                      (nconc ,@(loop for j below i
+                                                                  collect
+                                                                    `(elt normalized-subscripts
+                                                                          ,j))))
+                                               new-value)))))))))))
+  (define-aref-set))
 
 (defmacro nested (mode max-depth current-depth out-array out-array-indices array
                   array-indices
@@ -181,90 +177,84 @@ Examples: (array '(t t 3) :out out)."
                                         ,oa-stride-symbols))))))
 
 (progn
-  (defmacro define-specialized-aref (mode)      
-    `(progn
-       ,@(loop for type in '(single-float double-float fixnum)
-            collect
-              (let* ((array-indices (make-gensym-list *max-broadcast-dimensions*
-                                                      "AI"))
-                     (out-array-indices (make-gensym-list *max-broadcast-dimensions*
-                                                          "OAI"))
-                     (start-symbols (make-gensym-list *max-broadcast-dimensions*
-                                                      "START"))
-                     (strided-start-symbols (make-gensym-list *max-broadcast-dimensions*
-                                                              "SSTART"))
-                     (end-symbols (make-gensym-list *max-broadcast-dimensions*
-                                                    "END"))
-                     (strided-end-symbols (make-gensym-list *max-broadcast-dimensions*
-                                                            "SEND"))
-                     (step-symbols (make-gensym-list *max-broadcast-dimensions*
-                                                     "STEP"))
-                     (strided-step-symbols (make-gensym-list *max-broadcast-dimensions*
-                                                             "SSTEP"))
-                     (oa-stride-symbols (make-gensym-list *max-broadcast-dimensions*
-                                                          "OAS"))
-                     (a-stride-symbols (make-gensym-list *max-broadcast-dimensions*
-                                                         "AS")))
-                `(progn
-                   ,@(loop for i from 1 to *max-broadcast-dimensions*
-                        collect
-                          (let ((args (iter (for j below i)
-                                            (for start in start-symbols)
-                                            (for end in end-symbols)
-                                            (for step in step-symbols)
-                                            (collect start)
-                                            (collect end)
-                                            (collect step))))
-                            `(defun ,(specialized-operation 'aref type i)
-                                 (out array ,@args)
-                               (declare (optimize (speed 3))
-                                        (type (signed-byte 31) ,@args)
-                                        (type (array ,type) out array))
-                               (destructuring-bind (&optional
-                                                    ,@(loop for s in oa-stride-symbols
-                                                         for j below i
-                                                         collect `(,s 1)))
-                                   (strides out)
+  (defmacro define-specialized-aref (mode)
+    (let ((n *max-broadcast-dimensions*))
+      `(progn
+         ,@(loop for type in '(single-float double-float fixnum)
+              collect
+                (let* ((array-indices (make-gensym-list n "AI"))
+                       (out-array-indices (make-gensym-list n "OAI"))
+                       (start-symbols (make-gensym-list n "START"))
+                       (strided-start-symbols (make-gensym-list n "SSTART"))
+                       (end-symbols (make-gensym-list n "END"))
+                       (strided-end-symbols (make-gensym-list n "SEND"))
+                       (step-symbols (make-gensym-list n "STEP"))
+                       (strided-step-symbols (make-gensym-list n "SSTEP"))
+                       (oa-stride-symbols (make-gensym-list n "OAS"))
+                       (a-stride-symbols (make-gensym-list n "AS")))
+                  `(progn
+                     ,@(loop for i from 1 to *max-broadcast-dimensions*
+                          collect
+                            (let ((args (iter (for j below i)
+                                              (for start in start-symbols)
+                                              (for end in end-symbols)
+                                              (for step in step-symbols)
+                                              (collect start)
+                                              (collect end)
+                                              (collect step))))
+                              `(defun ,(ecase mode
+                                         (:ref (specialized-operation 'aref type i))
+                                         (:set `(setf ,(specialized-operation 'aref type i))))
+                                   (out array ,@args)
                                  (declare (optimize (speed 3))
-                                          (type (signed-byte 31)
-                                                ,@(subseq oa-stride-symbols 0 i)))
-                                 (destructuring-bind ,(subseq a-stride-symbols 0 i)
-                                     (strides array)
+                                          (type (signed-byte 31) ,@args)
+                                          (type (array ,type) out array))
+                                 (destructuring-bind (&optional
+                                                      ,@(loop for s in oa-stride-symbols
+                                                           for j below i
+                                                           collect `(,s 1)))
+                                     (strides out)
                                    (declare (optimize (speed 3))
                                             (type (signed-byte 31)
-                                                  ,@(subseq a-stride-symbols 0 i)))
-                                   (let ((out (1d-storage-array out))
-                                         (array (1d-storage-array array))
-                                         ,@(iter
-                                             (for j below i)
-                                             (for start in start-symbols)
-                                             (for sstart in strided-start-symbols)
-                                             (for end in end-symbols)
-                                             (for send in strided-end-symbols)
-                                             (for step in step-symbols)
-                                             (for sstep in strided-step-symbols)
-                                             (for a in a-stride-symbols)
-                                             (collect `(,sstart (the (signed-byte 31)
-                                                                     (* ,a ,start))))
-                                             (collect `(,send (the (signed-byte 31)
-                                                                   (* ,a ,end))))
-                                             (collect `(,sstep (the (signed-byte 31)
-                                                                    (* ,a ,step))))))
-                                     (declare (type (simple-array ,type) out array)
+                                                  ,@(subseq oa-stride-symbols 0 i)))
+                                   (destructuring-bind ,(subseq a-stride-symbols 0 i)
+                                       (strides array)
+                                     (declare (optimize (speed 3))
                                               (type (signed-byte 31)
-                                                    ,@(subseq strided-start-symbols 0 i)
-                                                    ,@(subseq strided-end-symbols 0 i)
-                                                    ,@(subseq strided-step-symbols 0 i)))
-                                     ,(macroexpand-1 `(nested ,mode ,i 0
-                                                              out ,out-array-indices
-                                                              array 
-                                                              ,array-indices
-                                                              ,strided-start-symbols
-                                                              ,strided-end-symbols
-                                                              ,strided-step-symbols
-                                                              ,oa-stride-symbols)))))
-                               out))))))))
-  (define-specialized-aref :ref))
+                                                    ,@(subseq a-stride-symbols 0 i)))
+                                     (let ((out (1d-storage-array out))
+                                           (array (1d-storage-array array))
+                                           ,@(iter
+                                               (for j below i)
+                                               (for start in start-symbols)
+                                               (for sstart in strided-start-symbols)
+                                               (for end in end-symbols)
+                                               (for send in strided-end-symbols)
+                                               (for step in step-symbols)
+                                               (for sstep in strided-step-symbols)
+                                               (for a in a-stride-symbols)
+                                               (collect `(,sstart (the (signed-byte 31)
+                                                                       (* ,a ,start))))
+                                               (collect `(,send (the (signed-byte 31)
+                                                                     (* ,a ,end))))
+                                               (collect `(,sstep (the (signed-byte 31)
+                                                                      (* ,a ,step))))))
+                                       (declare (type (simple-array ,type) out array)
+                                                (type (signed-byte 31)
+                                                      ,@(subseq strided-start-symbols 0 i)
+                                                      ,@(subseq strided-end-symbols 0 i)
+                                                      ,@(subseq strided-step-symbols 0 i)))
+                                       ,(macroexpand-1 `(nested ,mode ,i 0
+                                                                out ,out-array-indices
+                                                                array 
+                                                                ,array-indices
+                                                                ,strided-start-symbols
+                                                                ,strided-end-symbols
+                                                                ,strided-step-symbols
+                                                                ,oa-stride-symbols)))))
+                                 out)))))))))
+  (define-specialized-aref :ref)
+  (define-specialized-aref :set))
 
 (defun strides (array)
   (let ((reversed-dimensions (nreverse (array-dimensions array)))
