@@ -87,9 +87,11 @@ Examples:
                 :initial-element (cast type 1))))
 
 (defun nu:asarray (array-like &key (type *type*))
-  (make-array (nu:shape array-like)
-              :element-type type
-              :initial-contents (cast type array-like)))
+  (if (arrayp array-like)
+      (nu:astype array-like type)
+      (make-array (nu:shape array-like)
+                  :element-type type
+                  :initial-contents (cast type array-like))))
 
 (defmacro nu:with-inline (&body body)
   `(let ()

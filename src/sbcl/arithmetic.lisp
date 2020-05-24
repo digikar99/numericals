@@ -9,6 +9,12 @@
     :test (lambda (a b)
             (equalp (multiple-value-list (%simd-pack-256-singles a))
                     (multiple-value-list (%simd-pack-256-singles b)))))
+  
+  (define-constant +double-simd-zeros+
+      (apply #'%make-simd-pack-256-double (make-list 4 :initial-element 0.0d0))
+    :test (lambda (a b)
+            (equalp (multiple-value-list (%simd-pack-256-doubles a))
+                    (multiple-value-list (%simd-pack-256-doubles b)))))
 
   (define-constant +single-simd-ones+
       (apply #'%make-simd-pack-256-single (make-list 8 :initial-element 1.0))
