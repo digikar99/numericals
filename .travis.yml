@@ -1,0 +1,31 @@
+language: lisp
+sudo: required
+
+env:
+  matrix:
+    - LISP=sbcl
+
+addons:
+  apt:
+    packages:
+      - sbcl
+
+install:
+  - sbcl --version
+  - git clone -b release https://github.com/roswell/roswell.git
+  - cd roswell 
+  - sh bootstrap
+  - ./configure
+  - make && sudo make install
+  - ros install sbcl-bin
+  - cd ~/
+  - ls
+
+script:
+  - ros run -- --eval '(progn
+                         (push (uiop:getcwd) ql:*local-project-directories*)
+                         (ql:quickload :numericals))' --quit
+    [ $? -eq 1 ]
+
+notifications:
+  email: false
