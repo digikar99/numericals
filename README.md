@@ -2,7 +2,7 @@
 
 THIS PROJECT IS (VERY) UNSTABLE YET. THINGS ARE SUBJECT TO CHANGE.
 
-This project was previously named `sbcl-numericals`. That project now sits unmaintained in the [sbcl-numericals](./tree/master/sbcl-numericals) directory.
+This project was previously named `sbcl-numericals`. That project now sits unmaintained in the [sbcl-numericals](./sbcl-numericals) directory.
 
 The project renaming reflects an attempt to separate the ANSI standard parts of the codebase
 from the SBCL-specific part, so that a portability attempt may be made in the future.
@@ -23,7 +23,7 @@ The plan is to make the interface as simple and intuitive as possible. But also 
 high performance using SIMD. For the full realm of SIMD possibilities, see [Introduction
 to Intel Advanced Vector Extensions](https://software.intel.com/en-us/articles/introduction-to-intel-advanced-vector-extensions).
 
-The "intended to be working" list of operations sits in [src/package.lisp](./blob/master/src/package.lisp).
+The "intended to be working" list of operations sits in [src/package.lisp](./src/package.lisp).
 
 ## TODO (Contributing)
 
