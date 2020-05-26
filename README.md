@@ -2,7 +2,7 @@
 
 THIS PROJECT IS (VERY) UNSTABLE YET. THINGS ARE SUBJECT TO CHANGE.
 
-This project was previously named `sbcl-numericals`. That project now sits unmaintained in the [sbcl-numericals](./tree/master/sbcl-numericals) directory.
+This project was previously named `sbcl-numericals`. That project now sits unmaintained in the [sbcl-numericals](./sbcl-numericals) directory.
 
 The project renaming reflects an attempt to separate the ANSI standard parts of the codebase
 from the SBCL-specific part, so that a portability attempt may be made in the future.
@@ -23,7 +23,7 @@ The plan is to make the interface as simple and intuitive as possible. But also 
 high performance using SIMD. For the full realm of SIMD possibilities, see [Introduction
 to Intel Advanced Vector Extensions](https://software.intel.com/en-us/articles/introduction-to-intel-advanced-vector-extensions).
 
-The "intended to be working" list of operations sits in [src/package.lisp](./blob/master/src/package.lisp).
+The "intended to be working" list of operations sits in [src/package.lisp](./src/package.lisp).
 
 ## TODO (Contributing)
 
@@ -45,6 +45,82 @@ the reason is because numpy provides array slices, and I do not know the equival
 lisp based systems.
 - [SIMD] Speeding up `concatenate` for axis>0.
 - Implementing package (perhaps not based on SIMD) for non-SBCL systems
+
+## Benchmarks
+
+
+
+
+
+
+<div id='benchmark'>
+  <p>SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations):
+  </p>
+  <table>
+<tr>
+  <th>Non-broadcast array operations
+  </th>
+<th>100
+</th>
+<th>10000
+</th>
+<th>1000000
+</th>
+<th>100000000
+</th>
+</tr>
+<tr>
+  <td>+
+  </td>
+<td>1.09x
+</td>
+<td>1.09x
+</td>
+<td>1.06x
+</td>
+<td>1.00x
+</td>
+</tr>
+<tr>
+  <td>-
+  </td>
+<td>1.21x
+</td>
+<td>1.17x
+</td>
+<td>1.02x
+</td>
+<td>1.01x
+</td>
+</tr>
+<tr>
+  <td>*
+  </td>
+<td>1.15x
+</td>
+<td>1.17x
+</td>
+<td>0.99x
+</td>
+<td>0.99x
+</td>
+</tr>
+<tr>
+  <td>/
+  </td>
+<td>1.26x
+</td>
+<td>1.31x
+</td>
+<td>0.99x
+</td>
+<td>1.00x
+</td>
+</tr>
+  </table>
+</div>
+
+<!-- The above div would be filled by :numericals/tests when *write-to-readme* is T. -->
 
 ## Acknowledgements
 

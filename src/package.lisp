@@ -67,11 +67,37 @@
     `(progn
        ,@body)))
 
+(defpackage :numericals
+  (:export
+
+   :with-broadcast
+   :with-simd-operations
+   :with-inline
+   :array-like-p
+   :aref
+   :map-outer
+   
+   :*type*
+   :astype
+   :asarray
+   :concatenate
+   :zeros
+   :ones
+   :shape
+
+   :+
+   :-
+   :/
+   :*))
+
+#.(when (member :sbcl *features*)
+    `(declaim (sb-ext:maybe-inline ,@(iter (for s in-package :numericals external-only t)
+                                           (collect s)))))
+
 (defpackage :numericals.internals
   (:use :cl :alexandria :iterate
         #+sbcl :numericals.sbcl)
-
-  (:export :with-simd-operations))
+  (:local-nicknames (:nu :numericals)))
 
 (in-package :numericals.internals)
 
@@ -90,35 +116,4 @@
                  simd-double-broadcast-1d-aref
                  1d-storage-array
                  simd-single-+))
-
-(defpackage :numericals
-  (:use :numericals.internals)
-  (:export
-
-   :with-broadcast
-   :with-simd-operations
-   :with-inline
-   :array-like-p
-   :aref
-   :map-outer
-   
-   :astype
-   :asarray
-   :concatenate
-   :zeros
-   :ones
-   :shape
-
-   :+
-   :-
-   :/
-   :*))
-
-#.(when (member :sbcl *features*)
-    `(declaim (sb-ext:maybe-inline ,@(iter (for s in-package :numericals external-only t)
-                                           (collect s)))))
-
-
-(trivial-package-local-nicknames:add-package-local-nickname :nu :numericals
-                                                            :numericals.internals)
 
