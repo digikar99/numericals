@@ -115,6 +115,42 @@ def timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
                                :b (funcall nu-op a b :out c)
                                :atol 1e-7)))))
 
+(def-test broadcast-speed (:suite arithmetic)
+  (flet ((within-acceptable-limits (lisp-time numpy-time)
+           (<= (/ lisp-time numpy-time) 2)))
+    (let* ((a-sizes '((01 1) (01 10) (001 100) (0001 1000) (00001 10000)))
+           (b-sizes '((10 1) (10 01) (100 001) (1000 0001) (10000 00001)))
+           (c-sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
+           (num-operations '(1e7 1e8 1e8 1e9 1e9))
+           (numpy-operations '(np.add np.subtract np.multiply np.divide))
+           (numericals-operations '(nu:+ nu:- nu:* nu:/)))
+      (when *write-to-readme*
+        (who:with-html-output (*write-to-readme-stream* nil :indent t)
+          (:tr (:th "Broadcast array operations (warning: can vary quite a bit depending
+on actual array dimensions)")
+               (loop :for size :in (mapcar (lambda (l) (apply #'* l)) c-sizes)
+                  :do (who:htm (:th (who:str size)))))))
+      (loop :for numpy-operation :in numpy-operations
+         :for numericals-operation :in numericals-operations
+         :do (let ((numpy-timings (py-timeit :fn numpy-operation
+                                             :a-sizes a-sizes
+                                             :b-sizes b-sizes
+                                             :c-sizes c-sizes
+                                             :num-operations num-operations))
+                   (numericals-timings (lisp-timeit :fn numericals-operation
+                                                    :a-sizes a-sizes
+                                                    :b-sizes b-sizes
+                                                    :c-sizes c-sizes
+                                                    :num-operations num-operations)))
+               (when *write-to-readme*
+                 (who:with-html-output (*write-to-readme-stream* nil :indent t)
+                   (:tr (:td (who:fmt "~D" numericals-operation))
+                        (loop :for lisp-time :in numericals-timings
+                           :for numpy-time :in numpy-timings
+                           :do (who:htm (:td (who:fmt "~,2f" (/ numpy-time lisp-time)) "x"))))))
+               (is (every #'within-acceptable-limits
+                          numericals-timings numpy-timings)))))))
+
 
 ;; (defparameter a (nu:zeros 100000000))
 ;; (defparameter b (nu:zeros 100000000))
