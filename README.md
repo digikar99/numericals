@@ -53,13 +53,16 @@ lisp based systems.
 
 
 
+
 <div id='benchmark'>
-  <p>SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations):
+  <p>SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations): 
   </p>
   <table>
 <tr>
   <th>Non-broadcast array operations
   </th>
+<th>10
+</th>
 <th>100
 </th>
 <th>10000
@@ -72,9 +75,25 @@ lisp based systems.
 <tr>
   <td>+
   </td>
-<td>1.09x
+<td>1.24x
+</td>
+<td>1.25x
+</td>
+<td>1.27x
 </td>
 <td>1.09x
+</td>
+<td>1.01x
+</td>
+</tr>
+<tr>
+  <td>-
+  </td>
+<td>1.22x
+</td>
+<td>1.25x
+</td>
+<td>1.18x
 </td>
 <td>1.06x
 </td>
@@ -82,39 +101,31 @@ lisp based systems.
 </td>
 </tr>
 <tr>
-  <td>-
+  <td>*
   </td>
-<td>1.21x
+<td>1.27x
 </td>
-<td>1.17x
+<td>0.20x
 </td>
-<td>1.02x
+<td>1.29x
+</td>
+<td>1.09x
 </td>
 <td>1.01x
 </td>
 </tr>
 <tr>
-  <td>*
-  </td>
-<td>1.15x
-</td>
-<td>1.17x
-</td>
-<td>0.99x
-</td>
-<td>0.99x
-</td>
-</tr>
-<tr>
   <td>/
   </td>
-<td>1.26x
+<td>1.31x
 </td>
 <td>1.31x
 </td>
-<td>0.99x
+<td>1.22x
 </td>
-<td>1.00x
+<td>1.06x
+</td>
+<td>0.97x
 </td>
 </tr>
   </table>

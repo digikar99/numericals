@@ -7,20 +7,19 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (pyexec "
-def timeit(fn, array_size_list, num_operations):
+def timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
   import time
   import numpy as np
   
   timings = []
 
-  for sz in array_size_list:
-    lim = int(num_operations / sz)
-    dim = int(np.floor(np.sqrt(sz)))
-    a = np.ones((dim, dim)).astype('float32')
-    b = np.ones((dim, dim)).astype('float32')
-    c = np.ones((dim, dim)).astype('float32')
+  for i in range(len(num_operations)):
+    a = np.ones(a_sizes[i]).astype('float32')
+    b = np.ones(b_sizes[i]).astype('float32')
+    c = np.ones(c_sizes[i]).astype('float32')
+    num_operation = int(num_operations[i] / (np.product(c_sizes[i])))
     start = time.time()
-    for i in range(lim):
+    for i in range(num_operation):
       fn(a, b, out = c)
     end = time.time()
     timings.append(end - start)
@@ -30,20 +29,22 @@ def timeit(fn, array_size_list, num_operations):
 
 (defpyfun "timeit" nil :lisp-fun-name "PY-TIMEIT")
 
-(defun lisp-timeit (&key fn array-size-list num-operations)
+(defun lisp-timeit (&key fn a-sizes b-sizes c-sizes num-operations)
   (let ((nu:*type* 'single-float)
         (start nil)
         (end nil))
-    (loop :for size :in array-size-list
-       :for lim := (floor num-operations size)
-       :for dim := (floor (sqrt size))
-       :do (let ((a (nu:ones dim dim))
-                 (b (nu:ones dim dim))
-                 (c (nu:ones dim dim)))
+    (declare (special nu:*type*))
+    (loop :for i :below (length num-operations)
+       :for a = (apply #'nu:ones (elt a-sizes i))
+       :for b = (apply #'nu:ones (elt b-sizes i))
+       :for c = (apply #'nu:ones (elt c-sizes i))
+       :for num-operation := (floor (/ (elt num-operations i)
+                                       (apply #'* (elt c-sizes i))))
+       :do (let ()
              (declare (optimize (speed 3))
                       (type (simple-array single-float) a b c))
              (setq start (get-internal-real-time))
-             (loop :for i fixnum :below lim
+             (loop :for i fixnum :below num-operation
                 :do (funcall fn a b :out c))
              (setq end (get-internal-real-time)))
        :collect (coerce (/ (- end start)
@@ -56,22 +57,28 @@ def timeit(fn, array_size_list, num_operations):
 (def-test non-broadcast-speed (:suite arithmetic)
   (flet ((within-acceptable-limits (lisp-time numpy-time)
            (<= (/ lisp-time numpy-time) 1.35)))
-    (let* ((array-size-list (mapcar #'floor '(100 1e4 1e6 1e8)))
-           (num-operations 1e8)
+    (let* ((a-sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
+           (b-sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
+           (c-sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
+           (num-operations '(1e7 1e8 1e8 1e9 1e9))
            (numpy-operations '(np.add np.subtract np.multiply np.divide))
            (numericals-operations '(nu:+ nu:- nu:* nu:/)))
       (when *write-to-readme*
         (who:with-html-output (*write-to-readme-stream* nil :indent t)
           (:tr (:th "Non-broadcast array operations")
-               (loop :for size :in array-size-list
+               (loop :for size :in (mapcar (lambda (l) (apply #'* l)) c-sizes)
                   :do (who:htm (:th (who:str size)))))))
       (loop :for numpy-operation :in numpy-operations
          :for numericals-operation :in numericals-operations
          :do (let ((numpy-timings (py-timeit :fn numpy-operation
-                                             :array-size-list array-size-list
+                                             :a-sizes a-sizes
+                                             :b-sizes b-sizes
+                                             :c-sizes c-sizes
                                              :num-operations num-operations))
                    (numericals-timings (lisp-timeit :fn numericals-operation
-                                                    :array-size-list array-size-list
+                                                    :a-sizes a-sizes
+                                                    :b-sizes b-sizes
+                                                    :c-sizes c-sizes
                                                     :num-operations num-operations)))
                (when *write-to-readme*
                  (who:with-html-output (*write-to-readme-stream* nil :indent t)
@@ -91,6 +98,23 @@ def timeit(fn, array_size_list, num_operations):
                 (for b = (pycall 'np.random.random (list 3 d)))
                 (is (np:allclose :a (pycall np-op a b)
                                  :b (funcall nu-op a b)))))))
+
+(def-test broadcast-correctness (:suite arithmetic)
+  (iter (for np-op in '(np.add np.subtract np.multiply np.divide))
+        (for nu-op in '(nu:+ nu:- nu:* nu:/))
+        ;; (for i below 1)
+        (iter (for a-size in '((01 1) (01 10) (01 01 01) (10 01 10) (10 01 10 01)))
+              (for b-size in '((10 1) (10 01) (10 10 10) (10 10 01) (01 10 01 10)))
+              (for c-size in '((10 1) (10 10) (10 10 10) (10 10 10) (10 10 10 10)))
+              ;; (for i below 1)
+              (for a = (nu:asarray (pycall 'np.random.random a-size)))
+              (for b = (nu:asarray (pycall 'np.random.random b-size)))
+              (for c = (nu:asarray (pycall 'np.zeros c-size)))
+              ;; (print (list a b c))
+              (is (np:allclose :a (pycall np-op a b)
+                               :b (funcall nu-op a b :out c)
+                               :atol 1e-7)))))
+
 
 ;; (defparameter a (nu:zeros 100000000))
 ;; (defparameter b (nu:zeros 100000000))
