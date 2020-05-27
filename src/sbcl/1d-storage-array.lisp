@@ -4,5 +4,5 @@
   (declare (optimize (speed 3))
            (type array array))
   (if (typep array 'simple-array)
-      (array-storage-vector array)
+      (values (array-storage-vector array) 0)
       (array-displacement array)))

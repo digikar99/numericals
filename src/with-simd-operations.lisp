@@ -10,15 +10,21 @@
     '(cl:+ simd-single-+
       cl:- simd-single--
       cl:* simd-single-*
-      cl:/ simd-single-/)))
+      cl:/ simd-single-/))
+  (defparameter *with-simd-operations-symbol-translation-plist* nil
+    "Bound inside WITH-SIMD-OPERATIONS to help TRANSLATE-TO-SIMD-SINGLE and
+TRANSLATE-TO-BASE with the symbol translation."))
 
 (defun-c simd-single-op (op) (getf *simd-single-operation-translation-plist* op))
+(defun-c translate-symbol (symbol)
+  (getf *with-simd-operations-symbol-translation-plist* symbol))
 
 (defun-c translate-to-simd-single (body loop-var)
   "Returns BODY with OP replaced with corresponding SIMD-SINGLE-OP, 
 and each symbol S replaced with (SIMD-SINGLE-1D-AREF S LOOP-VAR)."
   (cond ((null body) ())
-        ((symbolp body) `(simd-single-1d-aref ,body ,loop-var))
+        ((symbolp body) `(simd-single-1d-aref ,(translate-symbol body)
+                                              ,loop-var))
         ((listp body)
          (if-let (simd-op (simd-single-op (car body)))
            `(,simd-op ,@(loop for elt in (cdr body)
@@ -41,7 +47,7 @@ and each symbol S replaced with (SIMD-SINGLE-1D-AREF S LOOP-VAR)."
   "Returns BODY with symbol S not in the CAR replaced with (THE ELEMENT-TYPE (AREF S LOOP-VAR)).
 Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
   (cond ((null body) ())
-        ((symbolp body) `(the ,element-type (aref ,body ,loop-var)))
+        ((symbolp body) `(the ,element-type (aref ,(translate-symbol body) ,loop-var)))
         ((listp body)
          `(the ,element-type
                (,(car body) ,@(loop for elt in (cdr body)
@@ -60,6 +66,7 @@ This is expanded to a form effective as:
                                       (simd-single-1d-aref c loop-var))))"
   (setq element-type (second element-type))
   (with-gensyms (1d-storage-array
+                 offset
                  loop-var
                  final-loop-var)
     (destructuring-bind (translate-to-simd-fn
@@ -67,39 +74,60 @@ This is expanded to a form effective as:
                          stride-size
                          element-type)
         (use-array-element-type element-type)
-      `(let ((,1d-storage-array (1d-storage-array ,result-array))
-             ,@(let ((symbols (collect-symbols body)))
-                 (loop for symbol in symbols
-                    collect `(,symbol (1d-storage-array ,symbol)))))
-         (declare (optimize (speed 3)))
-         (loop for ,loop-var fixnum
-            below (- (length ,1d-storage-array) ,stride-size)
-            by ,stride-size
-            do (setf (,accessor-fn ,1d-storage-array ,loop-var)
-                     ,(funcall translate-to-simd-fn body loop-var))
-            finally (loop for ,final-loop-var fixnum from ,loop-var below (length ,1d-storage-array)
-                       do (setf (aref ,1d-storage-array ,final-loop-var)
-                                ,(translate-to-base body final-loop-var element-type))))
-         ,result-array))))
+      `(multiple-value-bind (,1d-storage-array ,offset) (1d-storage-array ,result-array)
+         (declare (type (simple-array ,element-type) ,1d-storage-array))
+         ,(let* ((original-symbols (collect-symbols body))
+                 (symbols (make-gensym-list (length original-symbols) "SYMBOL"))
+                 (offsets (make-gensym-list (length original-symbols) "OFFSET"))
+                 (*with-simd-operations-symbol-translation-plist*
+                  (print (apply #'append
+                                (list result-array 1d-storage-array)
+                                (mapcar #'list original-symbols symbols)))))
+            `(let* (,@symbols
+                    ,@offsets
+                    (start ,offset)
+                    ;; should we wrap 1d-storage-array in once-only?
+                    ;; it's intended to be a symbol though
+                    (stop (+ ,offset (array-total-size ,result-array)))
+                    (simd-stop (+ ,offset (* ,stride-size
+                                             (floor (- stop start) ,stride-size)))))
+               (declare (type (or (simple-array ,element-type) null) ,@symbols)
+                        (type (or (signed-byte 31) null) ,@offsets)
+                        (type (signed-byte 31) start stop simd-stop)
+                        (optimize (speed 3)))
+               ,@(loop :for symbol :in symbols
+                    :for offset :in offsets
+                    :for original-symbol :in original-symbols
+                    :collect `(multiple-value-setq (,symbol ,offset)
+                                (1d-storage-array ,original-symbol)))
+               (loop :for ,loop-var fixnum :from start
+                  :below simd-stop
+                  :by ,stride-size
+                  :do (setf (,accessor-fn ,1d-storage-array ,loop-var)
+                            ,(funcall translate-to-simd-fn body loop-var))
+                  finally (loop :for ,final-loop-var fixnum :from ,loop-var
+                             :below stop
+                             :do (setf (aref ,1d-storage-array ,final-loop-var)
+                                       ,(translate-to-base body final-loop-var element-type))))))))))
 
 (defun single-+ (result a b)
   (declare (optimize (speed 3))
-           (type (simple-array single-float) result a b))
-  (nu:with-simd-operations 'single-float result (+ a b)))
+           (type (array single-float) result a b))
+   (nu:with-simd-operations 'single-float result (+ a b)))
 
 (defun single-- (result a b)
   (declare (optimize (speed 3))
-           (type (simple-array single-float) result a b))
+           (type (array single-float) result a b))
   (nu:with-simd-operations 'single-float result (- a b)))
 
 (defun single-* (result a b)
   (declare (optimize (speed 3))
-           (type (simple-array single-float) result a b))
+           (type (array single-float) result a b))
   (nu:with-simd-operations 'single-float result (* a b)))
 
 (defun single-/ (result a b)
   (declare (optimize (speed 3))
-           (type (simple-array single-float) result a b))
+           (type (array single-float) result a b))
   (nu:with-simd-operations 'single-float result (/ a b)))
 
 (defun-c non-broadcast-operation (operation type)
