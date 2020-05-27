@@ -48,7 +48,7 @@ Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
                                  collect (translate-to-base elt loop-var element-type)))))
         (t (error "Non-exhaustive!"))))
 
-(defmacro with-simd-operations (element-type result-array body)
+(defmacro nu:with-simd-operations (element-type result-array body)
   "\"Open codes\" BODY using SIMD operations. BODY is expected to be made up of 
 CAR-symbols having corresponding SIMD-OP or REST symbols are expected to be bound 
 to an array. An example translation is:
@@ -84,23 +84,23 @@ This is expanded to a form effective as:
 
 (defun single-+ (result a b)
   (declare (optimize (speed 3))
-           (type array result a b))
-  (with-simd-operations 'single-float result (+ a b)))
+           (type (simple-array single-float) result a b))
+  (nu:with-simd-operations 'single-float result (+ a b)))
 
 (defun single-- (result a b)
   (declare (optimize (speed 3))
-           (type array result a b))
-  (with-simd-operations 'single-float result (- a b)))
+           (type (simple-array single-float) result a b))
+  (nu:with-simd-operations 'single-float result (- a b)))
 
 (defun single-* (result a b)
   (declare (optimize (speed 3))
-           (type array result a b))
-  (with-simd-operations 'single-float result (* a b)))
+           (type (simple-array single-float) result a b))
+  (nu:with-simd-operations 'single-float result (* a b)))
 
 (defun single-/ (result a b)
   (declare (optimize (speed 3))
-           (type array result a b))
-  (with-simd-operations 'single-float result (/ a b)))
+           (type (simple-array single-float) result a b))
+  (nu:with-simd-operations 'single-float result (/ a b)))
 
 (defun-c non-broadcast-operation (operation type)
   (intern (concatenate 'string

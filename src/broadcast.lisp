@@ -44,8 +44,9 @@
          (reversed-stride-symbols (reverse stride-symbols))
          (reversed-required-dimension-symbols
           (nreverse (loop for i below num-dimensions collect (gensym "R"))))
-         (reversed-actual-dimension-symbols
-          (nreverse (loop for i below num-dimensions collect (gensym "A"))))
+         (actual-dimension-symbols
+          (loop for i below num-dimensions collect (gensym "A")))
+         (reversed-actual-dimension-symbols (reverse actual-dimension-symbols))
          (simd-aref (ecase type
                       (single-float 'simd-single-1d-aref)
                       (double-float 'simd-double-1d-aref)))
@@ -58,7 +59,7 @@
                                                       "-SIMD"))))
     (with-gensyms (vector)
       `(destructuring-bind (,reversed-required-dimension-symbols
-                            (&optional ,@(loop for s in reversed-actual-dimension-symbols
+                            (&optional ,@(loop for s in actual-dimension-symbols
                                             collect `(,s 1))))
            (list ,required-dimensions (array-dimensions ,array))
          (declare (ignorable ,@reversed-required-dimension-symbols)
@@ -67,7 +68,8 @@
                ,@(loop for s in reversed-stride-symbols collect `(,s 0)))
            (declare (type (simple-array ,type) ,vector)
                     (type (signed-byte 31) ,@reversed-stride-symbols
-                          ,@reversed-actual-dimension-symbols)
+                          ,@reversed-actual-dimension-symbols
+                          ,@reversed-required-dimension-symbols)
                     (optimize (speed 3)))
            ;; For an iterative version of calculating strides, 
            ;; see the function %broadcast-compatible-p
@@ -123,14 +125,14 @@
       `(let ((,(car loop-vars-a) 0)
              (,(car loop-vars-b) 0))
          (declare (type (signed-byte 31) ,(car loop-vars-a) ,(car loop-vars-b)))
-         (loop for ,(car loop-vars-r) fixnum
-            below (* ,(car bound-vars) ,(car stride-vars-r)) by ,(car stride-vars-r)
-            do ,(macroexpand-1 `(nested-for ,(1- n)
-                                    ,(cdr bound-vars)
-                                    (,(cdr loop-vars-r) ,(cdr stride-vars-r))
-                                    (,(cdr loop-vars-a) ,(cdr stride-vars-a))
-                                    (,(cdr loop-vars-b) ,(cdr stride-vars-b))
-                                  ,@body))
+         (loop :for ,(car loop-vars-r) fixnum
+            :below (* ,(car bound-vars) ,(car stride-vars-r)) :by ,(car stride-vars-r)
+            :do ,(macroexpand-1 `(nested-for ,(1- n)
+                                     ,(cdr bound-vars)
+                                     (,(cdr loop-vars-r) ,(cdr stride-vars-r))
+                                     (,(cdr loop-vars-a) ,(cdr stride-vars-a))
+                                     (,(cdr loop-vars-b) ,(cdr stride-vars-b))
+                                   ,@body))
               (incf ,(car loop-vars-a) ,(car stride-vars-a))
               (incf ,(car loop-vars-b) ,(car stride-vars-b))))))
 
@@ -156,22 +158,27 @@
          (declare (optimize (speed 3))
                   (type (simple-array single-float)
                         a b result))
+         ;; (print (list 'in ',name))
          (let ((broadcast-dimensions (array-dimensions result)))
            (destructuring-bind ,bound-symbols broadcast-dimensions
              (declare (type (signed-byte 31) ,@bound-symbols))
              (with-broadcast ,type ,n ,stride-symbols-r r-ref result broadcast-dimensions
                (with-broadcast ,type ,n ,stride-symbols-a a-ref a broadcast-dimensions
                  (with-broadcast ,type ,n ,stride-symbols-b b-ref b broadcast-dimensions
-                   (let ((rn-simd (* ,stride ,@(last stride-symbols-r)))
-                         (an-simd (* ,stride ,@(last stride-symbols-a)))
-                         (bn-simd (* ,stride ,@(last stride-symbols-b)))
-                         (bound-n-floor (floor ,@(last bound-symbols)
-                                               +simd-single-1d-aref-stride+))
-                         (bound-n-rem (rem ,@(last bound-symbols)
-                                           +simd-single-1d-aref-stride+)))
-                     (declare (type (signed-byte 31) rn-simd an-simd bn-simd
-                                    bound-n-floor bound-n-rem)
+                   (let ((an-simd-stride (* ,stride ,@(last stride-symbols-a)))
+                         (bn-simd-stride (* ,stride ,@(last stride-symbols-b)))
+                         (bound-n-simd (* ,stride
+                                          (floor ,@(last bound-symbols)
+                                                 ,stride))))
+                     ;; an-simd-stride and bn-simd-stride can be 0 or ,stride depending
+                     ;; on that last value
+                     ;; By contrast, the equivalent rn-simd-stride would always be non-zero.
+                     (declare (type (signed-byte 31) bound-n-simd
+                                    an-simd-stride bn-simd-stride)
                               (optimize (speed 3)))
+                     ;; (print (list (list ,@stride-symbols-a)
+                     ;;              (list ,@stride-symbols-b)
+                     ;;              (list ,@stride-symbols-r)))
                      (nested-for ,(1- n) ,bound-symbols
                          (,loop-symbols-r ,stride-symbols-r)
                          (,loop-symbols-a ,stride-symbols-a)
@@ -181,13 +188,16 @@
                          (declare (type (signed-byte 31)
                                         ,@(last loop-symbols-a)
                                         ,@(last loop-symbols-b)))
-                         (loop for ,@(last loop-symbols-r) fixnum
-                            below (* rn-simd bound-n-floor) by rn-simd
-                            do (setf (r-ref-simd ,@loop-symbols-r)
-                                     (,simd-op (a-ref-simd ,@loop-symbols-a)
-                                               (b-ref-simd ,@loop-symbols-b)))
-                              (incf ,@(last loop-symbols-a) an-simd)
-                              (incf ,@(last loop-symbols-b) bn-simd)
+                         (loop :for ,@(last loop-symbols-r) fixnum
+                            :below bound-n-simd by ,stride
+                            :do ;; (print (list (list ,@loop-symbols-a)
+                            ;;              (list ,@loop-symbols-b)
+                            ;;              (list ,@loop-symbols-r)))
+                              (setf (r-ref-simd ,@loop-symbols-r)
+                                    (,simd-op (a-ref-simd ,@loop-symbols-a)
+                                              (b-ref-simd ,@loop-symbols-b)))
+                              (incf ,@(last loop-symbols-a) an-simd-stride)
+                              (incf ,@(last loop-symbols-b) bn-simd-stride)
                             finally
                               (let ((,@(last loop-symbols-a) ,@(last loop-symbols-a))
                                     (,@(last loop-symbols-b) ,@(last loop-symbols-b)))
@@ -198,14 +208,17 @@
                                 ;; another loop variable; the stride can be 0,
                                 ;; and therefore, it cannot be the "by" part of the
                                 ;; resulting for loop variable.
-                                (loop for ,@(last loop-symbols-r) fixnum
-                                   from ,@(last loop-symbols-r)
-                                   below (* bound-n-rem ,@(last stride-symbols-r))
-                                   by ,@(last stride-symbols-r)
-                                   do (setf (r-ref ,@loop-symbols-r)
-                                            (,base-op (a-ref ,@loop-symbols-a)
-                                                      (b-ref ,@loop-symbols-b)))
-                                     (incf ,@(last loop-symbols-a) ,@(last stride-symbols-a))
+                                (loop :for ,@(last loop-symbols-r) fixnum
+                                   :from ,@(last loop-symbols-r)
+                                   :below ,@(last bound-symbols)
+                                   :do ;; (print (list (list ,@loop-symbols-a)
+                                   ;;              (list ,@loop-symbols-b)
+                                   ;;              (list ,@loop-symbols-r)))
+                                     (setf (r-ref ,@loop-symbols-r)
+                                           (,base-op (a-ref ,@loop-symbols-a)
+                                                     (b-ref ,@loop-symbols-b)))
+                                     (incf ,@(last loop-symbols-a)
+                                           ,@(last stride-symbols-a))
                                      (incf ,@(last loop-symbols-b)
                                            ,@(last stride-symbols-b)))))))))))))
          result))))
@@ -266,7 +279,6 @@
 ;;   (defparameter a (nu:zeros size size size))
 ;;   (defparameter b (nu:zeros size size size))
 ;;   (defparameter c (nu:zeros size size size)))
-
 
 ;; (let ((size 32))
 ;;   (defparameter a (nu:zeros 1 size size size))

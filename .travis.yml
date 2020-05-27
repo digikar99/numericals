@@ -9,9 +9,12 @@ addons:
   apt:
     packages:
       - sbcl
+      - python3-pip
 
 install:
   - sbcl --version
+  - python3 -m pip install numpy
+  - git clone --branch v2.2.1 https://github.com/digikar99/py4cl2.git # avoid numcl and resulting trivia etc to save test time
   - git clone -b release https://github.com/roswell/roswell.git
   - cd roswell 
   - sh bootstrap
@@ -22,9 +25,11 @@ install:
   - ls
 
 script:
-  - ros run -- --eval '(progn
-                         (push (uiop:getcwd) ql:*local-project-directories*)
-                         (ql:quickload :numericals))' --quit
+  - ros -e '(push (uiop:getcwd) ql:*local-project-directories*)
+            (ql:quickload :numericals)
+            (ql:quickload :numericals/tests)
+            (setq 5am:*on-error* :debug)
+            (setq 5am:*on-failure* :debug)' run -- --dynamic-space-size 2048 --eval '(numericals/tests:run-tests)' --eval '(uiop:quit 0)'
     [ $? -eq 1 ]
 
 notifications:

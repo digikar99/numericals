@@ -46,6 +46,158 @@ lisp based systems.
 - [SIMD] Speeding up `concatenate` for axis>0.
 - Implementing package (perhaps not based on SIMD) for non-SBCL systems
 
+## Benchmarks
+
+<div id='benchmark'>
+  <p>SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations): 
+  </p>
+  <table>
+<tr>
+  <th>Non-broadcast array operations
+  </th>
+<th>10
+</th>
+<th>100
+</th>
+<th>10000
+</th>
+<th>1000000
+</th>
+<th>100000000
+</th>
+</tr>
+<tr>
+  <td>+
+  </td>
+<td>1.26x
+</td>
+<td>1.26x
+</td>
+<td>1.20x
+</td>
+<td>1.07x
+</td>
+<td>1.02x
+</td>
+</tr>
+<tr>
+  <td>-
+  </td>
+<td>1.23x
+</td>
+<td>1.24x
+</td>
+<td>1.23x
+</td>
+<td>1.04x
+</td>
+<td>1.01x
+</td>
+</tr>
+<tr>
+  <td>*
+  </td>
+<td>1.26x
+</td>
+<td>1.27x
+</td>
+<td>1.16x
+</td>
+<td>1.10x
+</td>
+<td>1.00x
+</td>
+</tr>
+<tr>
+  <td>/
+  </td>
+<td>1.29x
+</td>
+<td>1.31x
+</td>
+<td>1.27x
+</td>
+<td>1.08x
+</td>
+<td>1.01x
+</td>
+</tr>
+<tr>
+  <th>Broadcast array operations (warning: can vary quite a bit depending
+on actual array dimensions)
+  </th>
+<th>10
+</th>
+<th>100
+</th>
+<th>10000
+</th>
+<th>1000000
+</th>
+<th>100000000
+</th>
+</tr>
+<tr>
+  <td>+
+  </td>
+<td>1.65x
+</td>
+<td>1.83x
+</td>
+<td>1.35x
+</td>
+<td>1.21x
+</td>
+<td>0.70x
+</td>
+</tr>
+<tr>
+  <td>-
+  </td>
+<td>1.64x
+</td>
+<td>1.86x
+</td>
+<td>1.39x
+</td>
+<td>1.20x
+</td>
+<td>0.69x
+</td>
+</tr>
+<tr>
+  <td>*
+  </td>
+<td>1.68x
+</td>
+<td>1.89x
+</td>
+<td>1.55x
+</td>
+<td>1.34x
+</td>
+<td>0.75x
+</td>
+</tr>
+<tr>
+  <td>/
+  </td>
+<td>1.73x
+</td>
+<td>1.89x
+</td>
+<td>1.47x
+</td>
+<td>1.35x
+</td>
+<td>0.76x
+</td>
+</tr>
+  </table>
+</div>
+
+<!-- The above div would be filled by :numericals/tests when *write-to-readme* is T. -->
+
 ## Acknowledgements
 
 - Everyone who has contributed to SBCL.
