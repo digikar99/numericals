@@ -29,7 +29,7 @@ script:
             (ql:quickload :numericals)
             (ql:quickload :numericals/tests)
             (setq 5am:*on-error* :debug)
-            (setq 5am:*on-failure* :debug)' run -- --dynamic-space-size 2048 --eval '(numericals/tests:run-tests)' --eval '(uiop:quit 0)'
+            (setq 5am:*on-failure* :debug)' run -- --dynamic-space-size 2048 --eval '(numericals/tests:run-correctness-tests)' --eval '(uiop:quit 0)'
     [ $? -eq 1 ]
 
 notifications:

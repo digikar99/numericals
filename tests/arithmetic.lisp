@@ -51,10 +51,7 @@ def timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
                            internal-time-units-per-second)
                         'single-float))))
 
-(def-suite arithmetic :in :numericals)
-(in-suite arithmetic)
-
-(def-test non-broadcast-speed (:suite arithmetic)
+(def-test non-broadcast-speed (:suite speed)
   (flet ((within-acceptable-limits (lisp-time numpy-time)
            (<= (/ lisp-time numpy-time) 1.35)))
     (let* ((a-sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
@@ -89,7 +86,7 @@ def timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
                (is (every #'within-acceptable-limits
                           numericals-timings numpy-timings)))))))
 
-(def-test non-broadcast-correctness (:suite arithmetic)
+(def-test non-broadcast-correctness (:suite correctness)
   (let ((dim (iota 8 :start 8)))
     (iter (for np-op in '(np.add np.subtract np.multiply np.divide))
           (for nu-op in '(nu:+ nu:- nu:* nu:/))
@@ -99,7 +96,7 @@ def timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
                 (is (np:allclose :a (pycall np-op a b)
                                  :b (funcall nu-op a b)))))))
 
-(def-test broadcast-correctness (:suite arithmetic)
+(def-test broadcast-correctness (:suite correctness)
   (iter (for np-op in '(np.add np.subtract np.multiply np.divide))
         (for nu-op in '(nu:+ nu:- nu:* nu:/))
         (iter (for a-size in '(   (1) (01 1) (01 10) (01 01 01) (10 01 10) (10 01 10 01)))
@@ -112,7 +109,7 @@ def timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
                                :b (funcall nu-op a b :out c)
                                :atol 1e-7)))))
 
-(def-test broadcast-speed (:suite arithmetic)
+(def-test broadcast-speed (:suite speed)
   (flet ((within-acceptable-limits (lisp-time numpy-time)
            (<= (/ lisp-time numpy-time) 2)))
     (let* ((a-sizes '((01 1) (01 10) (001 100) (0001 1000) (00001 10000)))

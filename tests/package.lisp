@@ -1,7 +1,8 @@
 (defpackage :numericals/tests
   (:use :cl :alexandria :py4cl2 :iterate :fiveam)
   (:local-nicknames (:nu :numericals))
-  (:export :run-tests))
+  (:export :run-speed-tests
+           :run-correctness-tests))
 
 (in-package :numericals/tests)
 
@@ -27,7 +28,7 @@
 (defun conc (&rest strings)
   (apply #'concatenate 'string (mapcar (lambda (s) (if s s "")) strings)))
 
-(defun run-tests (&optional write-to-readme)
+(defun run-speed-tests (&optional write-to-readme)
   (let* ((*write-to-readme* write-to-readme))
     (if write-to-readme
         (write-to-readme
@@ -37,4 +38,10 @@
              (:div :id "benchmark"
                    (:p "SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations): ")
                    (:table (who:str rows))))))
-        (5am:run! :numericals))))
+        (5am:run! 'speed))))
+
+
+(def-suite correctness :in :numericals)
+(def-suite speed :in :numericals)
+
+(defun run-correctness-tests () (5am:run! 'correctness))
