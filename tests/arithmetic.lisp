@@ -29,27 +29,56 @@ def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
 
 (defpyfun "arithmetic_timeit" nil :lisp-fun-name "PY-ARITHMETIC-TIMEIT")
 
+
+;; THis is better suited as a function because we don't want to care about the
+;; "form" of the arguments - we want to play with the values of the arguments.
 (defun lisp-arithmetic-timeit (&key fn a-sizes b-sizes c-sizes num-operations)
-  (let ((nu:*type* 'single-float)
-        (start nil)
-        (end nil))
-    (declare (special nu:*type*))
-    (loop :for i :below (length num-operations)
-       :for a = (apply #'nu:ones (elt a-sizes i))
-       :for b = (apply #'nu:ones (elt b-sizes i))
-       :for c = (apply #'nu:ones (elt c-sizes i))
-       :for num-operation := (floor (/ (elt num-operations i)
-                                       (apply #'* (elt c-sizes i))))
-       :do (let ()
-             (declare (optimize (speed 3))
-                      (type (simple-array single-float) a b c))
-             (setq start (get-internal-real-time))
-             (loop :for i fixnum :below num-operation
-                :do (funcall fn a b :out c))
-             (setq end (get-internal-real-time)))
-       :collect (coerce (/ (- end start)
-                           internal-time-units-per-second)
-                        'single-float))))
+  (let ((nu:*type* 'single-float))
+    (eval
+     `(let ((fn ',fn))
+        (loop :for i :below (length ',num-operations)
+           :for a-size := (elt ',a-sizes i)
+           :for b-size := (elt ',b-sizes i)
+           :for c-size := (elt ',c-sizes i)
+           :collect
+             (eval
+              `(let (start
+                     end
+                     (a (nu:ones ',a-size))
+                     (b (nu:ones ',b-size))
+                     (c (nu:ones ',c-size))
+                     (num-operation (floor ,(/ (elt ',num-operations i)
+                                               (apply #'* c-size)))))
+                 (declare (optimize (speed 3))
+                          (type (simple-array single-float ,a-size) a)
+                          (type (simple-array single-float ,b-size) b)
+                          (type (simple-array single-float ,c-size) c))
+                 (setq start (get-internal-real-time))
+                 (loop :for i fixnum :below num-operation
+                    :do (,fn a b :out c))
+                 (setq end (get-internal-real-time))
+                 (coerce (/ (- end start)
+                            internal-time-units-per-second)
+                         'single-float))))))
+    ;; (loop :for i :below (length num-operations)
+    ;;    :for a = (nu:ones (elt a-sizes i))
+    ;;    :for b = (nu:ones (elt b-sizes i))
+    ;;    :for c = (nu:ones (elt c-sizes i))
+    ;;    :for num-operation := (floor (/ (elt num-operations i)
+    ;;                                    (apply #'* (elt c-sizes i))))
+    ;;    :do (eval `(let (start end)
+    ;;                 (declare (optimize (speed 3))
+    ;;                          (type (simple-array single-float ,(elt a-sizes i)) a)
+    ;;                          (type (simple-array single-float ,(elt b-sizes i)) b)
+    ;;                          (type (simple-array single-float ,(elt c-sizes i)) c))
+    ;;                 (setq start (get-internal-real-time))
+    ;;                 (loop :for i fixnum :below num-operation
+    ;;                    :do (,fn a b :out c))
+    ;;                 (setq end (get-internal-real-time))))
+    ;;    :collect (coerce (/ (- end start)
+    ;;                        internal-time-units-per-second)
+    ;;                     'single-float))
+    ))
 
 (def-test non-broadcast-speed (:suite speed)
   (flet ((within-acceptable-limits (lisp-time numpy-time)

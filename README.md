@@ -68,10 +68,68 @@ lisp based systems.
 
 ## Benchmarks
 
+
 <div id='benchmark'>
   <p>SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations): 
   </p>
   <table>
+<tr>
+  <th>Allocation array operations (seems like SBCL allocates arrays
+during compilation time)
+  </th>
+<th>10
+</th>
+<th>100
+</th>
+<th>10000
+</th>
+<th>1000000
+</th>
+<th>100000000
+</th>
+</tr>
+<tr>
+  <td>ONES
+  </td>
+<td>20.71x
+</td>
+<td>20.66x
+</td>
+<td>35.97x
+</td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+</tr>
+<tr>
+  <td>ZEROS
+  </td>
+<td>7.73x
+</td>
+<td>7.74x
+</td>
+<td>19.62x
+</td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+</tr>
+<tr>
+  <td>EMPTY
+  </td>
+<td>7.66x
+</td>
+<td>7.63x
+</td>
+<td>8.42x
+</td>
+<td>2.46x
+</td>
+<td>∞x
+</td>
+</tr>
 <tr>
   <th>Non-broadcast array operations
   </th>
@@ -89,57 +147,57 @@ lisp based systems.
 <tr>
   <td>+
   </td>
-<td>1.15x
+<td>41.75x
 </td>
-<td>1.21x
+<td>28.30x
 </td>
-<td>0.89x
+<td>1.54x
 </td>
-<td>1.00x
+<td>0.99x
 </td>
-<td>0.96x
+<td>0.99x
 </td>
 </tr>
 <tr>
   <td>-
   </td>
-<td>0.94x
+<td>41.59x
+</td>
+<td>29.05x
+</td>
+<td>1.48x
 </td>
 <td>1.03x
-</td>
-<td>0.85x
-</td>
-<td>0.96x
-</td>
-<td>0.95x
-</td>
-</tr>
-<tr>
-  <td>*
-  </td>
-<td>1.04x
-</td>
-<td>1.06x
-</td>
-<td>0.84x
-</td>
-<td>0.94x
 </td>
 <td>0.98x
 </td>
 </tr>
 <tr>
+  <td>*
+  </td>
+<td>42.39x
+</td>
+<td>28.27x
+</td>
+<td>1.57x
+</td>
+<td>1.02x
+</td>
+<td>0.97x
+</td>
+</tr>
+<tr>
   <td>/
   </td>
-<td>1.04x
+<td>44.99x
 </td>
-<td>1.11x
+<td>21.98x
 </td>
-<td>1.04x
+<td>1.60x
 </td>
-<td>0.92x
+<td>1.09x
 </td>
-<td>0.87x
+<td>1.02x
 </td>
 </tr>
 <tr>
@@ -160,15 +218,15 @@ on actual array dimensions)
 <tr>
   <td>+
   </td>
-<td>1.40x
+<td>1.22x
 </td>
-<td>1.86x
+<td>1.67x
 </td>
-<td>1.30x
+<td>1.42x
 </td>
-<td>1.19x
+<td>1.24x
 </td>
-<td>0.66x
+<td>0.63x
 </td>
 </tr>
 <tr>
@@ -176,41 +234,41 @@ on actual array dimensions)
   </td>
 <td>1.60x
 </td>
-<td>1.99x
+<td>1.76x
 </td>
-<td>1.32x
+<td>1.38x
 </td>
-<td>1.14x
-</td>
-<td>0.59x
-</td>
-</tr>
-<tr>
-  <td>*
-  </td>
-<td>1.75x
-</td>
-<td>1.92x
-</td>
-<td>1.21x
-</td>
-<td>1.10x
+<td>1.22x
 </td>
 <td>0.63x
 </td>
 </tr>
 <tr>
+  <td>*
+  </td>
+<td>1.61x
+</td>
+<td>1.73x
+</td>
+<td>1.14x
+</td>
+<td>0.95x
+</td>
+<td>0.53x
+</td>
+</tr>
+<tr>
   <td>/
   </td>
-<td>1.70x
+<td>3.01x
 </td>
-<td>1.85x
+<td>3.01x
 </td>
-<td>1.33x
+<td>1.37x
 </td>
-<td>1.09x
+<td>1.40x
 </td>
-<td>0.62x
+<td>0.70x
 </td>
 </tr>
 <tr>
@@ -231,72 +289,15 @@ as such this can be slower than numpy by a factor of 50)
 <tr>
   <td>Axis 0
   </td>
-<td>3.39x
+<td>2.98x
 </td>
-<td>3.13x
+<td>2.96x
 </td>
-<td>1.27x
+<td>1.29x
 </td>
-<td>0.84x
+<td>0.75x
 </td>
-<td>0.70x
-</td>
-</tr>
-<tr>
-  <th>Allocation array operations (seems like SBCL allocates arrays
-during compilation time)
-  </th>
-<th>10
-</th>
-<th>100
-</th>
-<th>10000
-</th>
-<th>1000000
-</th>
-<th>100000000
-</th>
-</tr>
-<tr>
-  <td>ONES
-  </td>
-<td>∞x
-</td>
-<td>∞x
-</td>
-<td>506.35x
-</td>
-<td>∞x
-</td>
-<td>∞x
-</td>
-</tr>
-<tr>
-  <td>ZEROS
-  </td>
-<td>∞x
-</td>
-<td>∞x
-</td>
-<td>∞x
-</td>
-<td>∞x
-</td>
-<td>∞x
-</td>
-</tr>
-<tr>
-  <td>EMPTY
-  </td>
-<td>∞x
-</td>
-<td>∞x
-</td>
-<td>∞x
-</td>
-<td>∞x
-</td>
-<td>∞x
+<td>0.71x
 </td>
 </tr>
   </table>

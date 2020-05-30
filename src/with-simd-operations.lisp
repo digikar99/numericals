@@ -80,9 +80,9 @@ This is expanded to a form effective as:
                  (symbols (make-gensym-list (length original-symbols) "SYMBOL"))
                  (offsets (make-gensym-list (length original-symbols) "OFFSET"))
                  (*with-simd-operations-symbol-translation-plist*
-                  (print (apply #'append
-                                (list result-array 1d-storage-array)
-                                (mapcar #'list original-symbols symbols)))))
+                  (apply #'append
+                         (list result-array 1d-storage-array)
+                         (mapcar #'list original-symbols symbols))))
             `(let* (,@symbols
                     ,@offsets
                     (start ,offset)

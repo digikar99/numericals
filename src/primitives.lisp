@@ -56,6 +56,24 @@ compiler-macros to generate efficient code.")
       (nu:astype object to-type)
       (map-tree (curry '%cast to-type) object)))
 
+(define-compiler-macro cast (&whole whole to-type object &environment env)
+  (if (= 3 (policy-quality 'speed env))
+      (if (or (numberp object)
+              (and (symbolp object) (subtypep (variable-type object env) 'number))
+              (and (listp object)
+                   (let ((return-type (elt (function-type (car object)) 2)))
+                     (cond ((symbolp return-type)
+                            (subtypep return-type 'number))
+                           ((eq (first return-type) 'values)
+                            (subtypep (second return-type) 'number))
+                           (t (format t "; note: Return type ~S of function ~S not understood"
+                                      return-type (car object)))))))
+          (if (eq to-type 'fixnum)
+              `(floor ,object)
+              `(coerce ,object ,to-type))
+          whole)
+      whole))
+
 ;;; Possibly do this using SIMD
 (defun nu:astype (array type)
   (let* ((storage-vector (1d-storage-array array))
@@ -107,24 +125,20 @@ Examples:
                 (setq dimensions (car dimensions)))
               (make-array dimensions :element-type type
                           :initial-element (%cast type ,initial-element))))
-          
+          ;; TODO: portable way of signalling compiler notes
           (define-compiler-macro ,name (&whole whole &rest args &environment env)
             (let ((optimizable-p (= 3 (policy-quality 'speed env))))
               (if (member (car whole) (list ',name 'funcall)) ; ignoring the case of funcall or apply
                   (destructuring-bind (dimensions (&key (type '*type* type-p))) (split-at-keywords args)
                     (when optimizable-p
                       (setq type
-                            (cond ((and (not type-p) *lookup-type-at-compile-time*) *type*)
+                            (cond ((and (not type-p) *lookup-type-at-compile-time*) (list 'quote *type*))
                                   ((and (listp type)
                                         (eq (car type) 'quote)
                                         (null (cddr type))
                                         (valid-numericals-type-p (cadr type)))
-                                   (cadr type))
-                                  (t
-                                   (setq optimizable-p nil)
-                                   (format t "~&; note: ~D"
-                                           ,(format nil "Unable to optimize ~S without knowing value of TYPE at compile-time." name))
-                                   type))))
+                                   type)
+                                  (t type))))
                     ;; dimensions is a list
                     (when optimizable-p
                       (setq dimensions
@@ -147,8 +161,8 @@ Examples:
                         ;; At this point, if OPTIMIZABLE-P is T, then type is either of SINGLE-FLOAT,
                         ;; DOUBLE-FLOAT, FIXNUM. And DIMENSIONS is either a LIST or a FIXNUM
                         ;; - precisely the type of arguments accepted by MAKE-ARRAY.
-                        `(make-array ,dimensions :element-type ',type
-                                     :initial-element ,(%cast type ,initial-element))
+                        `(make-array ,dimensions :element-type ,type
+                                     :initial-element (%cast ,type ,,initial-element))
                         whole))
                   (progn
                     (when (= 3 (policy-quality 'speed env))
@@ -158,24 +172,10 @@ Examples:
   (define-allocation-function nu:empty 0)
   (define-allocation-function nu:ones 1))
 
-(defun nu:empty (&rest args)
-  "ARGS: (&rest array-dimensions &key (type *type*))
-Examples: 
-  (zeros 2 3)
-  (zeros 3 3 :type 'fixnum)"
+(defun foo ()
   (declare (optimize (speed 3)))
-  (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
-    (make-array dimensions :element-type type)))
-
-(defun nu:ones (&rest args)
-  "ARGS: (&rest array-dimensions &key (type *type*))
-Examples: 
-  (zeros 2 3)
-  (zeros 3 3 :type 'fixnum)"
-  (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
-    (declare (optimize (speed 3)))    
-    (make-array dimensions :element-type type
-                :initial-element (cast type 1))))
+  (let ((type 'double-float))    
+    (nu:zeros 100 :type type)))
 
 (defun nu:asarray (array-like &key (type *type*))
   (if (arrayp array-like)
