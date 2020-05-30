@@ -97,8 +97,6 @@ so that (concatenate a b c :axis 0) is valid."
                do (incf offset (copy-along-axis offset array))))
           out))))
 
-;; TODO: Checking if this and other functions work well for displaced arrays, or if it should
-;; be restricted to simple arrays.
 (defun concatenate-axis-0 (out &rest arrays)
   (declare (optimize (speed 3))
            (type (array single-float) out))

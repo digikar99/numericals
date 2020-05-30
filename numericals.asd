@@ -32,4 +32,5 @@
   :components ((:file "package")
                (:file "arithmetic")
                (:file "concatenate")
+               (:file "outer")
                (:static-file "readme" :pathname #P"../README.md")))

@@ -44,4 +44,4 @@
 (def-suite correctness :in :numericals)
 (def-suite speed :in :numericals)
 
-(defun run-correctness-tests () (5am:run! 'correctness))
+(defun run-correctness-tests () (5am:results-status (5am:run 'correctness)))

@@ -28,8 +28,8 @@ script:
   - ros -e '(push (uiop:getcwd) ql:*local-project-directories*)
             (ql:quickload :numericals)
             (ql:quickload :numericals/tests)
-            (setq 5am:*on-error* :debug)
-            (setq 5am:*on-failure* :debug)' run -- --dynamic-space-size 2048 --eval '(numericals/tests:run-correctness-tests)' --eval '(uiop:quit 0)'
+            (setq 5am:*on-error* nil)
+            (setq 5am:*on-failure* nil)' run -- --dynamic-space-size 2048 --eval '(uiop:quit (if (numericals/tests:run-correctness-tests) 0 1))'
     [ $? -eq 1 ]
 
 notifications:

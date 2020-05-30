@@ -19,32 +19,53 @@ You should probably use the latest [SBCL (get from git)](https://github.com/sbcl
 
 ## The Plan
 
-The plan is to make the interface as simple and intuitive as possible. But also enable
-high performance using SIMD. For the full realm of SIMD possibilities, see [Introduction
-to Intel Advanced Vector Extensions](https://software.intel.com/en-us/articles/introduction-to-intel-advanced-vector-extensions).
+The plan is to enable number crunching using this, coupled with py4cl/2. For "light" array
+manipulation, we stay within lisp. While for heavy manipulation - deep learning - we offload
+to the existing python ecosystem. This should eliminate the ~10000 op/sec limitations of py4cl/2.
+
+SIMD is rich. See [Introduction
+to Intel Advanced Vector Extensions](https://software.intel.com/en-us/articles/introduction-to-intel-advanced-vector-extensions) for the full realm of possibilities.
+
+## The Juicy Bits (Done)
+
+The following operations are in the "done" bucket for `single-float`s. [tests](./tests/) have been set up for the appropriate ones amongst these.
+So, none of the following should \*not\* work. If some thing doesn't work, [file an issue](https://github.com/digikar99/numericals/issues).
+
+Prerequisites: SBCL 2.0.4+.
+
+Operation list:
+
+- +
+- -
+- *
+- /
+- aref (unoptimized; hard to optimize; use map-outer if possible)
+- concatenate (unoptimized for axis != 0)
+- map-outer (speed untested)
+- zeros (unoptimized)
+- ones (unoptimized)
+- asarray (unoptimized and not done for arrays inside nested lists)
+- astype (unoptimized)
+- shape (unoptimized)
+- with-simd-operations [macro]
+- with-inline [macro]
 
 The "intended to be working" list of operations sits in [src/package.lisp](./src/package.lisp).
 
 ## TODO (Contributing)
 
-The current list of tasks include:
+The current list of tasks along with I-feel-to-be difficulty include:
 
-Quality-based:
-
-- Setting up tests
-- Ensuring correctness of already-done operations for (simple-array single-float)
-
-Feature/Quantity-based:
-
-- [SIMD] Ensuring functionality for fixnums and double-floats
-- [SIMD] Implementing comparison operators: translating between 1 and 0 of the non-lisp world
+- [SIMD Easy] Ensuring functionality for fixnums and double-floats 
+- [SIMD Medium] Implementing comparison operators: translating between 1 and 0 of the non-lisp world
 to `t` and `nil` of the lisp world; perhaps, adding a parameter that enables or disables
 this translation
-- [SIMD] Speeding up aref using SIMD or otherwise: we are 5-20x slower than numpy. A part of
+- [SIMD Hard] Speeding up aref using SIMD or otherwise: we are 5-20x slower than numpy. A part of
 the reason is because numpy provides array slices, and I do not know the equivalent for common
 lisp based systems.
-- [SIMD] Speeding up `concatenate` for axis>0.
-- Implementing package (perhaps not based on SIMD) for non-SBCL systems
+- [SIMD Hard] Speeding up `concatenate` for axis>0.
+- [SIMD Easy] Determining and Implementing Trigonometric functions 
+- [Easy] Implementing package (perhaps not based on SIMD) for non-SBCL systems
 
 ## Benchmarks
 
