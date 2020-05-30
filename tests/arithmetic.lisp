@@ -7,7 +7,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (pyexec "
-def timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
+def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
   import time
   import numpy as np
   
@@ -27,9 +27,9 @@ def timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
   return tuple(timings)
 "))
 
-(defpyfun "timeit" nil :lisp-fun-name "PY-TIMEIT")
+(defpyfun "arithmetic_timeit" nil :lisp-fun-name "PY-ARITHMETIC-TIMEIT")
 
-(defun lisp-timeit (&key fn a-sizes b-sizes c-sizes num-operations)
+(defun lisp-arithmetic-timeit (&key fn a-sizes b-sizes c-sizes num-operations)
   (let ((nu:*type* 'single-float)
         (start nil)
         (end nil))
@@ -67,16 +67,16 @@ def timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
                   :do (who:htm (:th (who:str size)))))))
       (loop :for numpy-operation :in numpy-operations
          :for numericals-operation :in numericals-operations
-         :do (let ((numpy-timings (py-timeit :fn numpy-operation
-                                             :a-sizes a-sizes
-                                             :b-sizes b-sizes
-                                             :c-sizes c-sizes
-                                             :num-operations num-operations))
-                   (numericals-timings (lisp-timeit :fn numericals-operation
-                                                    :a-sizes a-sizes
-                                                    :b-sizes b-sizes
-                                                    :c-sizes c-sizes
-                                                    :num-operations num-operations)))
+         :do (let ((numpy-timings (py-arithmetic-timeit :fn numpy-operation
+                                                        :a-sizes a-sizes
+                                                        :b-sizes b-sizes
+                                                        :c-sizes c-sizes
+                                                        :num-operations num-operations))
+                   (numericals-timings (lisp-arithmetic-timeit :fn numericals-operation
+                                                               :a-sizes a-sizes
+                                                               :b-sizes b-sizes
+                                                               :c-sizes c-sizes
+                                                               :num-operations num-operations)))
                (when *write-to-readme*
                  (who:with-html-output (*write-to-readme-stream* nil :indent t)
                    (:tr (:td (who:fmt "~D" numericals-operation))
@@ -126,16 +126,16 @@ on actual array dimensions)")
                   :do (who:htm (:th (who:str size)))))))
       (loop :for numpy-operation :in numpy-operations
          :for numericals-operation :in numericals-operations
-         :do (let ((numpy-timings (py-timeit :fn numpy-operation
-                                             :a-sizes a-sizes
-                                             :b-sizes b-sizes
-                                             :c-sizes c-sizes
-                                             :num-operations num-operations))
-                   (numericals-timings (lisp-timeit :fn numericals-operation
-                                                    :a-sizes a-sizes
-                                                    :b-sizes b-sizes
-                                                    :c-sizes c-sizes
-                                                    :num-operations num-operations)))
+         :do (let ((numpy-timings (py-arithmetic-timeit :fn numpy-operation
+                                                        :a-sizes a-sizes
+                                                        :b-sizes b-sizes
+                                                        :c-sizes c-sizes
+                                                        :num-operations num-operations))
+                   (numericals-timings (lisp-arithmetic-timeit :fn numericals-operation
+                                                               :a-sizes a-sizes
+                                                               :b-sizes b-sizes
+                                                               :c-sizes c-sizes
+                                                               :num-operations num-operations)))
                (when *write-to-readme*
                  (who:with-html-output (*write-to-readme-stream* nil :indent t)
                    (:tr (:td (who:fmt "~D" numericals-operation))

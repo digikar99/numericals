@@ -33,7 +33,7 @@
     (if write-to-readme
         (write-to-readme
          (let ((rows (with-output-to-string (*write-to-readme-stream*)
-                       (5am:run! :numericals))))
+                       (5am:run! 'speed))))
            (who:with-html-output-to-string (s nil :indent t)
              (:div :id "benchmark"
                    (:p "SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations): ")

@@ -31,4 +31,5 @@
                "cl-who")
   :components ((:file "package")
                (:file "arithmetic")
+               (:file "concatenate")
                (:static-file "readme" :pathname #P"../README.md")))
