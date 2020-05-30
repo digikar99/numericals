@@ -4,7 +4,13 @@
 
 (defparameter *type* 'single-float
   ;; better way to restrict the value?
-  "Can only be one of FIXNUM, SINGLE-FLOAT, or DOUBLE-FLOAT.")
+  "Can only be one of FIXNUM, SINGLE-FLOAT, or DOUBLE-FLOAT. Depending on the compile-time
+value of *LOOKUP-TYPE-AT-COMPILE-TIME*, this variable may be looked up at compile-time
+or run-time.")
+
+(defparameter *lookup-type-at-compile-time* t
+  "If the compile-time value is T, looks up the value of *TYPE* at compile-time to aid 
+compiler-macros to generate efficient code.")
 
 (defparameter *max-broadcast-dimensions* 4)
 ;; several macros need to be re-expanded for change in this to be reflected.
@@ -12,6 +18,8 @@
 (defmacro defun-c (name lambda-list &body body)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (defun ,name ,lambda-list ,@body)))
+
+(defun-c valid-numericals-type-p (type) (member type '(fixnum single-float double-float)))
 
 (defun split-at-keywords (args)
   "Example: (1 2 3 :a 2 :b 3) => ((1 2 3) (:a 2 :b 3))"
@@ -73,9 +81,91 @@
 Examples: 
   (zeros 2 3)
   (zeros 3 3 :type 'fixnum)"
+  (declare (optimize (speed 3)))
   (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
+    (when (and (listp (car dimensions)) (null (cdr dimensions)))
+      (setq dimensions (car dimensions)))
     (make-array dimensions :element-type type
                 :initial-element (%cast type 0))))
+
+(macrolet
+    ((define-allocation-function (name initial-element)
+       `(progn
+          
+          (defun ,name (&rest args)
+            ,(format nil "ARGS: (&rest array-dimensions &key (type *type*))
+Examples: 
+  (~D 2 3)
+  (~D '(5 5))
+  (~D 3 3 :type 'fixnum)"
+                     (string-downcase name)
+                     (string-downcase name)
+                     (string-downcase name))
+            (declare (optimize (speed 3)))
+            (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
+              (when (and (listp (car dimensions)) (null (cdr dimensions)))
+                (setq dimensions (car dimensions)))
+              (make-array dimensions :element-type type
+                          :initial-element (%cast type ,initial-element))))
+          
+          (define-compiler-macro ,name (&whole whole &rest args &environment env)
+            (let ((optimizable-p (= 3 (policy-quality 'speed env))))
+              (if (member (car whole) (list ',name 'funcall)) ; ignoring the case of funcall or apply
+                  (destructuring-bind (dimensions (&key (type '*type* type-p))) (split-at-keywords args)
+                    (when optimizable-p
+                      (setq type
+                            (cond ((and (not type-p) *lookup-type-at-compile-time*) *type*)
+                                  ((and (listp type)
+                                        (eq (car type) 'quote)
+                                        (null (cddr type))
+                                        (valid-numericals-type-p (cadr type)))
+                                   (cadr type))
+                                  (t
+                                   (setq optimizable-p nil)
+                                   (format t "~&; note: ~D"
+                                           ,(format nil "Unable to optimize ~S without knowing value of TYPE at compile-time." name))
+                                   type))))
+                    ;; dimensions is a list
+                    (when optimizable-p
+                      (setq dimensions
+                            (if (null (cdr dimensions))
+                                (if (or (typep (car dimensions) '(or list fixnum))
+                                        (subtypep (variable-type (car dimensions) env)
+                                                  '(or list fixnum)))
+                                    (car dimensions)
+                                    (progn
+                                      (setq optimizable-p nil)
+                                      (format
+                                       t "~&; note: ~D"
+                                       (format
+                                        nil
+                                        ,(format nil "Unable to optimize ~S without knowing type of ~~D at compile-time." name)
+                                        (car dimensions)))
+                                      dimensions))
+                                dimensions)))
+                    (if optimizable-p
+                        ;; At this point, if OPTIMIZABLE-P is T, then type is either of SINGLE-FLOAT,
+                        ;; DOUBLE-FLOAT, FIXNUM. And DIMENSIONS is either a LIST or a FIXNUM
+                        ;; - precisely the type of arguments accepted by MAKE-ARRAY.
+                        `(make-array ,dimensions :element-type ',type
+                                     :initial-element ,(%cast type ,initial-element))
+                        whole))
+                  (progn
+                    (when (= 3 (policy-quality 'speed env))
+                      (format t "~& note: Optimization for call to ~S is not implemented for ~S" ',name whole)
+                      whole))))))))
+  (define-allocation-function nu:zeros 0)
+  (define-allocation-function nu:empty 0)
+  (define-allocation-function nu:ones 1))
+
+(defun nu:empty (&rest args)
+  "ARGS: (&rest array-dimensions &key (type *type*))
+Examples: 
+  (zeros 2 3)
+  (zeros 3 3 :type 'fixnum)"
+  (declare (optimize (speed 3)))
+  (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
+    (make-array dimensions :element-type type)))
 
 (defun nu:ones (&rest args)
   "ARGS: (&rest array-dimensions &key (type *type*))
@@ -83,6 +173,7 @@ Examples:
   (zeros 2 3)
   (zeros 3 3 :type 'fixnum)"
   (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
+    (declare (optimize (speed 3)))    
     (make-array dimensions :element-type type
                 :initial-element (cast type 1))))
 

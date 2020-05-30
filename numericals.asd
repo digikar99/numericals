@@ -3,7 +3,8 @@
   :version "0.1.0"
   :serial t
   :depends-on ("alexandria"
-               "iterate")
+               "iterate"
+               "introspect-environment")
   :components ((:file "package")
                (:module "sbcl"
                         :components
@@ -30,6 +31,7 @@
                "fiveam"
                "cl-who")
   :components ((:file "package")
+               (:file "primitives")
                (:file "arithmetic")
                (:file "concatenate")
                (:file "outer")

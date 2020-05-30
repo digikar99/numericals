@@ -42,15 +42,14 @@ Operation list:
 - aref (unoptimized; hard to optimize; use map-outer if possible)
 - concatenate (unoptimized for axis != 0)
 - map-outer (speed untested)
-- zeros (unoptimized)
-- ones (unoptimized)
+- zeros 
+- ones
+- empty (same as zeros)
 - asarray (unoptimized and not done for arrays inside nested lists)
 - astype (unoptimized)
 - shape (unoptimized)
 - with-simd-operations [macro]
 - with-inline [macro]
-
-The "intended to be working" list of operations sits in [src/package.lisp](./src/package.lisp).
 
 ## TODO (Contributing)
 
@@ -90,57 +89,57 @@ lisp based systems.
 <tr>
   <td>+
   </td>
-<td>1.02x
+<td>1.15x
 </td>
-<td>1.17x
+<td>1.21x
 </td>
-<td>0.88x
+<td>0.89x
 </td>
-<td>0.92x
+<td>1.00x
 </td>
-<td>0.94x
+<td>0.96x
 </td>
 </tr>
 <tr>
   <td>-
   </td>
-<td>1.29x
+<td>0.94x
 </td>
-<td>1.20x
+<td>1.03x
 </td>
-<td>0.88x
+<td>0.85x
+</td>
+<td>0.96x
 </td>
 <td>0.95x
-</td>
-<td>0.91x
 </td>
 </tr>
 <tr>
   <td>*
   </td>
-<td>1.24x
+<td>1.04x
 </td>
-<td>1.21x
+<td>1.06x
 </td>
-<td>0.86x
-</td>
-<td>0.95x
+<td>0.84x
 </td>
 <td>0.94x
+</td>
+<td>0.98x
 </td>
 </tr>
 <tr>
   <td>/
   </td>
-<td>1.33x
+<td>1.04x
 </td>
-<td>1.34x
+<td>1.11x
 </td>
-<td>1.12x
+<td>1.04x
 </td>
-<td>0.94x
+<td>0.92x
 </td>
-<td>0.95x
+<td>0.87x
 </td>
 </tr>
 <tr>
@@ -161,57 +160,57 @@ on actual array dimensions)
 <tr>
   <td>+
   </td>
-<td>1.57x
+<td>1.40x
 </td>
-<td>1.74x
+<td>1.86x
 </td>
-<td>1.42x
+<td>1.30x
 </td>
-<td>1.26x
+<td>1.19x
 </td>
-<td>0.68x
+<td>0.66x
 </td>
 </tr>
 <tr>
   <td>-
   </td>
-<td>1.66x
+<td>1.60x
 </td>
-<td>1.88x
+<td>1.99x
 </td>
-<td>1.38x
+<td>1.32x
 </td>
-<td>1.24x
+<td>1.14x
 </td>
-<td>0.66x
+<td>0.59x
 </td>
 </tr>
 <tr>
   <td>*
   </td>
-<td>1.60x
+<td>1.75x
 </td>
-<td>1.49x
+<td>1.92x
 </td>
-<td>1.36x
+<td>1.21x
 </td>
-<td>1.26x
+<td>1.10x
 </td>
-<td>0.66x
+<td>0.63x
 </td>
 </tr>
 <tr>
   <td>/
   </td>
-<td>1.74x
+<td>1.70x
 </td>
-<td>1.93x
+<td>1.85x
 </td>
 <td>1.33x
 </td>
-<td>1.37x
+<td>1.09x
 </td>
-<td>0.71x
+<td>0.62x
 </td>
 </tr>
 <tr>
@@ -232,15 +231,72 @@ as such this can be slower than numpy by a factor of 50)
 <tr>
   <td>Axis 0
   </td>
-<td>3.12x
+<td>3.39x
 </td>
-<td>3.07x
+<td>3.13x
 </td>
-<td>1.33x
+<td>1.27x
 </td>
-<td>0.85x
+<td>0.84x
 </td>
-<td>0.67x
+<td>0.70x
+</td>
+</tr>
+<tr>
+  <th>Allocation array operations (seems like SBCL allocates arrays
+during compilation time)
+  </th>
+<th>10
+</th>
+<th>100
+</th>
+<th>10000
+</th>
+<th>1000000
+</th>
+<th>100000000
+</th>
+</tr>
+<tr>
+  <td>ONES
+  </td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+<td>506.35x
+</td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+</tr>
+<tr>
+  <td>ZEROS
+  </td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+</tr>
+<tr>
+  <td>EMPTY
+  </td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+<td>∞x
+</td>
+<td>∞x
 </td>
 </tr>
   </table>

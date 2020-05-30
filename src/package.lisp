@@ -78,11 +78,13 @@
    :map-outer
    
    :*type*
+   :*lookup-type-at-compile-time*
    :astype
    :asarray
    :concatenate
    :zeros
    :ones
+   :empty
    :shape
 
    :+
@@ -95,9 +97,10 @@
                                            (collect s)))))
 
 (defpackage :numericals.internals
-  (:use :cl :alexandria :iterate
+  (:use :cl :alexandria :iterate :introspect-environment
         #+sbcl :numericals.sbcl)
-  (:local-nicknames (:nu :numericals)))
+  (:local-nicknames (:nu :numericals))
+  (:import-from :numericals :*type* :*lookup-type-at-compile-time*))
 
 (in-package :numericals.internals)
 
