@@ -15,6 +15,9 @@ compiler-macros to generate efficient code.")
 (defparameter *max-broadcast-dimensions* 4)
 ;; several macros need to be re-expanded for change in this to be reflected.
 
+(deftype nu:numericals-array-element-type ()
+  `(member single-float double-float fixnum))
+
 (defmacro defun-c (name lambda-list &body body)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (defun ,name ,lambda-list ,@body)))
@@ -190,4 +193,121 @@ Examples:
                               (when (and (fboundp symbol)
                                          (not (macro-function symbol)))
                                 (collect symbol)))))
+     ,@body))
+
+(defmacro nu:def-array
+    (var dimensions &rest args
+     &key (type *type*) initial-element initial-contents
+       adjustable fill-pointer displaced-to displaced-index-offset
+       (proclaim-type t) doc)
+  ;; TODO: use array as function
+  (declare (ignorable initial-element initial-contents adjustable fill-pointer
+                      displaced-to displaced-index-offset))
+  (remf args :type)
+  (remf args :proclaim-type)
+  (remf args :doc)
+  (when (typep type 'nu:numericals-array-element-type)
+    (setq type (list 'quote type)))
+  (once-only (dimensions type)
+    `(progn
+       ,(when proclaim-type `(proclaim (list 'type
+                                             (list ',(if displaced-to 'array 'simple-array)
+                                                   ,type
+                                                   ,dimensions)
+                                             ',var)))
+       (defparameter ,var (make-array ,dimensions :element-type ,type
+                                      ,@args))
+       ,(when doc `(setf (documentation ',var 'variable) ,doc))))  )
+
+(defmacro nu:with-array ((var dimensions &rest args
+                              &key (type *type* type-p) initial-element initial-contents
+                              adjustable fill-pointer displaced-to displaced-index-offset
+                              (declare-type t)) &body body &environment env)
+  ;; Compile time value of *TYPE* is used!!
+  (declare (ignorable initial-element initial-contents adjustable fill-pointer
+                      displaced-to displaced-index-offset))
+  (remf args :type)
+  (remf args :declare-type)
+
+  ;; Parse type
+  (setq type (cond ((not type-p) type)
+                   ((constantp type env)
+                    (constant-form-value type env))
+                   ((eq type '*type*) *type*)
+                   (t (error 'maybe-form-not-constant-error :form type))))
+  
+  ;; Parse dimensions
+  (when (constantp dimensions env)
+    (setq dimensions (constant-form-value dimensions env)))
+  
+  `(let ((,var (make-array (list ,@dimensions) :element-type ',type
+                           ,@args)))
+     ,(when declare-type
+        `(declare (type (,(if displaced-to 'array 'simple-array)
+                          ,type
+                          ,dimensions)
+                        ,var)))
+     ,@body))
+
+(defmacro nu:with-arrays* (bindings &body body)
+  (if (cdr bindings)
+      `(nu:with-array ,(car bindings)
+         ,(macroexpand-1 `(nu:with-arrays* ,(cdr bindings) ,@body)))
+      `(nu:with-array ,(car bindings) ,@body)))
+
+;; TODO: constantp with symbol-macros is implementation dependent
+;; SBCL says symbol-macros are constant, CCL says no;
+;; Smoothen out this behaviour
+(defun-c ensure-get-constant-value (form env)
+  (if (constantp form env)
+      (constant-form-value form env)
+      (error 'maybe-form-not-constant :form form)))
+
+(define-condition maybe-form-not-constant-error (error)
+  ((form :reader form :initform (error "FORM not supplied") :initarg :form))
+  (:report (lambda (condition stream)
+             (format stream
+                     "~&The following form could not be determined to be a constant~%~%~D~%"
+                     (form condition)))))
+
+;; A failed implementation of nu:with-constant that wanted to consider
+;; dynamic variables.
+
+;; (defmacro nu:with-constant ((var value) &body body &environment env)
+;;   (unless (constantp value env)
+;;     (error 'maybe-form-not-constant-error :form value))
+;;   (if (eq :special (variable-information var))
+;;       (if (eq var '*type*)
+;;           (let ((*type* (ensure-get-constant-value value env)))
+;;             (print `(let ((*type* ',(ensure-get-constant-value value env)))
+;;                       ,@(mapcar (rcurry #'macroexpand env) body))))
+;;           (error "This case has not been considered!"))
+;;       `(symbol-macrolet ((,var ,value))
+;;          ,@body)))
+
+;; (defmacro nu:with-constants (bindings &body body)
+;;   (if (cdr bindings)
+;;       `(nu:with-constant ,(car bindings)
+;;          (nu:with-constants ,(cdr bindings) ,@body))
+;;       `(nu:with-constant ,(car bindings) ,@body)))
+
+;; (nu:with-constants ((*type* 'double-float)
+;;                     (shape '(10 10)))
+;;   (nu:with-array (f shape) f))
+
+(defmacro nu:with-constant ((var value) &body body &environment env)
+  (unless (constantp value env)
+    (error 'maybe-form-not-constant-error :form value))
+  (if (eq :special (variable-information var))
+      (error "~D should ne not be special" var)
+      `(symbol-macrolet ((,var ,value))
+         ,@body)))
+
+(defmacro nu:with-constants (bindings &body body &environment env)
+  `(symbol-macrolet ,(loop :for (var value) :in bindings
+                        :do (unless (constantp value env)
+                              (error 'maybe-form-not-constant-error :form value))
+                          (when (specialp var)
+                            (error "~D should not be special" var))
+                        :finally (return bindings))
      ,@body))

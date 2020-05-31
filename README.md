@@ -35,10 +35,10 @@ Prerequisites: SBCL 2.0.4+.
 
 Operation list:
 
-- +
-- -
-- *
-- /
+- `+`
+- `-`
+- `*`
+- `/`
 - aref (unoptimized; hard to optimize; use map-outer if possible)
 - concatenate (unoptimized for axis != 0)
 - map-outer (speed untested)
@@ -48,8 +48,16 @@ Operation list:
 - asarray (unoptimized and not done for arrays inside nested lists)
 - astype (unoptimized)
 - shape (unoptimized)
+
 - with-simd-operations [macro]
 - with-inline [macro]
+- with-array / `with-arrays*` [macro]
+- with-constant / with-constants [macro]
+- maybe-form-not-constant-error
+- def-array [macro]
+- numericals-array-element-type
+- `*type*`
+- `*lookup-type-at-compile-time*`
 
 ## TODO (Contributing)
 
@@ -62,9 +70,12 @@ this translation
 - [SIMD Hard] Speeding up aref using SIMD or otherwise: we are 5-20x slower than numpy. A part of
 the reason is because numpy provides array slices, and I do not know the equivalent for common
 lisp based systems.
-- [SIMD Hard] Speeding up `concatenate` for axis>0.
+- [SIMD Medium] Speeding up `concatenate` for axis>0.
 - [SIMD Easy] Determining and Implementing Trigonometric functions 
 - [Easy] Implementing package (perhaps not based on SIMD) for non-SBCL systems
+- [Easy] Adding tests for not-yet-tested things
+- [Medium] Adding more compiler macros and checks for greater efficiency
+- [Hard] Implementing `asarray` for arrays nested inside lists of lists reasonably efficiently
 
 ## Benchmarks
 

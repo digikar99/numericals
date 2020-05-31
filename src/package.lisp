@@ -73,7 +73,14 @@
    :with-broadcast
    :with-simd-operations
    :with-inline
+   :with-array
+   :with-arrays*
+   :with-constant
+   :with-constants
+   :maybe-form-not-constant-error
+   :def-array
    :array-like-p
+   :numericals-array-element-type ; TODO: better name ???
    :aref
    :map-outer
    
@@ -100,7 +107,10 @@
   (:use :cl :alexandria :iterate :introspect-environment
         #+sbcl :numericals.sbcl)
   (:local-nicknames (:nu :numericals))
-  (:import-from :numericals :*type* :*lookup-type-at-compile-time*))
+  (:import-from :numericals
+                :*type*
+                :*lookup-type-at-compile-time*
+                :maybe-form-not-constant-error))
 
 (in-package :numericals.internals)
 
