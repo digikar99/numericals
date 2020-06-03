@@ -84,7 +84,8 @@
            :array-storage-vector
            :array-total-size
            :1d-storage-array
-           :aref))
+           :aref
+           :broadcast-array))
 
 ;; This package implements a multidimensional displaced array. This is required to implement ;; faster aref-ing. Without this, aref can be 50 times slower than numpy - since all numpy
 ;; does while arefing is provides a "view", without actually copying over the data.

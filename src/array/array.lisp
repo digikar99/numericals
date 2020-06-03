@@ -265,7 +265,7 @@ compiler-macros to generate efficient code.")
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
 (defvar *storage-vector* nil
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
-(defvar *last-dimension-stride* nil
+(defvar *current-dimension-stride* nil
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
 
 (defmethod print-object ((object na:numericals-array) stream)
@@ -276,24 +276,28 @@ compiler-macros to generate efficient code.")
            (*stream* stream)
            (*row-major-index* (na:array-offset object))
            (*storage-vector* (na:array-storage-vector object))
-           (*last-dimension-stride* (na:array-stride object (1- *array-dimensions-length*))))
+           (*current-dimension-stride* (na:array-stride object 0)))
       (print-numericals-array 0))))
 
 (defun print-numericals-array (axis)
   ;; TODO: take *print-pretty* into account
-  ;; TODO: take other axis strides into account
   (if (= axis *array-dimensions-length*)
       (progn
         (write (aref *storage-vector* *row-major-index*) :stream *stream*)
-        ;; (print (list *row-major-index* *last-dimension-stride*))
-        (incf *row-major-index* *last-dimension-stride*))
+        ;; (print (list *row-major-index* *current-dimension-stride*))
+        (incf *row-major-index* *current-dimension-stride*))
       (progn
         (write-char #\( *stream*)
         (let* ((axis-size (na:array-dimension *array* axis))
-               (axis-size-1 (1- axis-size)))
+               (axis-size-1 (1- axis-size))
+               (*row-major-index* *row-major-index*)
+               (*current-dimension-stride* (na:array-stride *array* axis)))
+          ;; (print (list 'axis-size axis-size))
           (loop :for i :below axis-size
              :do (print-numericals-array (1+ axis))
-               (unless (= i axis-size-1) (write-char #\space *stream*))))        
+               (unless (= i axis-size-1) (write-char #\space *stream*))))
+        ;; (print (list 'current *row-major-index* *current-dimension-stride*))
+        (incf *row-major-index* *current-dimension-stride*)
         (write-char #\) *stream*))))
 
 (defun na:aref (na:numericals-array &rest subscripts)
@@ -384,3 +388,21 @@ compiler-macros to generate efficient code.")
            (type na:numericals-array na:numericals-array))
   (values (na:array-storage-vector na:numericals-array)
           (na:array-offset na:numericals-array)))
+
+(defun na:broadcast-array (na:numericals-array broadcast-dimensions)
+  ;; TODO: Incorporate offsets!
+  ;; TODO: Doing this neatly requires changes in aref
+  (with-slots (dimensions element-type strides offset storage-vector) na:numericals-array
+    (make-numericals-array :dimensions broadcast-dimensions
+                           :element-type element-type
+                           :strides
+                           (loop :for s :in strides
+                              :for b :in broadcast-dimensions
+                              :for d :in dimensions
+                              :collect
+                                (cond ((= b d) s)
+                                      ((= d 1) 0)
+                                      (t (error "~D of dimensions ~D cannot be broadcasted to dimensions ~D" na:numericals-array dimensions broadcast-dimensions))))
+                           :offset offset
+                           :storage-vector storage-vector)))
+
