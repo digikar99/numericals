@@ -71,6 +71,7 @@
            :array
            :make-array
            :*type*
+           :*lookup-type-at-compile-time*
            :numericals-array-element-type ; TODO: better name ???
            :array-dimensions           
            :array-dimension
@@ -88,12 +89,13 @@
 ;; This package implements a multidimensional displaced array. This is required to implement ;; faster aref-ing. Without this, aref can be 50 times slower than numpy - since all numpy
 ;; does while arefing is provides a "view", without actually copying over the data.
 (defpackage :numericals/array/internals
-  (:use :cl :alexandria :iterate)
+  (:use :cl :alexandria :iterate :introspect-environment)
   (:import-from #+sbcl :numericals.sbcl
                 :1d-storage-array)
   (:import-from :trivial-types :function-designator)
   (:import-from :numericals/array
                 :*type*
+                :*lookup-type-at-compile-time*
                 :numericals-array-element-type
                 :make-numericals-array
 
@@ -118,6 +120,7 @@
   (:import-from :numericals/array
                 :numericals-array-element-type
                 :*type*
+                :*lookup-type-at-compile-time*
                 :array-dimensions
                 :array-dimension
                 :array-element-type
@@ -165,7 +168,6 @@
         #+sbcl :numericals.sbcl)
   (:local-nicknames (:nu :numericals))
   (:import-from :numericals
-                :*lookup-type-at-compile-time*
                 :maybe-form-not-constant-error)
   (:shadowing-import-from :numericals/array
                           :*type*

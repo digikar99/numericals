@@ -2,16 +2,6 @@
 
 ;;; DO NOT INLINE CODE UNLESS NECESSARY
 
-(defparameter *type* 'single-float
-  ;; better way to restrict the value?
-  "Can only be one of FIXNUM, SINGLE-FLOAT, or DOUBLE-FLOAT. Depending on the compile-time
-value of *LOOKUP-TYPE-AT-COMPILE-TIME*, this variable may be looked up at compile-time
-or run-time.")
-
-(defparameter *lookup-type-at-compile-time* t
-  "If the compile-time value is T, looks up the value of *TYPE* at compile-time to aid 
-compiler-macros to generate efficient code.")
-
 (defparameter *max-broadcast-dimensions* 4)
 ;; several macros need to be re-expanded for change in this to be reflected.
 

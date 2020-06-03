@@ -60,6 +60,10 @@
   "Can only be one of FIXNUM, SINGLE-FLOAT, or DOUBLE-FLOAT. Depending on the compile-time
 value of NUMERICALS:*LOOKUP-TYPE-AT-COMPILE-TIME*, this variable may be looked up at compile-time or run-time by certain constructs.")
 
+(defparameter *lookup-type-at-compile-time* t
+  "If the compile-time value is T, looks up the value of *TYPE* at compile-time to aid 
+compiler-macros to generate efficient code.")
+
 (declaim (ftype (function (list &key
                                 (:element-type numericals-array-element-type)
                                 (:initial-element *)
@@ -68,7 +72,6 @@ value of NUMERICALS:*LOOKUP-TYPE-AT-COMPILE-TIME*, this variable may be looked u
                                 (:initial-contents *))
                           (values na:numericals-array &optional))
                 na:make-array))
-(declaim (notinline na:make-array))
 (defun na:make-array
     (dimensions
      &key (element-type *type*)
@@ -100,7 +103,7 @@ value of NUMERICALS:*LOOKUP-TYPE-AT-COMPILE-TIME*, this variable may be looked u
                                      '(1)))
                  :offset offset)))
     (cond ((and initial-element-p (typep initial-element 'function-designator))
-           (let ((row-major-index '0))
+           (let ((row-major-index 0))
              (declare (type (signed-byte 31) row-major-index))
              (apply #'map-product ; TODO: This unnecessarily collects the values.
                     (lambda (&rest subscripts)
@@ -122,6 +125,124 @@ value of NUMERICALS:*LOOKUP-TYPE-AT-COMPILE-TIME*, this variable may be looked u
                (set-storage-vector initial-contents)))
            array)
           (t array))))
+
+(defun unable-to-optimize-call-note (callee reason &rest reason-args)
+  (format *error-output* "~&; note: Unable to optimize call to ~S because~%;   ~D"
+          callee (apply #'format nil reason reason-args)))
+
+(define-compiler-macro na:make-array
+    (&whole whole dimensions
+            &key (element-type *type* element-type-p)
+            (initial-element nil initial-element-p)
+            (strides nil strides-p)
+            (offset 0)
+            (initial-contents nil initial-contents-p)
+            &environment env)
+  ;; TODO: Write a proper compiler macro!!!
+  (when (and initial-element-p initial-contents-p)
+    (error "Can't specify both :INITIAL-ELEMENT and :INITIAL-CONTENTS"))
+  (if (= 3 (policy-quality 'speed env))
+      (flet ((utocn (reason &rest reason-args)
+               (apply #'unable-to-optimize-call-note
+                      'na:make-array reason reason-args)))
+
+        (when initial-contents-p
+          (utocn "INITIAL-CONTENTS case has not been optimized yet")
+          (return-from na:make-array whole))
+        
+        (let ((element-type-known-p t)
+              (dimensions-known-p t)
+              (initial-element-known-p t)
+              (make-array-known-p t)
+              storage-vector)
+          ;; Handle element-type
+          (setq element-type                
+                (if element-type-p
+                    (if (constantp element-type env)
+                        (constant-form-value element-type env)
+                        (progn
+                          (utocn "ELEMENT-TYPE ~D could not be determined to be a constant" element-type)
+                          (setq element-type-known-p nil)
+                          element-type))
+                    (if *lookup-type-at-compile-time*
+                        *type*
+                        (progn
+                          (utocn "Not using the compile-time value of *TYPE* because *LOOKUP-TYPE-AT-COMPILE-TIME* is NIL at compile-time")
+                          (setq element-type-known-p nil)
+                          '*type*))))
+          ;; Handle dimensions
+          (setq dimensions
+                (if (constantp dimensions env)
+                    (constant-form-value dimensions env)
+                    (progn
+                      (utocn "DIMENSIONS ~D could not be determined to be a constant" dimensions)
+                      (setq dimensions-known-p nil)
+                      dimensions)))
+          
+          (setq initial-element
+                (if initial-element-p
+                    (if (constantp initial-element env)
+                        (if element-type-known-p
+                            (coerce (constant-form-value initial-element
+                                                         env)
+                                    element-type)
+                            (progn
+                              (utocn "INITIAL-ELEMENT cannot be determined at compile-time without knowing ELEMENT-TYPE")
+                              (setq initial-element-known-p nil)
+                              `(coerce ,(constant-form-value initial-element
+                                                             env)
+                                       ;; TODO: check this
+                                       ,element-type)))
+                        (progn
+                          (utocn "INITIAL-ELEMENT ~D could not be determined to be a constant"
+                                 initial-element)
+                          (setq initial-element-known-p nil)
+                          `(coerce ,initial-element ,(if element-type-known-p
+                                                         (list 'quote element-type)
+                                                         element-type))))
+                    (if element-type-known-p
+                        (coerce 0 element-type)
+                        (progn
+                          (utocn "INITIAL-ELEMENT cannot be determined at compile-time without knowing ELEMENT-TYPE")
+                          (setq initial-element-known-p nil)
+                          `(coerce 0 ,(list 'quote element-type))))))
+
+          (let ((storage-vector
+                 (cond ((and initial-element-known-p
+                             element-type-known-p
+                             dimensions-known-p)
+                        (make-array (apply #'* dimensions)
+                                    :initial-element initial-element
+                                    :element-type element-type))
+                       (t
+                        (utocn "STORAGE-VECTOR could not be allocated at compile-time without knowing all of INITIAL-ELEMENT, ELEMENT-TYPE and DIMENSIONS")
+                        (setq make-array-known-p nil)
+                        `(make-array ,(if dimensions-known-p
+                                          (apply #'* dimensions)
+                                          `(apply #'* ,dimensions))
+                                     :initial-element ,initial-element
+                                     :element-type ,(if element-type-known-p
+                                                        (list 'quote element-type)
+                                                        element-type)))))
+                (strides (if strides-p
+                             strides
+                             (if dimensions-known-p
+                                 (list 'quote
+                                       (nconc (cdr (maplist (lambda (l) (apply #'* l))
+                                                            dimensions))
+                                              '(1)))
+                                 `(nconc (cdr (maplist (lambda (l) (apply #'* l))
+                                                       ,dimensions))
+                                         '(1))))))
+            `(make-numericals-array :storage-vector ,storage-vector
+                                    :element-type ,(if element-type-known-p
+                                                       (list 'quote element-type)
+                                                       element-type)
+                                    :dimensions ,(if dimensions-known-p
+                                                     (list 'quote dimensions)
+                                                     dimensions)
+                                    :strides ,strides
+                                    :offset ,offset))))))
 
 (defun na:array-dimensions-length (na:numericals-array)
   (length (na:array-dimensions na:numericals-array)))
