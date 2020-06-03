@@ -4,6 +4,7 @@
   :serial t
   :depends-on ("alexandria"
                "iterate"
+               "trivial-types"
                "introspect-environment")
   :components ((:file "package")
                (:module "sbcl"
@@ -11,11 +12,14 @@
                         ((:file "accessors")
                          (:file "1d-storage-array")
                          (:file "arithmetic")))
+               (:module "array"
+                        :components
+                        ((:file "array")))
                (:file "primitives")
                (:file "broadcast")
                (:file "with-simd-operations")
                (:file "arithmetic")
-               (:file "aref")
+               ;; (:file "aref")
                (:file "concatenate")
                (:file "outer")))
 

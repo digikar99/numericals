@@ -59,6 +59,53 @@
            ;; to me, an efficient non-redundant operative way isn't clear.
            :1d-storage-array))
 
+(defpackage :numericals/array
+  (:use)
+  (:intern :make-numericals-array
+           :strides
+           :storage-vector
+           :offset
+           :dimensions
+           :element-type)
+  (:export :numericals-array
+           :array
+           :make-array
+           :*type*
+           :numericals-array-element-type ; TODO: better name ???
+           :array-dimensions           
+           :array-dimension
+           :array-strides
+           :array-stride
+           :array-offsets
+           :array-offset
+           :array-element-type
+           :array-dimensions-length
+           :array-storage-vector
+           :array-total-size
+           :1d-storage-array
+           :aref))
+
+;; This package implements a multidimensional displaced array. This is required to implement ;; faster aref-ing. Without this, aref can be 50 times slower than numpy - since all numpy
+;; does while arefing is provides a "view", without actually copying over the data.
+(defpackage :numericals/array/internals
+  (:use :cl :alexandria :iterate)
+  (:import-from #+sbcl :numericals.sbcl
+                :1d-storage-array)
+  (:import-from :trivial-types :function-designator)
+  (:import-from :numericals/array
+                :*type*
+                :numericals-array-element-type
+                :make-numericals-array
+
+                :strides
+                :storage-vector
+                :offset
+                :dimensions
+                :element-type)
+  (:local-nicknames (:na :numericals/array)))
+
+
+
 ;; How do we check for the presence of AVX2 support given that it's not a part of +features+ ?
 
 (in-package #+sbcl :numericals.sbcl)
@@ -68,6 +115,15 @@
        ,@body)))
 
 (defpackage :numericals
+  (:import-from :numericals/array
+                :numericals-array-element-type
+                :*type*
+                :array-dimensions
+                :array-dimension
+                :array-element-type
+                :array-total-size
+                :aref
+                :make-array)
   (:export
 
    :with-broadcast
@@ -79,8 +135,9 @@
    :with-constants
    :maybe-form-not-constant-error
    :def-array
+   :make-array
    :array-like-p
-   :numericals-array-element-type ; TODO: better name ???
+   :numericals-array-element-type
    :aref
    :map-outer
    
@@ -108,9 +165,17 @@
         #+sbcl :numericals.sbcl)
   (:local-nicknames (:nu :numericals))
   (:import-from :numericals
-                :*type*
                 :*lookup-type-at-compile-time*
-                :maybe-form-not-constant-error))
+                :maybe-form-not-constant-error)
+  (:shadowing-import-from :numericals/array
+                          :*type*
+                          :1d-storage-array
+                          :array-element-type
+                          :array-dimension
+                          :array-dimensions
+                          :array-total-size
+                          :numericals-array
+                          :make-array))
 
 (in-package :numericals.internals)
 
