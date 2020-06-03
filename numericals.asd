@@ -10,7 +10,8 @@
                         :components
                         ((:file "accessors")
                          (:file "1d-storage-array")
-                         (:file "arithmetic")))
+                         (:file "arithmetic")
+                         (:file "boolean")))
                (:file "primitives")
                (:file "broadcast")
                (:file "with-simd-operations")
