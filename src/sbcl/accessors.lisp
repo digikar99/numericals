@@ -1,4 +1,4 @@
-(in-package :numericals.sbcl)
+(in-package :numericals/sbcl)
 
 ;; How do we check for the presence of AVX2 support given that it's not a part of +features+
 ;; > In this way.

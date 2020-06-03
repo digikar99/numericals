@@ -1,4 +1,4 @@
-(in-package :numericals.sbcl)
+(in-package :numericals/sbcl)
 
 (defun 1d-storage-array (array)
   (declare (optimize (speed 3))

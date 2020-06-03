@@ -1,5 +1,5 @@
 #+sbcl
-(defpackage :numericals.sbcl
+(defpackage :numericals/sbcl
   (:use :cl :sb-c :sb-ext :sb-vm :alexandria :iterate)
   (:import-from :sb-vm
                 :descriptor-reg
@@ -105,7 +105,7 @@
 
 (defpackage :numericals.internals
   (:use :cl :alexandria :iterate :introspect-environment
-        #+sbcl :numericals.sbcl)
+        #+sbcl :numericals/sbcl)
   (:local-nicknames (:nu :numericals))
   (:import-from :numericals
                 :*type*

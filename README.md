@@ -17,6 +17,73 @@ PS: This library began as a [reddit post](https://www.reddit.com/r/lisp/comments
 
 You should probably use the latest [SBCL (get from git)](https://github.com/sbcl/sbcl), at least SBCL-2.0.4. The build is fairly easy: `sh make.sh && sh run-sbcl.sh # or install.sh`.
 
+## Why not matlisp?
+
+Because ...
+
+```lisp
+(let ((a (zeros 1000 1000))
+      (b (zeros 1000 1000)))
+  (declare (optimize (speed 3)))
+  (time (loop :for i :below 1000 :do (m+ a b))))
+; Evaluation took:
+;   4.001 seconds of real time
+;   4.004066 seconds of total run time (3.807962 user, 0.196104 system)
+;   [ Run times consist of 0.361 seconds GC time, and 3.644 seconds non-GC time. ]
+;   100.07% CPU
+;   8,828,045,634 processor cycles
+;   8,000,016,000 bytes consed
+NIL
+```
+
+```lisp
+(let ((a (nu:zeros '(1000 1000)))
+      (b (nu:zeros '(1000 1000))))
+  (time (loop :for i :below 1000 :do (nu:+ a b))))
+; Evaluation took:
+;   1.727 seconds of real time
+;   1.728858 seconds of total run time (1.556757 user, 0.172101 system)
+;   [ Run times consist of 0.199 seconds GC time, and 1.530 seconds non-GC time. ]
+;   100.12% CPU
+;   3,810,797,604 processor cycles
+;   4,000,343,680 bytes consed
+NIL
+
+(let ((a (nu:zeros '(1000 1000)))  ; There are other macros with help which automatically declare
+      (b (nu:zeros '(1000 1000)))  ; things for you as well, though more work still needs to be 
+      (c (nu:zeros '(1000 1000)))) ; done to optimize for more special cases.
+  (declare (type (simple-array single-float (1000 1000)) a b c)
+           (optimize (speed 3)))
+  (time (loop :for i :below 1000 :do (nu:+ a b :out c))))
+; Evaluation took:
+;   0.523 seconds of real time
+;   0.524254 seconds of total run time (0.524254 user, 0.000000 system)
+;   100.19% CPU
+;   1,157,540,668 processor cycles
+;   0 bytes consed
+NIL
+```
+
+And I didn't see any equivalent of `nu:aref` there:
+
+```lisp
+(let ((a (nu:asarray '((1 2 3) (4 5 6)))))
+  (nu:aref a t 2))
+;=> #(3.0 6.0)
+```
+
+Also broadcasting:
+
+```lisp
+(nu:+ (nu:asarray '((1 2 3)))
+      (nu:asarray '((1) (2))))
+;=> #2A((2.0 3.0 4.0) (3.0 4.0 5.0))
+```
+
+## What about others?
+
+I don't know. There are [many others](https://www.cliki.net/linear%20algebra).
+
 ## The Plan
 
 The plan is to enable number crunching using this, coupled with py4cl/2. For "light" array
@@ -71,7 +138,8 @@ this translation
 the reason is because numpy provides array slices, and I do not know the equivalent for common
 lisp based systems.
 - [SIMD Medium] Speeding up `concatenate` for axis>0.
-- [SIMD Easy] Determining and Implementing Trigonometric functions 
+- [SIMD Easy] Determining and Implementing Trigonometric functions
+- [SIMD Easy] Implementing bit-wise boolean operators
 - [Easy] Implementing package (perhaps not based on SIMD) for non-SBCL systems
 - [Easy] Adding tests for not-yet-tested things
 - [Medium] Adding more compiler macros and checks for greater efficiency
@@ -81,13 +149,13 @@ lisp based systems.
 
 
 <div id='benchmark'>
-  <p>SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations): 
-  </p>
-  <table>
+<p>SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations): 
+</p>
+<table>
 <tr>
-  <th>Allocation array operations (seems like SBCL allocates arrays
+<th>Allocation array operations (seems like SBCL allocates arrays
 during compilation time)
-  </th>
+</th>
 <th>10
 </th>
 <th>100
@@ -100,8 +168,8 @@ during compilation time)
 </th>
 </tr>
 <tr>
-  <td>ONES
-  </td>
+<td>ONES
+</td>
 <td>20.71x
 </td>
 <td>20.66x
@@ -114,8 +182,8 @@ during compilation time)
 </td>
 </tr>
 <tr>
-  <td>ZEROS
-  </td>
+<td>ZEROS
+</td>
 <td>7.73x
 </td>
 <td>7.74x
@@ -128,8 +196,8 @@ during compilation time)
 </td>
 </tr>
 <tr>
-  <td>EMPTY
-  </td>
+<td>EMPTY
+</td>
 <td>7.66x
 </td>
 <td>7.63x
@@ -142,8 +210,8 @@ during compilation time)
 </td>
 </tr>
 <tr>
-  <th>Non-broadcast array operations
-  </th>
+<th>Non-broadcast array operations
+</th>
 <th>10
 </th>
 <th>100
@@ -156,8 +224,8 @@ during compilation time)
 </th>
 </tr>
 <tr>
-  <td>+
-  </td>
+<td>+
+</td>
 <td>41.75x
 </td>
 <td>28.30x
@@ -170,8 +238,8 @@ during compilation time)
 </td>
 </tr>
 <tr>
-  <td>-
-  </td>
+<td>-
+</td>
 <td>41.59x
 </td>
 <td>29.05x
@@ -184,8 +252,8 @@ during compilation time)
 </td>
 </tr>
 <tr>
-  <td>*
-  </td>
+<td>*
+</td>
 <td>42.39x
 </td>
 <td>28.27x
@@ -198,8 +266,8 @@ during compilation time)
 </td>
 </tr>
 <tr>
-  <td>/
-  </td>
+<td>/
+</td>
 <td>44.99x
 </td>
 <td>21.98x
@@ -212,9 +280,9 @@ during compilation time)
 </td>
 </tr>
 <tr>
-  <th>Broadcast array operations (warning: can vary quite a bit depending
+<th>Broadcast array operations (warning: can vary quite a bit depending
 on actual array dimensions)
-  </th>
+</th>
 <th>10
 </th>
 <th>100
@@ -227,8 +295,8 @@ on actual array dimensions)
 </th>
 </tr>
 <tr>
-  <td>+
-  </td>
+<td>+
+</td>
 <td>1.22x
 </td>
 <td>1.67x
@@ -241,8 +309,8 @@ on actual array dimensions)
 </td>
 </tr>
 <tr>
-  <td>-
-  </td>
+<td>-
+</td>
 <td>1.60x
 </td>
 <td>1.76x
@@ -255,8 +323,8 @@ on actual array dimensions)
 </td>
 </tr>
 <tr>
-  <td>*
-  </td>
+<td>*
+</td>
 <td>1.61x
 </td>
 <td>1.73x
@@ -269,8 +337,8 @@ on actual array dimensions)
 </td>
 </tr>
 <tr>
-  <td>/
-  </td>
+<td>/
+</td>
 <td>3.01x
 </td>
 <td>3.01x
@@ -283,9 +351,9 @@ on actual array dimensions)
 </td>
 </tr>
 <tr>
-  <th>Concatenate (currently unoptimized for axis != 0; 
+<th>Concatenate (currently unoptimized for axis != 0; 
 as such this can be slower than numpy by a factor of 50)
-  </th>
+</th>
 <th>10
 </th>
 <th>100
@@ -298,8 +366,8 @@ as such this can be slower than numpy by a factor of 50)
 </th>
 </tr>
 <tr>
-  <td>Axis 0
-  </td>
+<td>Axis 0
+</td>
 <td>2.98x
 </td>
 <td>2.96x
@@ -311,7 +379,7 @@ as such this can be slower than numpy by a factor of 50)
 <td>0.71x
 </td>
 </tr>
-  </table>
+</table>
 </div>
 
 <!-- The above div would be filled by :numericals/tests when *write-to-readme* is T. -->
@@ -320,7 +388,7 @@ as such this can be slower than numpy by a factor of 50)
 
 - Everyone who has contributed to SBCL.
 - [u/love5an](https://www.reddit.com/user/love5an/) and [u/neil-lindquist](https://www.reddit.com/user/neil-lindquist/) for the required hand-holding and the [gist](https://gist.github.com/Lovesan/660866b96a2632b900359333a251cc1c).
-  - Paul Khuong for [some](https://pvk.ca/Blog/2013/06/05/fresh-in-sbcl-1-dot-1-8-sse-intrinsics/) [blog posts](https://pvk.ca/Blog/2014/08/16/how-to-define-new-intrinsics-in-sbcl/).
+- Paul Khuong for [some](https://pvk.ca/Blog/2013/06/05/fresh-in-sbcl-1-dot-1-8-sse-intrinsics/) [blog posts](https://pvk.ca/Blog/2014/08/16/how-to-define-new-intrinsics-in-sbcl/).
 - [guicho271828](https://github.com/guicho271828) for [SBCL Wiki](https://github.com/guicho271828/sbcl-wiki/wiki) as well as [numcl](https://github.com/numcl/numcl).
 - It's possible that I could have forgotten to mention somebody - so... yeah... happy number crunching!
 

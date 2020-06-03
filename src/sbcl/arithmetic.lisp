@@ -1,6 +1,6 @@
 ;;; SIMD arithmetic operations (+-/*) that can take any number of operands.
 
-(in-package :numericals.sbcl)
+(in-package :numericals/sbcl)
 
 (macro-when (member :avx2 sb-impl:+internal-features+)
   
