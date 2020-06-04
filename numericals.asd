@@ -14,7 +14,7 @@
                          (:file "boolean")))
                (:file "primitives")
                (:file "broadcast")
-               (:file "with-simd-operations")
+               (:file "with-elementwise-operations")
                (:file "arithmetic")
                (:file "aref")
                (:file "concatenate")

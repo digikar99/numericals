@@ -73,7 +73,7 @@
   (:export
 
    :with-broadcast
-   :with-simd-operations
+   :with-elementwise-operations ; TOOD: Should there be a hyphen: elementwise vs element-wise
    :with-inline
    :with-array
    :with-arrays*

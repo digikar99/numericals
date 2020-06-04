@@ -153,7 +153,8 @@ keyword args. For example
                                     args))
                           (return-from ,name
                             (let ((base-operation ',base-operation))
-                              `(nu:with-simd-operations 'single-float ,out (,base-operation ,@args)))))))
+                              `(nu:with-elementwise-operations
+                                   'single-float ,out (,base-operation ,@args)))))))
                     
                     ;; args is a list
                     ;; (when optimizable-p
