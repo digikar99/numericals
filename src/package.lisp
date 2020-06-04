@@ -131,5 +131,9 @@
                  simd-single-broadcast-1d-aref
                  simd-double-broadcast-1d-aref
                  1d-storage-array
-                 simd-single-+))
+                 simd-single-+
+                 simd-single--
+                 simd-single-/
+                 simd-single-*
+                 simd-single-sqrt))
 
