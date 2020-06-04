@@ -29,8 +29,10 @@ def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
 
 (defpyfun "arithmetic_timeit" nil :lisp-fun-name "PY-ARITHMETIC-TIMEIT")
 
+;; TODO: Add speed tests for unary operators
 
-;; THis is better suited as a function because we don't want to care about the
+
+;; This is better suited as a function because we don't want to care about the
 ;; "form" of the arguments - we want to play with the values of the arguments.
 (defun lisp-arithmetic-timeit (&key fn a-sizes b-sizes c-sizes num-operations)
   (let ((nu:*type* 'single-float))
@@ -116,14 +118,24 @@ def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
                           numericals-timings numpy-timings)))))))
 
 (def-test non-broadcast-correctness (:suite correctness)
-  (let ((dim (iota 8 :start 8)))
-    (iter (for np-op in '(np.add np.subtract np.multiply np.divide))
-          (for nu-op in '(nu:+ nu:- nu:* nu:/))
+  (let ((dim (iota 8 :start 8))
+        (binary-numericals-op '(nu:+ nu:- nu:* nu:/))
+        (binary-numpy-op '(np.add np.subtract np.multiply np.divide))
+        (unary-numericals-op '(nu:sqrt))
+        (unary-numpy-op '(np.sqrt)))
+    (iter (for np-op in binary-numpy-op)
+          (for nu-op in binary-numericals-op)
           (iter (for d in dim)
                 (for a = (pycall 'np.random.random (list 3 d)))
                 (for b = (pycall 'np.random.random (list 3 d)))
                 (is (np:allclose :a (pycall np-op a b)
-                                 :b (funcall nu-op a b)))))))
+                                 :b (funcall nu-op a b)))))
+    (iter (for np-op in unary-numpy-op)
+          (for nu-op in unary-numericals-op)
+          (iter (for d in dim)
+                (for a = (pycall 'np.random.random (list 3 d)))
+                (is (np:allclose :a (pycall np-op a)
+                                 :b (funcall nu-op a)))))))
 
 (def-test broadcast-correctness (:suite correctness)
   (iter (for np-op in '(np.add np.subtract np.multiply np.divide))

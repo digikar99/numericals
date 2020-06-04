@@ -10,7 +10,8 @@
     '(cl:+ simd-single-+
       cl:- simd-single--
       cl:* simd-single-*
-      cl:/ simd-single-/))
+      cl:/ simd-single-/
+      cl:sqrt simd-single-sqrt))
   (defparameter *with-simd-operations-symbol-translation-plist* nil
     "Bound inside WITH-SIMD-OPERATIONS to help TRANSLATE-TO-SIMD-SINGLE and
 TRANSLATE-TO-BASE with the symbol translation."))
@@ -113,7 +114,7 @@ This is expanded to a form effective as:
 (defun single-+ (result a b)
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
-   (nu:with-simd-operations 'single-float result (+ a b)))
+  (nu:with-simd-operations 'single-float result (+ a b)))
 
 (defun single-- (result a b)
   (declare (optimize (speed 3))
@@ -129,6 +130,11 @@ This is expanded to a form effective as:
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
   (nu:with-simd-operations 'single-float result (/ a b)))
+
+(defun single-sqrt (result a)
+  (declare (optimize (speed 3))
+           (type (array single-float) result a))
+  (nu:with-simd-operations 'single-float result (sqrt a)))
 
 (defun-c non-broadcast-operation (operation type)
   (intern (concatenate 'string

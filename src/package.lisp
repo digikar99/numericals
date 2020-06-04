@@ -50,6 +50,8 @@
            :simd-single-/
            :simd-single-*
 
+           :simd-single-sqrt
+
            :simd-and
            :simd-or
            :simd-not
@@ -61,7 +63,7 @@
 
 ;; How do we check for the presence of AVX2 support given that it's not a part of +features+ ?
 
-(in-package #+sbcl :numericals.sbcl)
+(in-package #+sbcl :numericals/sbcl)
 (defmacro macro-when (condition &body body)
   (when condition
     `(progn
@@ -97,7 +99,8 @@
    :+
    :-
    :/
-   :*))
+   :*
+   :sqrt))
 
 #.(when (member :sbcl *features*)
     `(declaim (sb-ext:maybe-inline ,@(iter (for s in-package :numericals external-only t)
