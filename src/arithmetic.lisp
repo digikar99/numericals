@@ -118,7 +118,10 @@ keyword args. For example
                     (declare (ignorable args out type type-p out-supplied-p))
                     (when optimizable-p
                       (setq type
-                            (cond ((and (not type-p) *lookup-type-at-compile-time*) (list 'quote *type*))
+                            (cond ((and (not type-p)
+                                        *lookup-type-at-compile-time*)
+                                   (list 'quote *type*))
+                                  ;; TODO: These patterns of quoting abound in compiler macros the way I'm doing things. Abstract them out, or find (and abstract?) a better pattern.
                                   ((and (listp type)
                                         (eq (car type) 'quote)
                                         (null (cddr type))
@@ -126,20 +129,21 @@ keyword args. For example
                                    type)
                                   (t type))))
                     (when optimizable-p
-                      (when (and (every #'numberp args)
+                      (when (and (every #'(lambda (arg) (or (numberp arg)
+                                                            (typep arg 'number env)))
+                                        args)
                                  (not out-supplied-p))
                         (return-from ,name (list 'cast type (cons ',base-operation args)))))
 
                     ;; TODO: These notes should not be printed if call cannot be optimized.
                     (when (and optimizable-p out-supplied-p)
-                      (let ((out-type (variable-type out env))
-                            (*print-pretty* nil))
-                        (unless (= 3 (length out-type))
+                      (let ((out-type (variable-type out env)))
+                        (unless (and (listp out-type) (= 3 (length out-type)))
                           (format t
                                   "~&; note: Unable to determine optimizability of call to ~S because type of ~S ~S is not exact"
                                   ',name
                                   out out-type))
-                        (when (and (= 3 (length out-type))
+                        (when (and (listp out-type) (= 3 (length out-type))
                                    (subtypep out-type
                                              '(simple-array single-float *))
                                    (every
@@ -156,7 +160,7 @@ keyword args. For example
                               `(nu:with-elementwise-operations
                                    'single-float ,out (,base-operation ,@args)))))))
                     
-                    ;; args is a list
+                    ;; args is a list ; TODO: What were we trying to do here?
                     ;; (when optimizable-p
                     ;;   (setq dimensions
                     ;;         (if (null (cdr dimensions))
@@ -282,9 +286,65 @@ keyword args. For example
                   out)
                 (progn
                   (assert (not out-supplied-p) nil
-                          "Cannot supply result in ~D when no argument is array-like."
+                          "Cannot supply result in ~D when argument is not array-like."
                           out)
-                  (coerce (,base-operation arg) type)))))
+                  (coerce (,base-operation arg) type))))
+
+          (define-compiler-macro ,name (&whole whole arg
+                                               &key (out nil out-supplied-p)
+                                               (type *type* type-p)
+                                               &environment env)
+            (declare (ignorable arg out type type-p out-supplied-p))
+            (let ((optimizable-p (= 3 (policy-quality 'speed env))))
+              (if (member (car whole) (list ',name 'funcall)) ; ignoring the case of funcall or apply
+                  (progn
+                    (when optimizable-p
+                      (setq type
+                            (cond ((and (not type-p)
+                                        *lookup-type-at-compile-time*)
+                                   (list 'quote *type*))
+                                  ((and (listp type)
+                                        (eq (car type) 'quote)
+                                        (null (cddr type))
+                                        (valid-numericals-type-p (cadr type)))
+                                   type)
+                                  (t type))))
+
+                    ;; Takes care of the numberp branch
+                    (when optimizable-p
+                      (when (or (numberp arg) (typep arg 'number env))
+                        (if out-supplied-p
+                            (setq optimizable-p nil)
+                            (return-from ,name (list 'cast type
+                                                     (cons ',base-operation arg))))))
+
+                    ;; TODO: These notes should not be printed if call cannot be optimized.
+                    (when optimizable-p
+                      (if out-supplied-p
+                          (let ((out-type (variable-type out env)))
+                            (unless (and (listp out-type) (= 3 (length out-type)))
+                              (format t
+                                      "~&; note: Unable to determine optimizability of call to ~S because type of ~S ~S is not exact"
+                                      ',name
+                                      out out-type))
+                            (when (and (and (listp out-type) (= 3 (length out-type)))
+                                       (subtypep out-type
+                                                 '(simple-array single-float *))
+                                       (let ((arg-type (variable-type arg env)))
+                                         (unless (= 3 (length arg-type))
+                                           (format t
+                                                   "~&; note: Unable to determine optimizability of call to ~S because type of ~S ~S is not exact"
+                                                   ',name arg arg-type))
+                                         (equalp arg-type out-type)))
+                              (return-from ,name
+                                (let ((base-operation ',base-operation))
+                                  `(nu:with-elementwise-operations
+                                       'single-float ,out (,base-operation ,arg))))))))
+                    whole)
+                  (progn
+                    (when (= 3 (policy-quality 'speed env))
+                      (format t "~& note: Optimization for call to ~S is not implemented for ~S" ',name whole)
+                      whole))))))
        
        ;; TODO: Add compiler-macro
        ))

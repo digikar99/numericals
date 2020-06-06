@@ -5,7 +5,7 @@
     (single-float '(translate-to-simd-single simd-single-1d-aref +simd-single-1d-aref-stride+ single-float))
     (double-float '(translate-to-simd-double simd-double-1d-aref +simd-double-1d-aref-stride+ double-float))))
 
-(eval-when (:compile-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *simd-single-operation-translation-plist*
     '(cl:+ simd-single-+
       cl:- simd-single--
