@@ -111,8 +111,7 @@ compiler-macros to generate efficient code.")
                             (apply initial-element subscripts))
                       (incf row-major-index))
                     (loop :for d fixnum :in dimensions
-                       :collect (iota d))))
-           array)
+                       :collect (iota d)))))
           (initial-contents-p
            (let ((row-major-index 0))
              (labels ((set-storage-vector (elt)
@@ -122,9 +121,8 @@ compiler-macros to generate efficient code.")
                             (progn
                               (setf (aref storage-vector row-major-index) elt)
                               (incf row-major-index)))))
-               (set-storage-vector initial-contents)))
-           array)
-          (t array))))
+               (set-storage-vector initial-contents)))))
+    array))
 
 (defun unable-to-optimize-call-note (callee reason &rest reason-args)
   (format *error-output* "~&; note: Unable to optimize call to ~S because~%;   ~D"
@@ -242,7 +240,8 @@ compiler-macros to generate efficient code.")
                                                      (list 'quote dimensions)
                                                      dimensions)
                                     :strides ,strides
-                                    :offset ,offset))))))
+                                    :offset ,offset))))
+      whole))
 
 (defun na:array-dimensions-length (na:numericals-array)
   (length (na:array-dimensions na:numericals-array)))
@@ -304,13 +303,23 @@ compiler-macros to generate efficient code.")
   ;; TODO: Handle nested aref
   ;; TODO: Handle offsets
   ;; TODO: Handle non-integer subscripts
+  ;; TODO [hard?]: Introduce parametric types in CL.
+  ;;  In the special case where this reduces to CL:AREF, this function is over 20 times slower.
+  ;;  However, I do not see a way of optimizing this even using compiler-macros without
+  ;;  parametric user-defined types (for na:numericals-array). However, perhaps, due to
+  ;;  the function-call-overhead in python, this is about 2 times faster in that special-case.
+  ;;  In fact this is 2-2.5 times faster than python-numpy in either case.
   (declare (optimize speed))
   (etypecase na:numericals-array
     (array (apply #'aref na:numericals-array subscripts))
     (na:numericals-array
      (with-slots (storage-vector element-type strides offset dimensions) na:numericals-array
-       (if (length= subscripts (na:array-dimensions na:numericals-array))
-           (aref storage-vector (apply #'+ (mapcar #'* subscripts strides)))
+       (if (length= subscripts dimensions)
+           (aref storage-vector (loop :for stride :in strides
+                                   :for subscript :in subscripts
+                                   :summing (the (signed-byte 31)
+                                                 (* (the (signed-byte 31) stride)
+                                                    (the (signed-byte 31) subscript)))))
            (multiple-value-bind (dimensions strides offset)
                (let ((d dimensions)
                      (s strides)
@@ -350,7 +359,12 @@ compiler-macros to generate efficient code.")
     (na:numericals-array
      (with-slots (storage-vector element-type strides offset dimensions) na:numericals-array
        (if (length= subscripts (na:array-dimensions na:numericals-array))
-           (setf (aref storage-vector (apply #'+ (mapcar #'* subscripts strides))) new-value)
+           (setf (aref storage-vector (loop :for stride :in strides
+                                         :for subscript :in subscripts
+                                         :summing (the (signed-byte 31)
+                                                       (* (the (signed-byte 31) stride)
+                                                          (the (signed-byte 31) subscript)))))
+                 new-value)
            (multiple-value-bind (dimensions strides offset)
                (let ((d dimensions)
                      (s strides)
