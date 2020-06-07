@@ -45,15 +45,12 @@
 (deftype numericals-array-element-type ()
   `(member single-float double-float fixnum))
 
-;; (defun numericals-array-single-float (na:numericals-array)
-;;   (eq (na:array-element-type na:numericals-array) 'single-float))
+(deftype na:array (&optional (element-type * element-type-p) (dimensions * dimensions-p))
+  (when (or element-type-p dimensions-p)
+    (warn "The NUMERICALS package has not been optimized for parametric types of NUMERICALS:ARRAY. So, parametric type declarations involving NUMERICALS:ARRAY have no effect."))
+  'na:numericals-array)
 
-;; (deftype my-array (&optional (element-type *type* element-type-p))
-;;   (if element-type-p
-;;       (ecase element-type
-;;         (single-float `(and na:numericals-array
-;;                             (satisfies numericals-array-single-float))))
-;;       `na:numericals-array))
+(defun na:arrayp (object) (typep object 'na:numericals-array))
 
 (declaim (type numericals:numericals-array-element-type *type*))
 (defparameter *type* 'single-float

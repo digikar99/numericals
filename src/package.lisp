@@ -1,3 +1,9 @@
+(cl:in-package :cl)
+
+#.(defconstant +array-symbols+
+    '(:array :arrayp :array-dimensions :array-dimension
+      :array-element-type :array-total-size :aref :make-array))
+
 #+sbcl
 (defpackage :numericals.sbcl
   (:use :cl :sb-c :sb-ext :sb-vm :alexandria :iterate)
@@ -69,6 +75,7 @@
            :element-type)
   (:export :numericals-array
            :array
+           :arrayp
            :make-array
            :*type*
            :*lookup-type-at-compile-time*
@@ -107,8 +114,6 @@
                 :element-type)
   (:local-nicknames (:na :numericals/array)))
 
-
-
 ;; How do we check for the presence of AVX2 support given that it's not a part of +features+ ?
 
 (in-package #+sbcl :numericals.sbcl)
@@ -120,6 +125,8 @@
 (defpackage :numericals
   (:import-from :numericals/array
                 :numericals-array-element-type
+                :array
+                :arrayp
                 :*type*
                 :*lookup-type-at-compile-time*
                 :array-dimensions
@@ -138,6 +145,11 @@
    :with-constant
    :with-constants
    :maybe-form-not-constant-error
+   :array
+   :array-dimensions
+   :array-dimension
+   :array-element-type
+   :array-total-size
    :def-array
    :make-array
    :array-like-p
@@ -173,6 +185,8 @@
   (:shadowing-import-from :numericals/array
                           :*type*
                           :1d-storage-array
+                          :array
+                          :arrayp
                           :array-element-type
                           :array-dimension
                           :array-dimensions
