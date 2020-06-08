@@ -1,8 +1,59 @@
 (cl:in-package :cl)
 
-#.(defconstant +array-symbols+
-    '(:array :arrayp :array-dimensions :array-dimension
-      :array-element-type :array-total-size :aref :make-array))
+#.(alexandria:define-constant +cl-array-symbols+
+      '(:array :arrayp
+        :array-dimensions
+        :array-dimension
+        :array-element-type
+        :array-total-size
+        :aref
+        :make-array)
+    :test 'equalp)
+
+#.(alexandria:define-constant +numericals-array-symbols+
+      '(:array-stride
+        :array-strides
+        :array-storage-vector
+        :1d-storage-array
+        :array-dimensions-length
+        :array-offset
+        :broadcast-array
+        :array-broadcast-p
+        :numericals-array)
+    :test 'equalp)
+
+(defpackage :numericals
+  #.(cons :export +cl-array-symbols+)
+  (:export
+
+   :with-broadcast
+   :with-simd-operations
+   :with-inline
+   :with-array
+   :with-arrays*
+   :with-constant
+   :with-constants
+   :maybe-form-not-constant-error
+   :def-array
+   :make-array
+   :array-like-p
+   :numericals-array-element-type
+   :map-outer
+   
+   :*type*
+   :*lookup-type-at-compile-time*
+   :astype
+   :asarray
+   :concatenate
+   :zeros
+   :ones
+   :empty
+   :shape
+
+   :+
+   :-
+   :/
+   :*))
 
 #+sbcl
 (defpackage :numericals.sbcl
@@ -65,7 +116,11 @@
            ;; to me, an efficient non-redundant operative way isn't clear.
            :1d-storage-array))
 
-(defpackage :numericals/array
+
+;;; Ideally, we'd like to keep only one interface package - however, there are certain
+;;; array- functions we might not want to be public, but want them to be available for
+;;; internal use.
+(defpackage :numericals.array
   (:use)
   (:intern :make-numericals-array
            :strides
@@ -73,46 +128,38 @@
            :offset
            :dimensions
            :element-type)
-  (:export :numericals-array
-           :array
-           :arrayp
-           :make-array
-           :*type*
-           :*lookup-type-at-compile-time*
-           :numericals-array-element-type ; TODO: better name ???
-           :array-dimensions           
-           :array-dimension
-           :array-strides
-           :array-stride
-           :array-offsets
-           :array-offset
-           :array-element-type
-           :array-dimensions-length
-           :array-storage-vector
-           :array-total-size
-           :1d-storage-array
-           :aref
-           :broadcast-array))
+  #.(nconc '(:import-from :numericals             
+             :*type*
+             :*lookup-type-at-compile-time*
+             :numericals-array-element-type)
+           +cl-array-symbols+)
+  #.(nconc '(:export)
+           +cl-array-symbols+)
+  #.(nconc '(:export)
+           +numericals-array-symbols+))
 
 ;; This package implements a multidimensional displaced array. This is required to implement ;; faster aref-ing. Without this, aref can be 50 times slower than numpy - since all numpy
 ;; does while arefing is provides a "view", without actually copying over the data.
-(defpackage :numericals/array/internals
+(defpackage :numericals.array.internals
   (:use :cl :alexandria :iterate :introspect-environment)
+
   (:import-from #+sbcl :numericals.sbcl
                 :1d-storage-array)
-  (:import-from :trivial-types :function-designator)
-  (:import-from :numericals/array
-                :*type*
-                :*lookup-type-at-compile-time*
-                :numericals-array-element-type
-                :make-numericals-array
 
+  (:import-from :trivial-types :function-designator)
+  (:import-from :numericals                
+                :*type*
+                :*lookup-type-at-compile-time*                
+                :numericals-array-element-type)
+  
+  (:import-from :numericals.array
+                :make-numericals-array
                 :strides
                 :storage-vector
                 :offset
                 :dimensions
                 :element-type)
-  (:local-nicknames (:na :numericals/array)))
+  (:local-nicknames (:na :numericals.array)))
 
 ;; How do we check for the presence of AVX2 support given that it's not a part of +features+ ?
 
@@ -122,77 +169,19 @@
     `(progn
        ,@body)))
 
-(defpackage :numericals
-  (:import-from :numericals/array
-                :numericals-array-element-type
-                :array
-                :arrayp
-                :*type*
-                :*lookup-type-at-compile-time*
-                :array-dimensions
-                :array-dimension
-                :array-element-type
-                :array-total-size
-                :aref
-                :make-array)
-  (:export
-
-   :with-broadcast
-   :with-simd-operations
-   :with-inline
-   :with-array
-   :with-arrays*
-   :with-constant
-   :with-constants
-   :maybe-form-not-constant-error
-   :array
-   :array-dimensions
-   :array-dimension
-   :array-element-type
-   :array-total-size
-   :def-array
-   :make-array
-   :array-like-p
-   :numericals-array-element-type
-   :aref
-   :map-outer
-   
-   :*type*
-   :*lookup-type-at-compile-time*
-   :astype
-   :asarray
-   :concatenate
-   :zeros
-   :ones
-   :empty
-   :shape
-
-   :+
-   :-
-   :/
-   :*))
-
-#.(when (member :sbcl *features*)
-    `(declaim (sb-ext:maybe-inline ,@(iter (for s in-package :numericals external-only t)
-                                           (collect s)))))
+#+sbcl
+#.`(declaim (sb-ext:maybe-inline ,@(iter (for s in-package :numericals external-only t)
+                                         (collect s))))
 
 (defpackage :numericals.internals
   (:use :cl :alexandria :iterate :introspect-environment
         #+sbcl :numericals.sbcl)
   (:local-nicknames (:nu :numericals))
   (:import-from :numericals
-                :maybe-form-not-constant-error)
-  (:shadowing-import-from :numericals/array
-                          :*type*
-                          :1d-storage-array
-                          :array
-                          :arrayp
-                          :array-element-type
-                          :array-dimension
-                          :array-dimensions
-                          :array-total-size
-                          :numericals-array
-                          :make-array))
+                :maybe-form-not-constant-error                
+                :*type*)
+  #.(nconc '(:shadowing-import-from :numericals.array :1d-storage-array)
+           cl::+cl-array-symbols+))
 
 (in-package :numericals.internals)
 

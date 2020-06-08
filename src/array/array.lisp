@@ -1,6 +1,15 @@
+;;; The goal of this package is to provide a drop-in replacement to cl:simple-array
+;;; providing a wrapper around it, to enable fast numpy-view-like aref-ing.
 
-(cl:in-package :numericals/array)
-(cl:defstruct (numericals-array (:conc-name array-)) 
+;;; What should work without errors then includes:
+;;; - parametric types declared using cl:array
+;;; - array-dimensions, -dimension, -element-type, aref,
+
+;;; For parametric cl:array declarations to work, we need a deftype array.
+;;; This deftype-d array must reduce to the new array, meaning the actual
+;;; array type and the deftype wrapper need to have different names.
+(cl:in-package :numericals.array)
+(cl:defstruct (numericals-array (:conc-name array-))
   ;; TODO: Add more documentation with a proper example
   "- DIMENSIONS is a list of dimensions.
 - STRIDES is a list of strides along each dimension.
@@ -25,7 +34,7 @@
 ;; That does not work to maintain speeds! Because there are other declarations
 ;; and more things at play. Macroexpand the above defstruct form to take a look!
 
-(cl:in-package :numericals/array/internals)
+(cl:in-package :numericals.array.internals)
 
 ;;; CLOS is way too slow. For example, in the case of na:array-dimensions:
 ;; (defun foo ()
@@ -46,6 +55,7 @@
   `(member single-float double-float fixnum))
 
 (deftype na:array (&optional (element-type * element-type-p) (dimensions * dimensions-p))
+  (declare (ignore element-type dimensions))
   (when (or element-type-p dimensions-p)
     (warn "The NUMERICALS package has not been optimized for parametric types of NUMERICALS:ARRAY. So, parametric type declarations involving NUMERICALS:ARRAY have no effect."))
   'na:numericals-array)
