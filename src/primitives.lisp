@@ -174,7 +174,7 @@ Examples:
   (cond ((arrayp array-like)
          (nu:astype array-like type))
         ((cl:arrayp array-like)
-         (cl-array-array array-like))
+         (nu:astype (cl-array-array array-like) type)) ; TODO: Optimize this!
         (t (make-array (nu:shape array-like)
                        :element-type type
                        :initial-contents (cast type array-like)))))
