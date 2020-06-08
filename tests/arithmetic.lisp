@@ -120,8 +120,8 @@ def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
     (iter (for np-op in '(np.add np.subtract np.multiply np.divide))
           (for nu-op in '(nu:+ nu:- nu:* nu:/))
           (iter (for d in dim)
-                (for a = (pycall 'np.random.random (list 3 d)))
-                (for b = (pycall 'np.random.random (list 3 d)))
+                (for a = (nu:asarray (pycall 'np.random.random (list 3 d))))
+                (for b = (nu:asarray (pycall 'np.random.random (list 3 d))))
                 (is (np:allclose :a (pycall np-op a b)
                                  :b (funcall nu-op a b)))))))
 

@@ -8,9 +8,9 @@
         (for b = (if dim-b (first dim-b) 1)) 
         ;; We do not use a "for in" clause because we want to terminate at the
         ;; maximum of the two lists rather than the minimum
-        (for dim-a initially (nreverse dimensions-a)
+        (for dim-a initially (reverse dimensions-a)
              then (if dim-a (cdr dim-a) nil))
-        (for dim-b initially (nreverse dimensions-b)
+        (for dim-b initially (reverse dimensions-b)
              then (if dim-b (cdr dim-b) nil))
         (while (or dim-a dim-b))
         (collect (if (or (= a b) (= a 1) (= b 1))
@@ -180,16 +180,6 @@ keyword args. For example
   (define-broadcast-wrapper nu:- '%- '- 0)
   (define-broadcast-wrapper nu:* '%* '* 1)
   (define-broadcast-wrapper nu:/ '%/ '/ 1))
-
-(defparameter a (nu:zeros 1024 1024))
-(defparameter b (nu:zeros 1024 1024))
-(defparameter c (nu:zeros 1024 1024))
-
-(defun foo ()
-  (declare (optimize (speed 3)))
-  (loop :for i :below 1000
-     :do (nu:+ a b))
-  nil)
 
 ;; To be able to handle *max-broadcast-dimensions*, we need to generate %+ using a macro
 (progn

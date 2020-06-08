@@ -80,10 +80,7 @@
          ;; For an iterative version of calculating strides, 
          ;; see the function %broadcast-compatible-p
          ;; Perhaps, also https://ipython-books.github.io/46-using-stride-tricks-with-numpy/
-         ,(broadcast-strides num-dimensions 1
-                             reversed-actual-dimension-symbols
-                             reversed-required-dimension-symbols
-                             reversed-stride-symbols)
+         (dsetq ,stride-symbols (array-strides ,array))
          ;; (unless (= ,num-dimensions (length ,required-dimensions))
          ;;   (error "Length of ~D is supposed to be ~D" ,required-dimensions ,num-dimensions)))
          ;; The most obvious way to calculate the "true" index, as stated 
@@ -164,8 +161,13 @@
          (declare (optimize (speed 3))
                   (type (array single-float)
                         a b result))
-         ;; (print (list 'in ',name))
-         (let ((broadcast-dimensions (array-dimensions result)))
+         (let* ((broadcast-dimensions (array-dimensions result))
+                (a (if (equalp (array-dimensions a) broadcast-dimensions)
+                       a
+                       (broadcast-array a broadcast-dimensions)))
+                (b (if (equalp (array-dimensions b) broadcast-dimensions)
+                       b
+                       (broadcast-array b broadcast-dimensions))))
            (destructuring-bind ,bound-symbols broadcast-dimensions
              (declare (type (signed-byte 31) ,@bound-symbols))
              (with-broadcast ,type ,n ,stride-symbols-r r-ref result broadcast-dimensions

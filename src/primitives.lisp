@@ -171,11 +171,13 @@ Examples:
     (nu:zeros 100 :type type)))
 
 (defun nu:asarray (array-like &key (type *type*))
-  (if (arrayp array-like)
-      (nu:astype array-like type)
-      (make-array (nu:shape array-like)
-                  :element-type type
-                  :initial-contents (cast type array-like))))
+  (cond ((arrayp array-like)
+         (nu:astype array-like type))
+        ((cl:arrayp array-like)
+         (cl-array-array array-like))
+        (t (make-array (nu:shape array-like)
+                       :element-type type
+                       :initial-contents (cast type array-like)))))
 
 (defmacro nu:with-inline (&body body)
   `(let ()

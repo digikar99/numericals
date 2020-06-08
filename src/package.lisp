@@ -7,6 +7,8 @@
         :array-element-type
         :array-total-size
         :aref
+        :row-major-aref
+        :array-rank
         :make-array)
     :test 'equalp)
 
@@ -15,11 +17,11 @@
         :array-strides
         :array-storage-vector
         :1d-storage-array
-        :array-dimensions-length
         :array-offset
         :broadcast-array
-        :array-broadcast-p
-        :numericals-array)
+        :array-contiguous-p
+        :numericals-array
+        :cl-array-array)
     :test 'equalp)
 
 (defpackage :numericals
@@ -128,15 +130,15 @@
            :offset
            :dimensions
            :element-type)
-  #.(nconc '(:import-from :numericals             
-             :*type*
-             :*lookup-type-at-compile-time*
-             :numericals-array-element-type)
-           +cl-array-symbols+)
-  #.(nconc '(:export)
-           +cl-array-symbols+)
-  #.(nconc '(:export)
-           +numericals-array-symbols+))
+  #.(append '(:import-from :numericals
+              :*type*
+              :*lookup-type-at-compile-time*
+              :numericals-array-element-type)
+            +cl-array-symbols+)
+  #.(append '(:export)
+            +cl-array-symbols+)
+  #.(append '(:export)
+            +numericals-array-symbols+))
 
 ;; This package implements a multidimensional displaced array. This is required to implement ;; faster aref-ing. Without this, aref can be 50 times slower than numpy - since all numpy
 ;; does while arefing is provides a "view", without actually copying over the data.
@@ -178,10 +180,11 @@
         #+sbcl :numericals.sbcl)
   (:local-nicknames (:nu :numericals))
   (:import-from :numericals
-                :maybe-form-not-constant-error                
+                :maybe-form-not-constant-error
                 :*type*)
-  #.(nconc '(:shadowing-import-from :numericals.array :1d-storage-array)
-           cl::+cl-array-symbols+))
+  #.(append '(:shadowing-import-from :numericals.array)
+            cl::+cl-array-symbols+
+            cl::+numericals-array-symbols+))
 
 (in-package :numericals.internals)
 

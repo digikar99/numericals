@@ -26,7 +26,10 @@
   (offset (cl:progn
            (cl:error "OFFSET must be supplied during NUMERICALS-ARRAY initialization")
            0)
-          :type cl:fixnum))
+          :type cl:fixnum)
+  (contiguous-p
+   (cl:error "CONTIGUOUS-P must be supplied during NUMERICALS-ARRAY initialization")
+   :read-only cl:t))
 
 ;; Doing this is necessary to maintain speeds. (See next comment block.)
 ;; #+sbcl (declare (sb-ext:maybe-inline na:array-dimensions))
@@ -108,7 +111,8 @@ compiler-macros to generate efficient code.")
                               (nconc (cdr (maplist (lambda (l) (apply #'* l))
                                                    dimensions))
                                      '(1)))
-                 :offset offset)))
+                 :offset offset
+                 :contiguous-p t)))
     (cond ((and initial-element-p (typep initial-element 'function-designator))
            (let ((row-major-index 0))
              (declare (type (signed-byte 31) row-major-index))
@@ -247,10 +251,11 @@ compiler-macros to generate efficient code.")
                                                      (list 'quote dimensions)
                                                      dimensions)
                                     :strides ,strides
-                                    :offset ,offset))))
+                                    :offset ,offset
+                                    :contiguous-p t))))
       whole))
 
-(defun na:array-dimensions-length (na:numericals-array)
+(defun na:array-rank (na:numericals-array)
   (length (na:array-dimensions na:numericals-array)))
 (defun na:array-dimension (na:numericals-array axis-number)
   (elt (na:array-dimensions na:numericals-array) axis-number))
@@ -261,7 +266,7 @@ compiler-macros to generate efficient code.")
   (declare (optimize speed))
   (apply #'* (na:array-dimensions na:numericals-array)))
 
-(defvar *array-dimensions-length* nil
+(defvar *array-rank* nil
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
 (defvar *stream* nil
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
@@ -275,9 +280,9 @@ compiler-macros to generate efficient code.")
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
 
 (defmethod print-object ((object na:numericals-array) stream)
-  (let ((n (na:array-dimensions-length object)))
+  (let ((n (na:array-rank object)))
     (format stream "#~DA" n)
-    (let* ((*array-dimensions-length* (na:array-dimensions-length object))
+    (let* ((*array-rank* (na:array-rank object))
            (*array* object)
            (*stream* stream)
            (*row-major-index* (na:array-offset object))
@@ -287,7 +292,7 @@ compiler-macros to generate efficient code.")
 
 (defun print-numericals-array (axis)
   ;; TODO: take *print-pretty* into account
-  (if (= axis *array-dimensions-length*)
+  (if (= axis *array-rank*)
       (progn
         (write (aref *storage-vector* *row-major-index*) :stream *stream*)
         ;; (print (list *row-major-index* *current-dimension-stride*))
@@ -304,7 +309,10 @@ compiler-macros to generate efficient code.")
                (unless (= i axis-size-1) (write-char #\space *stream*))))
         ;; (print (list 'current *row-major-index* *current-dimension-stride*))
         (incf *row-major-index* *current-dimension-stride*)
-        (write-char #\) *stream*))))
+        (write-char #\) *stream*)
+        ;; TODO: a hacky way to make display manageable
+        (when (= (1+ axis) *array-rank*)
+          (write-char #\newline *stream*)))))
 
 (defun na:aref (na:numericals-array &rest subscripts)
   ;; TODO: Handle nested aref
@@ -321,17 +329,24 @@ compiler-macros to generate efficient code.")
     (array (apply #'aref na:numericals-array subscripts))
     (na:numericals-array
      (with-slots (storage-vector element-type strides offset dimensions) na:numericals-array
-       (if (length= subscripts dimensions)
+       (if (let ((use-cl-aref t))
+             (loop :for subscript :in subscripts
+                :while use-cl-aref
+                :unless (numberp subscript)
+                :do (setf use-cl-aref nil))
+             use-cl-aref)
            (aref storage-vector (loop :for stride :in strides
                                    :for subscript :in subscripts
                                    :summing (the (signed-byte 31)
                                                  (* (the (signed-byte 31) stride)
                                                     (the (signed-byte 31) subscript)))))
-           (multiple-value-bind (dimensions strides offset)
+           (multiple-value-bind (dimensions strides offset contiguous-p)
                (let ((d dimensions)
                      (s strides)
                      (new-offset 0)
-                     new-dimensions new-strides)
+                     new-dimensions new-strides
+                     (contiguous-p t)
+                     (saw-a-t nil))
                  (declare (type (signed-byte 31) new-offset))
                  (loop :for subscript :in subscripts
                     :do
@@ -341,20 +356,26 @@ compiler-macros to generate efficient code.")
                         (if (eq t subscript)
                             (progn
                               (setq new-dimensions (cons (car d) new-dimensions))
-                              (setq new-strides (cons car-s new-strides)))
+                              (setq new-strides (cons car-s new-strides))
+                              (setq saw-a-t t))
                             (setq new-offset (+ new-offset (* car-s (the (signed-byte 31)
-                                                                         subscript))))))
+                                                                         subscript)))))
+                        (when (and saw-a-t (typep subscript '(signed-byte 31)))
+                          (setq contiguous-p nil))
+                        (print contiguous-p))
                       (setq d (cdr d))
                       (setq s (cdr s)))
                  (values (nconc (nreverse new-dimensions) d)
                          (nconc (nreverse new-strides) s)
-                         new-offset))
+                         new-offset
+                         contiguous-p))
              (make-numericals-array
               :storage-vector storage-vector
               :element-type element-type
               :dimensions dimensions
               :strides strides
-              :offset offset)))))))
+              :offset offset
+              :contiguous-p contiguous-p)))))))
 
 (defun (setf na:aref) (new-value na:numericals-array &rest subscripts)
   ;; TODO: Handle nested aref
@@ -401,6 +422,12 @@ compiler-macros to generate efficient code.")
               :strides strides
               :offset offset)))))))
 
+(defun na:row-major-aref (na:numericals-array index)
+  (if (na:array-contiguous-p na:numericals-array)
+      (aref (na:array-storage-vector na:numericals-array)
+            (+ (na:array-offset na:numericals-array) index))
+      (error "non-contigous case not implemented")))
+
 (declaim (ftype (function (na:numericals-array)
                           (values simple-array fixnum))
                 na:1d-storage-array))
@@ -417,13 +444,39 @@ compiler-macros to generate efficient code.")
     (make-numericals-array :dimensions broadcast-dimensions
                            :element-type element-type
                            :strides
-                           (loop :for s :in strides
-                              :for b :in broadcast-dimensions
-                              :for d :in dimensions
-                              :collect
-                                (cond ((= b d) s)
-                                      ((= d 1) 0)
-                                      (t (error "~D of dimensions ~D cannot be broadcasted to dimensions ~D" na:numericals-array dimensions broadcast-dimensions))))
+                           ;; TODO: Handle strides for (1) -> (1 10) and (10) -> (1 10) broadcast cases
+                           (let* ((blen (length broadcast-dimensions))
+                                  (len (length dimensions))
+                                  (dimensions (append (make-list (- blen len)
+                                                                 :initial-element 1)
+                                                      dimensions))
+                                  (strides (append (make-list (- blen len)
+                                                              :initial-element 0)
+                                                   strides)))
+                             (loop :for s :in strides
+                                :for b :in broadcast-dimensions
+                                :for d :in dimensions
+                                :collect
+                                  (cond ((= b d) s)
+                                        ((= d 1) 0)
+                                        (t (error "~D of dimensions ~D cannot be broadcasted to dimensions ~D" na:numericals-array dimensions broadcast-dimensions)))))
                            :offset offset
-                           :storage-vector storage-vector)))
+                           :storage-vector storage-vector
+                           ;; TODO: Determine contiguity
+                           :contiguous-p nil)))
 
+(defun na:cl-array-array (array)
+  (declare (type array array))
+  ;; TODO: Take *type* into consideration
+  (let ((dimensions (array-dimensions array)))
+    (multiple-value-bind (storage-vector offset)
+        (1d-storage-array array)
+      (make-numericals-array :storage-vector storage-vector
+                             :offset offset
+                             :dimensions dimensions
+                             :element-type (array-element-type array)
+                             :strides (nreverse (let ((stride 1))
+                                                  (loop :for d :in (reverse dimensions)
+                                                     :collect stride
+                                                     :do (setq stride (* stride d)))))
+                             :contiguous-p t))))
