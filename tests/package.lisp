@@ -10,47 +10,48 @@
                 :pythonize)
   #.(append '(:shadowing-import-from :numericals)
             cl::+cl-array-symbols+))
-
-(defmethod pythonize :around (obj)
-  (if (typep obj 'array)
-      (progn
-        (when (and (config-var 'numpy-pickle-lower-bound)
-                   (config-var 'numpy-pickle-location)
-                   (>= (array-total-size obj)
-                       (config-var 'numpy-pickle-lower-bound)))
-          (let ((filename (concatenate 'string
-                                       (config-var 'numpy-pickle-location)
-                                       ".to." (write-to-string (incf *numpy-pickle-index*)))))
-            (numpy-file-format:store-array obj filename)
-            (return-from pythonize
-              (concatenate 'string "_py4cl_load_pickled_ndarray('"
-                           filename"')"))))
-        
-        ;; Handle case of empty array
-        (if (= (array-total-size obj) 0)
-            (return-from pythonize "[]"))
-        
-        ;; First convert the array to 1D [0,1,2,3,...]
-        (let ((array1d (with-output-to-string (stream)
-                         (write-char #\[ stream)
-                         (princ (pythonize (row-major-aref obj 0)) stream)
-                         (do ((indx 1 (1+ indx)))
-                             ((>= indx (array-total-size obj)))
-                           (write-char #\, stream)
-                           (princ (pythonize (row-major-aref obj indx)) stream))
-                         (write-char #\] stream))))
-          (if (= (array-rank obj) 1)
-              ;; 1D array return as-is
-              array1d
-              ;; Multi-dimensional array. Call NumPy to resize
-              (concatenate 'string
-                           "_py4cl_numpy.resize(" array1d ", "
-                           (pythonize (array-dimensions obj)) ")"))))
-      (call-next-method)))
-
 (in-package :numericals/tests)
 
-(defpymodule "numpy" nil :lisp-package "NP")
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defmethod pythonize :around (obj)
+             (if (typep obj 'array)
+                 (progn
+                   (when (and (config-var 'numpy-pickle-lower-bound)
+                              (config-var 'numpy-pickle-location)
+                              (>= (array-total-size obj)
+                                  (config-var 'numpy-pickle-lower-bound)))
+                     (let ((filename (concatenate 'string
+                                                  (config-var 'numpy-pickle-location)
+                                                  ".to." (write-to-string (incf *numpy-pickle-index*)))))
+                       (numpy-file-format:store-array obj filename)
+                       (return-from pythonize
+                         (concatenate 'string "_py4cl_load_pickled_ndarray('"
+                                      filename"')"))))
+                   
+                   ;; Handle case of empty array
+                   (if (= (array-total-size obj) 0)
+                       (return-from pythonize "[]"))
+                   
+                   ;; First convert the array to 1D [0,1,2,3,...]
+                   (let ((array1d (with-output-to-string (stream)
+                                    (write-char #\[ stream)
+                                    (princ (pythonize (row-major-aref obj 0)) stream)
+                                    (do ((indx 1 (1+ indx)))
+                                        ((>= indx (array-total-size obj)))
+                                      (write-char #\, stream)
+                                      (princ (pythonize (row-major-aref obj indx)) stream))
+                                    (write-char #\] stream))))
+                     (if (= (array-rank obj) 1)
+                         ;; 1D array return as-is
+                         array1d
+                         ;; Multi-dimensional array. Call NumPy to resize
+                         (concatenate 'string
+                                      "_py4cl_numpy.resize(" array1d ", "
+                                      (pythonize (array-dimensions obj)) ")"))))
+                 (call-next-method))))
+
+
+(py4cl2:defpymodule "numpy" nil :lisp-package "NP")
 (def-suite :numericals)
 
 (defparameter *write-to-readme* nil)
@@ -88,4 +89,6 @@
 (def-suite correctness :in :numericals)
 (def-suite speed :in :numericals)
 
-(defun run-correctness-tests () (5am:results-status (5am:run 'correctness)))
+(defun run-correctness-tests ()
+  (pyexec "import numpy as np")
+  (5am:results-status (5am:run 'correctness)))

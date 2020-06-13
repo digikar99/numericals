@@ -1,28 +1,44 @@
 (cl:in-package :cl)
 
-#.(alexandria:define-constant +cl-array-symbols+
-      '(:array :arrayp
-        :array-dimensions
-        :array-dimension
-        :array-element-type
-        :array-total-size
-        :aref
-        :row-major-aref
-        :array-rank
-        :make-array)
-    :test 'equalp)
+(defmacro eval-always (&body body)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     ,@body))
 
-#.(alexandria:define-constant +numericals-array-symbols+
-      '(:array-stride
-        :array-strides
-        :array-storage-vector
-        :1d-storage-array
-        :array-offset
-        :broadcast-array
-        :array-contiguous-p
-        :numericals-array
-        :cl-array-array)
-    :test 'equalp)
+(eval-always
+ (alexandria:define-constant +cl-array-symbols+
+     '(:array :arrayp
+       :array-dimensions
+       :array-dimension
+       :array-element-type
+       :array-total-size
+       :array-displacement
+       :1d-storage-array
+       :aref
+       :row-major-aref
+       :array-rank
+       :make-array)
+   :test 'equalp)
+
+ (alexandria:define-constant +numericals-array-symbols+
+     '(:array-stride
+       :array-strides
+       :array-displaced-to
+       :array-displaced-index-offset
+       :array-dim
+       :broadcast-array
+       :array-contiguous-p
+       :numericals-array
+       :make-numericals-array
+       :cl-array-array)
+   :test 'equalp)
+
+ (alexandria:define-constant +numericals-array-slots+
+     '(:displaced-index-offset
+       :displaced-to
+       :strides
+       :dim
+       :element-type)
+   :test 'equalp))
 
 (defpackage :numericals
   #.(cons :export +cl-array-symbols+)
@@ -124,12 +140,7 @@
 ;;; internal use.
 (defpackage :numericals.array
   (:use)
-  (:intern :make-numericals-array
-           :strides
-           :storage-vector
-           :offset
-           :dimensions
-           :element-type)
+  #.(append '(:intern) +numericals-array-slots+)
   #.(append '(:import-from :numericals
               :*type*
               :*lookup-type-at-compile-time*
@@ -145,8 +156,8 @@
 (defpackage :numericals.array.internals
   (:use :cl :alexandria :iterate :introspect-environment)
 
-  (:import-from #+sbcl :numericals.sbcl
-                :1d-storage-array)
+  (:shadowing-import-from #+sbcl :numericals.sbcl
+                          :1d-storage-array)
 
   (:import-from :trivial-types :function-designator)
   (:import-from :numericals                
@@ -154,13 +165,10 @@
                 :*lookup-type-at-compile-time*                
                 :numericals-array-element-type)
   
-  (:import-from :numericals.array
-                :make-numericals-array
-                :strides
-                :storage-vector
-                :offset
-                :dimensions
-                :element-type)
+  #.(append '(:shadowing-import-from :numericals.array
+              :make-numericals-array)
+            +numericals-array-symbols+
+            +numericals-array-slots+)
   (:local-nicknames (:na :numericals.array)))
 
 ;; How do we check for the presence of AVX2 support given that it's not a part of +features+ ?

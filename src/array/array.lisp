@@ -14,19 +14,21 @@
   "- DIMENSIONS is a list of dimensions.
 - STRIDES is a list of strides along each dimension.
 - OFFSETS is a list of offsets along each dimension."
-  (storage-vector
-   (cl:error "STORAGE-VECTOR must be supplied during NUMERICALS-ARRAY initialization."))
+  (displaced-to
+   (cl:error "DISPLACED-TO must be supplied during NUMERICALS-ARRAY initialization."))
   (element-type
    (cl:error "ELEMENT-TYPE must be supplied during NUMERICALS-ARRAY initialization."))
-  (dimensions
-   (cl:error "DIMENSIONS must be supplied during NUMERICALS-ARRAY initialization")
+  (dim
+   (cl:error "DIM must be supplied during NUMERICALS-ARRAY initialization")
    :read-only cl:t)
   (strides
    (cl:error "STRIDES must be supplied during NUMERICALS-ARRAY initialization"))
-  (offset (cl:progn
-           (cl:error "OFFSET must be supplied during NUMERICALS-ARRAY initialization")
-           0)
-          :type cl:fixnum)
+  ;; TODO: Rename this to displaced-index-offset
+  (displaced-index-offset
+   (cl:progn
+    (cl:error "DISPLACED-INDEX-OFFSET must be supplied during NUMERICALS-ARRAY initialization")
+    0)
+   :type cl:fixnum)
   (contiguous-p
    (cl:error "CONTIGUOUS-P must be supplied during NUMERICALS-ARRAY initialization")
    :read-only cl:t))
@@ -78,193 +80,212 @@ compiler-macros to generate efficient code.")
                                 (:element-type numericals-array-element-type)
                                 (:initial-element *)
                                 (:strides list)
-                                (:offset fixnum)
-                                (:initial-contents *))
+                                (:displaced-index-offset fixnum)
+                                (:initial-contents *)
+                                (:displaced-to simple-array))
                           (values na:numericals-array &optional))
                 na:make-array))
-(defun na:make-array
-    (dimensions
-     &key (element-type *type*)
-       (initial-element nil initial-element-p)
-       (strides nil strides-p)
-       (offset 0)
-       (initial-contents nil initial-contents-p))
-  ;; TODO: Handle the case with initial-contents
-  ;; TODO: Take offset and strides into account while calculating dimensions
+
+(defun na:make-array (dimensions &rest args
+                      &key (element-type *type*)
+                        (initial-element nil initial-element-p)
+                        (initial-contents nil initial-contents-p)
+                        (strides nil strides-p)
+                        adjustable fill-pointer
+                        (displaced-to nil displaced-to-p)
+                        (displaced-index-offset 0))
+  ;; TODO: Handle adjustable
+  ;; TODO: Handle fill-pointer
+  ;; TODO: Sanitize displaced-to and perhaps, displaced-index-offset
+  ;; TODO: Take displaced-index-offset and strides into account while calculating dimensions
   (when (and initial-element-p initial-contents-p)
     (error "Can't specify both :INITIAL-ELEMENT and :INITIAL-CONTENTS"))
-  (let* ((storage-vector-initial-element
+  (let* ((displaced-to-initial-element
           (cond ((and initial-element-p
                       (typep initial-element 'function-designator))
                  (coerce 0 element-type))
                 (initial-element-p initial-element)
                 (t (coerce 0 element-type))))
-         (storage-vector (make-array (apply #'* dimensions)
-                                     :initial-element storage-vector-initial-element
-                                     :element-type element-type))
+         (displaced-to (or displaced-to
+                           (make-array (apply #'* dimensions)
+                                       :initial-element displaced-to-initial-element
+                                       :element-type element-type)))
          (array (make-numericals-array
-                 :storage-vector storage-vector
+                 :displaced-to displaced-to
                  :element-type element-type
-                 :dimensions dimensions
+                 :dim dimensions
                  :strides (if strides-p
                               strides
                               (nconc (cdr (maplist (lambda (l) (apply #'* l))
                                                    dimensions))
                                      '(1)))
-                 :offset offset
+                 :displaced-index-offset displaced-index-offset
                  :contiguous-p t)))
     (cond ((and initial-element-p (typep initial-element 'function-designator))
            (let ((row-major-index 0))
              (declare (type (signed-byte 31) row-major-index))
              (apply #'map-product ; TODO: This unnecessarily collects the values.
                     (lambda (&rest subscripts)
-                      (setf (aref storage-vector row-major-index)
+                      (setf (aref displaced-to row-major-index)
                             (apply initial-element subscripts))
                       (incf row-major-index))
                     (loop :for d fixnum :in dimensions
                        :collect (iota d)))))
           (initial-contents-p
            (let ((row-major-index 0))
-             (labels ((set-storage-vector (elt)
+             (labels ((set-displaced-to (elt)
                         (if (listp elt)
                             (loop :for e :in elt
-                               :do (set-storage-vector e))
+                               :do (set-displaced-to e))
                             (progn
-                              (setf (aref storage-vector row-major-index) elt)
+                              (setf (aref displaced-to row-major-index) elt)
                               (incf row-major-index)))))
-               (set-storage-vector initial-contents)))))
+               (set-displaced-to initial-contents)))))
     array))
 
 (defun unable-to-optimize-call-note (callee reason &rest reason-args)
   (format *error-output* "~&; note: Unable to optimize call to ~S because~%;   ~D"
           callee (apply #'format nil reason reason-args)))
 
-(define-compiler-macro na:make-array
-    (&whole whole dimensions
-            &key (element-type *type* element-type-p)
-            (initial-element nil initial-element-p)
-            (strides nil strides-p)
-            (offset 0)
-            (initial-contents nil initial-contents-p)
-            &environment env)
-  ;; TODO: Write a proper compiler macro!!!
-  (when (and initial-element-p initial-contents-p)
-    (error "Can't specify both :INITIAL-ELEMENT and :INITIAL-CONTENTS"))
-  (if (= 3 (policy-quality 'speed env))
-      (flet ((utocn (reason &rest reason-args)
-               (apply #'unable-to-optimize-call-note
-                      'na:make-array reason reason-args)))
+;; (define-compiler-macro na:make-array
+;;     (&whole whole dimensions
+;;             &key (element-type *type* element-type-p)
+;;             (initial-element nil initial-element-p)
+;;             (strides nil strides-p)
+;;             (displaced-index-offset 0)
+;;             (initial-contents nil initial-contents-p)
+;;             &environment env)
+;;   ;; TODO: Write a proper compiler macro!!!
+;;   (when (and initial-element-p initial-contents-p)
+;;     (error "Can't specify both :INITIAL-ELEMENT and :INITIAL-CONTENTS"))
+;;   (if (= 3 (policy-quality 'speed env))
+;;       (flet ((utocn (reason &rest reason-args)
+;;                (apply #'unable-to-optimize-call-note
+;;                       'na:make-array reason reason-args)))
 
-        (when initial-contents-p
-          (utocn "INITIAL-CONTENTS case has not been optimized yet")
-          (return-from na:make-array whole))
-        
-        (let ((element-type-known-p t)
-              (dimensions-known-p t)
-              (initial-element-known-p t)
-              (make-array-known-p t)
-              storage-vector)
-          ;; Handle element-type
-          (setq element-type                
-                (if element-type-p
-                    (if (constantp element-type env)
-                        (constant-form-value element-type env)
-                        (progn
-                          (utocn "ELEMENT-TYPE ~D could not be determined to be a constant" element-type)
-                          (setq element-type-known-p nil)
-                          element-type))
-                    (if *lookup-type-at-compile-time*
-                        *type*
-                        (progn
-                          (utocn "Not using the compile-time value of *TYPE* because *LOOKUP-TYPE-AT-COMPILE-TIME* is NIL at compile-time")
-                          (setq element-type-known-p nil)
-                          '*type*))))
-          ;; Handle dimensions
-          (setq dimensions
-                (if (constantp dimensions env)
-                    (constant-form-value dimensions env)
-                    (progn
-                      (utocn "DIMENSIONS ~D could not be determined to be a constant" dimensions)
-                      (setq dimensions-known-p nil)
-                      dimensions)))
-          
-          (setq initial-element
-                (if initial-element-p
-                    (if (constantp initial-element env)
-                        (if element-type-known-p
-                            (coerce (constant-form-value initial-element
-                                                         env)
-                                    element-type)
-                            (progn
-                              (utocn "INITIAL-ELEMENT cannot be determined at compile-time without knowing ELEMENT-TYPE")
-                              (setq initial-element-known-p nil)
-                              `(coerce ,(constant-form-value initial-element
-                                                             env)
-                                       ;; TODO: check this
-                                       ,element-type)))
-                        (progn
-                          (utocn "INITIAL-ELEMENT ~D could not be determined to be a constant"
-                                 initial-element)
-                          (setq initial-element-known-p nil)
-                          `(coerce ,initial-element ,(if element-type-known-p
-                                                         (list 'quote element-type)
-                                                         element-type))))
-                    (if element-type-known-p
-                        (coerce 0 element-type)
-                        (progn
-                          (utocn "INITIAL-ELEMENT cannot be determined at compile-time without knowing ELEMENT-TYPE")
-                          (setq initial-element-known-p nil)
-                          `(coerce 0 ,(list 'quote element-type))))))
+;;         (when initial-contents-p
+;;           (utocn "INITIAL-CONTENTS case has not been optimized yet")
+;;           (return-from na:make-array whole))
 
-          (let ((storage-vector
-                 (cond ((and initial-element-known-p
-                             element-type-known-p
-                             dimensions-known-p)
-                        (make-array (apply #'* dimensions)
-                                    :initial-element initial-element
-                                    :element-type element-type))
-                       (t
-                        (utocn "STORAGE-VECTOR could not be allocated at compile-time without knowing all of INITIAL-ELEMENT, ELEMENT-TYPE and DIMENSIONS")
-                        (setq make-array-known-p nil)
-                        `(make-array ,(if dimensions-known-p
-                                          (apply #'* dimensions)
-                                          `(apply #'* ,dimensions))
-                                     :initial-element ,initial-element
-                                     :element-type ,(if element-type-known-p
-                                                        (list 'quote element-type)
-                                                        element-type)))))
-                (strides (if strides-p
-                             strides
-                             (if dimensions-known-p
-                                 (list 'quote
-                                       (nconc (cdr (maplist (lambda (l) (apply #'* l))
-                                                            dimensions))
-                                              '(1)))
-                                 `(nconc (cdr (maplist (lambda (l) (apply #'* l))
-                                                       ,dimensions))
-                                         '(1))))))
-            `(make-numericals-array :storage-vector ,storage-vector
-                                    :element-type ,(if element-type-known-p
-                                                       (list 'quote element-type)
-                                                       element-type)
-                                    :dimensions ,(if dimensions-known-p
-                                                     (list 'quote dimensions)
-                                                     dimensions)
-                                    :strides ,strides
-                                    :offset ,offset
-                                    :contiguous-p t))))
-      whole))
+;;         (let ((element-type-known-p t)
+;;               (dimensions-known-p t)
+;;               (initial-element-known-p t)
+;;               (make-array-known-p t)
+;;               displaced-to)
+;;           ;; Handle element-type
+;;           (setq element-type                
+;;                 (if element-type-p
+;;                     (if (constantp element-type env)
+;;                         (constant-form-value element-type env)
+;;                         (progn
+;;                           (utocn "ELEMENT-TYPE ~D could not be determined to be a constant" element-type)
+;;                           (setq element-type-known-p nil)
+;;                           element-type))
+;;                     (if *lookup-type-at-compile-time*
+;;                         *type*
+;;                         (progn
+;;                           (utocn "Not using the compile-time value of *TYPE* because *LOOKUP-TYPE-AT-COMPILE-TIME* is NIL at compile-time")
+;;                           (setq element-type-known-p nil)
+;;                           '*type*))))
+;;           ;; Handle dimensions
+;;           (setq dimensions
+;;                 (if (constantp dimensions env)
+;;                     (constant-form-value dimensions env)
+;;                     (progn
+;;                       (utocn "DIMENSIONS ~D could not be determined to be a constant" dimensions)
+;;                       (setq dimensions-known-p nil)
+;;                       dimensions)))
+
+;;           (setq initial-element
+;;                 (if initial-element-p
+;;                     (if (constantp initial-element env)
+;;                         (if element-type-known-p
+;;                             (coerce (constant-form-value initial-element
+;;                                                          env)
+;;                                     element-type)
+;;                             (progn
+;;                               (utocn "INITIAL-ELEMENT cannot be determined at compile-time without knowing ELEMENT-TYPE")
+;;                               (setq initial-element-known-p nil)
+;;                               `(coerce ,(constant-form-value initial-element
+;;                                                              env)
+;;                                        ;; TODO: check this
+;;                                        ,element-type)))
+;;                         (progn
+;;                           (utocn "INITIAL-ELEMENT ~D could not be determined to be a constant"
+;;                                  initial-element)
+;;                           (setq initial-element-known-p nil)
+;;                           `(coerce ,initial-element ,(if element-type-known-p
+;;                                                          (list 'quote element-type)
+;;                                                          element-type))))
+;;                     (if element-type-known-p
+;;                         (coerce 0 element-type)
+;;                         (progn
+;;                           (utocn "INITIAL-ELEMENT cannot be determined at compile-time without knowing ELEMENT-TYPE")
+;;                           (setq initial-element-known-p nil)
+;;                           `(coerce 0 ,(list 'quote element-type))))))
+
+;;           (let ((displaced-to
+;;                  (cond ((and initial-element-known-p
+;;                              element-type-known-p
+;;                              dimensions-known-p)
+;;                         (make-array (apply #'* dimensions)
+;;                                     :initial-element initial-element
+;;                                     :element-type element-type))
+;;                        (t
+;;                         (utocn "DISPLACED-TO could not be allocated at compile-time without knowing all of INITIAL-ELEMENT, ELEMENT-TYPE and DIMENSIONS")
+;;                         (setq make-array-known-p nil)
+;;                         `(make-array ,(if dimensions-known-p
+;;                                           (apply #'* dimensions)
+;;                                           `(apply #'* ,dimensions))
+;;                                      :initial-element ,initial-element
+;;                                      :element-type ,(if element-type-known-p
+;;                                                         (list 'quote element-type)
+;;                                                         element-type)))))
+;;                 (strides (if strides-p
+;;                              strides
+;;                              (if dimensions-known-p
+;;                                  (list 'quote
+;;                                        (nconc (cdr (maplist (lambda (l) (apply #'* l))
+;;                                                             dimensions))
+;;                                               '(1)))
+;;                                  `(nconc (cdr (maplist (lambda (l) (apply #'* l))
+;;                                                        ,dimensions))
+;;                                          '(1))))))
+;;             `(make-numericals-array :displaced-to ,displaced-to
+;;                                     :element-type ,(if element-type-known-p
+;;                                                        (list 'quote element-type)
+;;                                                        element-type)
+;;                                     :dim ,(if dimensions-known-p
+;;                                                      (list 'quote dimensions)
+;;                                                      dimensions)
+;;                                     :strides ,strides
+;;                                     :displaced-index-offset ,displaced-index-offset
+;;                                     :contiguous-p t))))
+;;       whole))
 
 (defun na:array-rank (na:numericals-array)
   (length (na:array-dimensions na:numericals-array)))
 (defun na:array-dimension (na:numericals-array axis-number)
   (elt (na:array-dimensions na:numericals-array) axis-number))
+(defun na:array-dimensions (na:numericals-array)
+  (copy-list (na:array-dim na:numericals-array)))
 (defun na:array-stride (na:numericals-array axis-number)
   (elt (na:array-strides na:numericals-array) axis-number))
 (declaim (ftype (function (na:numericals-array) fixnum) na:array-total-size))
 (defun na:array-total-size (na:numericals-array)
   (declare (optimize speed))
   (apply #'* (na:array-dimensions na:numericals-array)))
+
+(defun na:array-displacement (na:numericals-array)
+  (declare (optimize speed)
+           (type na:numericals-array na:numericals-array))
+  (values (na:array-displaced-to na:numericals-array)
+          (na:array-displaced-index-offset na:numericals-array)))
+(defun na:1d-storage-array (na:numericals-array)
+  (declare (optimize speed)
+           (type na:numericals-array na:numericals-array))
+  (values (na:array-displaced-to na:numericals-array)
+          (na:array-displaced-index-offset na:numericals-array)))
 
 (defvar *array-rank* nil
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
@@ -274,7 +295,7 @@ compiler-macros to generate efficient code.")
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
 (defvar *row-major-index* nil
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
-(defvar *storage-vector* nil
+(defvar *displaced-to* nil
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
 (defvar *current-dimension-stride* nil
   "Used by PRINT-OBJECT to print NUMERICALS/ARRAY:NUMERICALS-ARRAY")
@@ -285,8 +306,8 @@ compiler-macros to generate efficient code.")
     (let* ((*array-rank* (na:array-rank object))
            (*array* object)
            (*stream* stream)
-           (*row-major-index* (na:array-offset object))
-           (*storage-vector* (na:array-storage-vector object))
+           (*row-major-index* (na:array-displaced-index-offset object))
+           (*displaced-to* (na:array-displaced-to object))
            (*current-dimension-stride* (na:array-stride object 0)))
       (print-numericals-array 0))))
 
@@ -294,7 +315,7 @@ compiler-macros to generate efficient code.")
   ;; TODO: take *print-pretty* into account
   (if (= axis *array-rank*)
       (progn
-        (write (aref *storage-vector* *row-major-index*) :stream *stream*)
+        (write (aref *displaced-to* *row-major-index*) :stream *stream*)
         ;; (print (list *row-major-index* *current-dimension-stride*))
         (incf *row-major-index* *current-dimension-stride*))
       (progn
@@ -316,7 +337,7 @@ compiler-macros to generate efficient code.")
 
 (defun na:aref (na:numericals-array &rest subscripts)
   ;; TODO: Handle nested aref
-  ;; TODO: Handle offsets
+  ;; TODO: Handle displaced-index-offsets
   ;; TODO: Handle non-integer subscripts
   ;; TODO [hard?]: Introduce parametric types in CL.
   ;;  In the special case where this reduces to CL:AREF, this function is over 20 times slower.
@@ -328,26 +349,26 @@ compiler-macros to generate efficient code.")
   (etypecase na:numericals-array
     (array (apply #'aref na:numericals-array subscripts))
     (na:numericals-array
-     (with-slots (storage-vector element-type strides offset dimensions) na:numericals-array
+     (with-slots (displaced-to element-type strides displaced-index-offset dimensions) na:numericals-array
        (if (let ((use-cl-aref t))
              (loop :for subscript :in subscripts
                 :while use-cl-aref
                 :unless (numberp subscript)
                 :do (setf use-cl-aref nil))
              use-cl-aref)
-           (aref storage-vector (loop :for stride :in strides
-                                   :for subscript :in subscripts
-                                   :summing (the (signed-byte 31)
-                                                 (* (the (signed-byte 31) stride)
-                                                    (the (signed-byte 31) subscript)))))
-           (multiple-value-bind (dimensions strides offset contiguous-p)
+           (aref displaced-to (loop :for stride :in strides
+                                 :for subscript :in subscripts
+                                 :summing (the (signed-byte 31)
+                                               (* (the (signed-byte 31) stride)
+                                                  (the (signed-byte 31) subscript)))))
+           (multiple-value-bind (dimensions strides displaced-index-offset contiguous-p)
                (let ((d dimensions)
                      (s strides)
-                     (new-offset 0)
+                     (new-displaced-index-offset 0)
                      new-dimensions new-strides
                      (contiguous-p t)
                      (saw-a-t nil))
-                 (declare (type (signed-byte 31) new-offset))
+                 (declare (type (signed-byte 31) new-displaced-index-offset))
                  (loop :for subscript :in subscripts
                     :do
                       (let ((car-s (car s)))
@@ -358,8 +379,8 @@ compiler-macros to generate efficient code.")
                               (setq new-dimensions (cons (car d) new-dimensions))
                               (setq new-strides (cons car-s new-strides))
                               (setq saw-a-t t))
-                            (setq new-offset (+ new-offset (* car-s (the (signed-byte 31)
-                                                                         subscript)))))
+                            (setq new-displaced-index-offset (+ new-displaced-index-offset (* car-s (the (signed-byte 31)
+                                                                                                         subscript)))))
                         (when (and saw-a-t (typep subscript '(signed-byte 31)))
                           (setq contiguous-p nil))
                         (print contiguous-p))
@@ -367,38 +388,38 @@ compiler-macros to generate efficient code.")
                       (setq s (cdr s)))
                  (values (nconc (nreverse new-dimensions) d)
                          (nconc (nreverse new-strides) s)
-                         new-offset
+                         new-displaced-index-offset
                          contiguous-p))
              (make-numericals-array
-              :storage-vector storage-vector
+              :displaced-to displaced-to
               :element-type element-type
-              :dimensions dimensions
+              :dim dimensions
               :strides strides
-              :offset offset
+              :displaced-index-offset displaced-index-offset
               :contiguous-p contiguous-p)))))))
 
 (defun (setf na:aref) (new-value na:numericals-array &rest subscripts)
   ;; TODO: Handle nested aref
-  ;; TODO: Handle offsets
+  ;; TODO: Handle displaced-index-offsets
   ;; TODO: Handle non-integer subscripts
   (declare (optimize speed))
   (etypecase na:numericals-array
     (array (setf (apply #'aref na:numericals-array subscripts) new-value))
     (na:numericals-array
-     (with-slots (storage-vector element-type strides offset dimensions) na:numericals-array
+     (with-slots (displaced-to element-type strides displaced-index-offset dim) na:numericals-array
        (if (length= subscripts (na:array-dimensions na:numericals-array))
-           (setf (aref storage-vector (loop :for stride :in strides
-                                         :for subscript :in subscripts
-                                         :summing (the (signed-byte 31)
-                                                       (* (the (signed-byte 31) stride)
-                                                          (the (signed-byte 31) subscript)))))
+           (setf (aref displaced-to (loop :for stride :in strides
+                                       :for subscript :in subscripts
+                                       :summing (the (signed-byte 31)
+                                                     (* (the (signed-byte 31) stride)
+                                                        (the (signed-byte 31) subscript)))))
                  new-value)
-           (multiple-value-bind (dimensions strides offset)
-               (let ((d dimensions)
+           (multiple-value-bind (dim strides displaced-index-offset)
+               (let ((d dim)
                      (s strides)
-                     (new-offset 0)
+                     (new-displaced-index-offset 0)
                      new-dimensions new-strides)
-                 (declare (type (signed-byte 31) new-offset))
+                 (declare (type (signed-byte 31) new-displaced-index-offset))
                  (loop :for subscript :in subscripts
                     :do
                       (let ((car-s (car s)))
@@ -408,72 +429,63 @@ compiler-macros to generate efficient code.")
                             (progn
                               (setq new-dimensions (cons (car d) new-dimensions))
                               (setq new-strides (cons car-s new-strides)))
-                            (setq new-offset (+ new-offset (* car-s (the (signed-byte 31)
-                                                                         subscript))))))
+                            (setq new-displaced-index-offset (+ new-displaced-index-offset (* car-s (the (signed-byte 31)
+                                                                                                         subscript))))))
                       (setq d (cdr d))
                       (setq s (cdr s)))
                  (values (nconc (nreverse new-dimensions) d)
                          (nconc (nreverse new-strides) s)
-                         new-offset))
+                         new-displaced-index-offset))
              (make-numericals-array
-              :storage-vector storage-vector
+              :displaced-to displaced-to
               :element-type element-type
-              :dimensions dimensions
+              :dim dim
               :strides strides
-              :offset offset)))))))
+              :displaced-index-offset displaced-index-offset)))))))
 
 (defun na:row-major-aref (na:numericals-array index)
   (if (na:array-contiguous-p na:numericals-array)
-      (aref (na:array-storage-vector na:numericals-array)
-            (+ (na:array-offset na:numericals-array) index))
+      (aref (na:array-displaced-to na:numericals-array)
+            (+ (na:array-displaced-index-offset na:numericals-array) index))
       (error "non-contigous case not implemented")))
 
-(declaim (ftype (function (na:numericals-array)
-                          (values simple-array fixnum))
-                na:1d-storage-array))
-(defun na:1d-storage-array (na:numericals-array)
-  (declare (optimize speed)
-           (type na:numericals-array na:numericals-array))
-  (values (na:array-storage-vector na:numericals-array)
-          (na:array-offset na:numericals-array)))
-
 (defun na:broadcast-array (na:numericals-array broadcast-dimensions)
-  ;; TODO: Incorporate offsets!
+  ;; TODO: Incorporate displaced-index-offsets!
   ;; TODO: Doing this neatly requires changes in aref
-  (with-slots (dimensions element-type strides offset storage-vector) na:numericals-array
-    (make-numericals-array :dimensions broadcast-dimensions
+  (with-slots (dim element-type strides displaced-index-offset displaced-to) na:numericals-array
+    (make-numericals-array :dim broadcast-dimensions
                            :element-type element-type
                            :strides
                            ;; TODO: Handle strides for (1) -> (1 10) and (10) -> (1 10) broadcast cases
                            (let* ((blen (length broadcast-dimensions))
-                                  (len (length dimensions))
-                                  (dimensions (append (make-list (- blen len)
-                                                                 :initial-element 1)
-                                                      dimensions))
+                                  (len (length dim))
+                                  (dim (append (make-list (- blen len)
+                                                          :initial-element 1)
+                                               dim))
                                   (strides (append (make-list (- blen len)
                                                               :initial-element 0)
                                                    strides)))
                              (loop :for s :in strides
                                 :for b :in broadcast-dimensions
-                                :for d :in dimensions
+                                :for d :in dim
                                 :collect
                                   (cond ((= b d) s)
                                         ((= d 1) 0)
-                                        (t (error "~D of dimensions ~D cannot be broadcasted to dimensions ~D" na:numericals-array dimensions broadcast-dimensions)))))
-                           :offset offset
-                           :storage-vector storage-vector
+                                        (t (error "~D of dim ~D cannot be broadcasted to dim ~D" na:numericals-array dim broadcast-dimensions)))))
+                           :displaced-index-offset displaced-index-offset
+                           :displaced-to displaced-to
                            ;; TODO: Determine contiguity
                            :contiguous-p nil)))
 
 (defun na:cl-array-array (array)
-  (declare (type array array))
+  (declare (type cl:array array))
   ;; TODO: Take *type* into consideration
   (let ((dimensions (array-dimensions array)))
-    (multiple-value-bind (storage-vector offset)
+    (multiple-value-bind (displaced-to displaced-index-offset)
         (1d-storage-array array)
-      (make-numericals-array :storage-vector storage-vector
-                             :offset offset
-                             :dimensions dimensions
+      (make-numericals-array :displaced-to displaced-to
+                             :displaced-index-offset displaced-index-offset
+                             :dim dimensions
                              :element-type (array-element-type array)
                              :strides (nreverse (let ((stride 1))
                                                   (loop :for d :in (reverse dimensions)

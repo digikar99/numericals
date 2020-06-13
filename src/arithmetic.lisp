@@ -58,6 +58,7 @@
     (array (if (eq type (array-element-type object))
                object
                (nu:astype object type)))
+    (cl:array (nu:astype (cl-array-array object) type))
     (number (make-array '(1) :element-type type
                         :initial-element (cast type object)))))
 
@@ -104,7 +105,7 @@ keyword args. For example
                             (assert (not out-supplied-p) nil
                                     "Cannot supply result in ~D when no argument is array-like."
                                     out)
-                            (coerce (apply ',base-operation args) type))))))
+                            (coerce (apply ',base-operation (print args)) type))))))
 
                 (define-compiler-macro ,name (&whole whole &rest orig-args &environment env)
                   (let ((optimizable-p (= 3 (policy-quality 'speed env))))
