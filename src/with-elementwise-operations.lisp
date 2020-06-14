@@ -55,7 +55,7 @@ Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
                                  collect (translate-to-base elt loop-var element-type)))))
         (t (error "Non-exhaustive!"))))
 
-(defmacro nu:with-elementwise-operations (element-type result-array body)
+(defmacro with-elementwise-operations (element-type result-array body)
   "\"Open codes\" BODY using SIMD operations. BODY is expected to be made up of 
 CAR-symbols having corresponding SIMD-OP or REST symbols are expected to be bound 
 to an array. An example translation is:
@@ -114,27 +114,59 @@ This is expanded to a form effective as:
 (defun single-+ (result a b)
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
-  (nu:with-elementwise-operations 'single-float result (+ a b)))
+  (with-elementwise-operations 'single-float result (+ a b)))
 
 (defun single-- (result a b)
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
-  (nu:with-elementwise-operations 'single-float result (- a b)))
+  (with-elementwise-operations 'single-float result (- a b)))
 
 (defun single-* (result a b)
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
-  (nu:with-elementwise-operations 'single-float result (* a b)))
+  (with-elementwise-operations 'single-float result (* a b)))
 
 (defun single-/ (result a b)
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
-  (nu:with-elementwise-operations 'single-float result (/ a b)))
+  (with-elementwise-operations 'single-float result (/ a b)))
 
 (defun single-sqrt (result a)
   (declare (optimize (speed 3))
            (type (array single-float) result a))
-  (nu:with-elementwise-operations 'single-float result (sqrt a)))
+  (with-elementwise-operations 'single-float result (sqrt a)))
+
+(defmacro nu:weop (out expression)
+  "\"Open codes\" EXPRESSION using SIMD operations. EXPRESSION is expected to be made up of 
+CAR-symbols having corresponding SIMD-OP or REST symbols are expected to be bound 
+to an array. An example translation is:
+  (weop result (+ a (* b c))) 
+This is expanded to a form effective as: 
+  (setf (simd-single-1d-aref result loop-var)
+        (simd-single-+ (simd-single-1d-aref a loop-var)
+                       (simd-single-* (simd-single-1d-aref b loop-var)
+                                      (simd-single-1d-aref c loop-var))))"
+  (let ((symbols (collect-symbols expression))
+        (new-out (gensym)))
+    `(let ((,new-out (or ,out (nu:zeros (array-dimensions ,(car symbols))
+                                        :type (array-element-type ,(car symbols))))))
+       (declare (optimize speed))
+       ,@(loop :for s :in symbols
+            :collect `(assert (eq (array-element-type ,new-out)
+                                  (array-element-type ,s))
+                              nil
+                              "Elementwise operations cannot be performed on arrays ~A and ~A"
+                              ,new-out ,s))
+       ,@(loop :for s :in symbols
+            :collect `(assert (equalp (array-dimensions ,new-out)
+                                      (array-dimensions ,s))
+                              nil
+                              "Elementwise operations cannot be performed on arrays ~A and ~A"
+                              ,new-out ,s))
+       (ecase (array-element-type ,new-out)
+         (single-float
+          (with-elementwise-operations 'single-float ,new-out ,expression)))
+       ,new-out)))
 
 (defun-c non-broadcast-operation (operation type)
   (intern (concatenate 'string

@@ -45,7 +45,7 @@
   (:export
 
    :with-broadcast
-   :with-elementwise-operations
+   :weop ; with-elementwise-operations
    :with-inline
    :with-array
    :with-arrays*

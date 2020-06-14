@@ -158,7 +158,7 @@ keyword args. For example
                                     args))
                           (return-from ,name
                             (let ((base-operation ',base-operation))
-                              `(nu:with-elementwise-operations
+                              `(with-elementwise-operations
                                    'single-float ,out (,base-operation ,@args)))))))
                     
                     ;; args is a list ; TODO: What were we trying to do here?
@@ -329,7 +329,7 @@ keyword args. For example
                                          (equalp arg-type out-type)))
                               (return-from ,name
                                 (let ((base-operation ',base-operation))
-                                  `(nu:with-elementwise-operations
+                                  `(with-elementwise-operations
                                        'single-float ,out (,base-operation ,arg))))))))
                     whole)
                   (progn

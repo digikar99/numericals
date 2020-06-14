@@ -17,6 +17,77 @@ PS: This library began as a [reddit post](https://www.reddit.com/r/lisp/comments
 
 You should probably use the latest [SBCL (get from git)](https://github.com/sbcl/sbcl), at least SBCL-2.0.4. The build is fairly easy: `sh make.sh && sh run-sbcl.sh # or install.sh`.
 
+## Why not matlisp?
+
+Because ...
+
+```lisp
+(let ((a (zeros 1000 1000))
+      (b (zeros 1000 1000)))
+  (declare (optimize (speed 3)))
+  (time (loop :for i :below 1000 :do (m+ a b))))
+; Evaluation took:
+;   4.001 seconds of real time
+;   4.004066 seconds of total run time (3.807962 user, 0.196104 system)
+;   [ Run times consist of 0.361 seconds GC time, and 3.644 seconds non-GC time. ]
+;   100.07% CPU
+;   8,828,045,634 processor cycles
+;   8,000,016,000 bytes consed
+NIL
+```
+
+```lisp
+(let ((a (nu:zeros '(1000 1000)))
+      (b (nu:zeros '(1000 1000))))
+  (time (loop :for i :below 1000 :do (nu:+ a b))))
+; Evaluation took:
+;   1.727 seconds of real time
+;   1.728858 seconds of total run time (1.556757 user, 0.172101 system)
+;   [ Run times consist of 0.199 seconds GC time, and 1.530 seconds non-GC time. ]
+;   100.12% CPU
+;   3,810,797,604 processor cycles
+;   4,000,343,680 bytes consed
+NIL
+
+(let ((a (nu:zeros '(1000 1000)))   ; There are other macros with help which automatically declare
+      (b (nu:zeros '(1000 1000)))   ; things for you as well, though more work still needs to be 
+      (c (nu:zeros '(1000 1000))))  ; done to optimize for more special cases.
+  (time (loop :for i :below 1000 :do
+             (nu:weop c (+ a b))))) ; elementwise operations
+; Evaluation took:
+;   0.775 seconds of real time
+;   0.775492 seconds of total run time (0.775492 user, 0.000000 system)
+;   100.00% CPU
+;   1,712,306,568 processor cycles
+;   131,072 bytes consed
+NIL
+```
+
+And I didn't see any equivalent of `nu:aref` there:
+
+```lisp
+(let ((a (nu:asarray '((1 2 3) (4 5 6)))))
+  (nu:aref a t 2))
+;=> #1A(3.0 6.0)
+```
+
+
+To enable fast numpy-like view-based slicing, we have provided a drop-in replacement for common lisp arrays. Besides being used like usual specialized arrays, these include an additional `strides` slot that enables the slicing.
+
+Also broadcasting:
+
+```lisp
+(nu:+ (nu:asarray '((1 2 3)))
+      (nu:asarray '((1) (2))))
+; #2A((2.0 3.0 4.0)
+;  (3.0 4.0 5.0)
+; )
+```
+
+## What about others?
+
+I don't know. There are [many others](https://www.cliki.net/linear%20algebra).
+
 ## The Plan
 
 The plan is to enable number crunching using this, coupled with py4cl/2. For "light" array
@@ -49,7 +120,7 @@ Operation list:
 - astype (unoptimized)
 - shape (unoptimized)
 
-- with-simd-operations [macro]
+- weop [macro]
 - with-inline [macro]
 - with-array / `with-arrays*` [macro]
 - with-constant / with-constants [macro]
@@ -71,13 +142,15 @@ this translation
 the reason is because numpy provides array slices, and I do not know the equivalent for common
 lisp based systems.
 - [SIMD Medium] Speeding up `concatenate` for axis>0.
-- [SIMD Easy] Determining and Implementing Trigonometric functions 
+- [SIMD Easy] Determining and Implementing Trigonometric functions
+- [SIMD Easy] Implementing bit-wise boolean operators
 - [Easy] Implementing package (perhaps not based on SIMD) for non-SBCL systems
 - [Easy] Adding tests for not-yet-tested things
 - [Medium] Adding more compiler macros and checks for greater efficiency
 - [Hard] Implementing `asarray` for arrays nested inside lists of lists reasonably efficiently
 
 ## Benchmarks
+
 
 
 
@@ -103,47 +176,47 @@ during compilation time)
 <tr>
   <td>ONES
   </td>
-<td>9.78x
+<td>7.52∞x
 </td>
-<td>7.84x
+<td>4.91∞x
 </td>
-<td>0.38x
+<td>0.47∞x
 </td>
-<td>0.27x
+<td>0.27∞x
 </td>
-<td>0.40x
+<td>0.28∞x
 </td>
 </tr>
 <tr>
   <td>ZEROS
   </td>
-<td>3.73x
+<td>3.14∞x
 </td>
-<td>2.97x
+<td>1.98∞x
 </td>
-<td>0.19x
+<td>0.16∞x
 </td>
-<td>0.21x
+<td>0.21∞x
 </td>
-<td>0.00x
+<td>0.00∞x
 </td>
 </tr>
 <tr>
   <td>EMPTY
   </td>
-<td>3.67x
+<td>3.64∞x
 </td>
-<td>2.79x
+<td>2.89∞x
 </td>
-<td>0.08x
+<td>0.09∞x
 </td>
-<td>0.00x
+<td>0.00∞x
 </td>
-<td>0.00x
+<td>0.00∞x
 </td>
 </tr>
 <tr>
-  <th>Non-broadcast array operations
+  <th>Non-broadcast array operations (If you know you do not need broadcast, you might want to try using WEOP that is specialized for element-wise operations)
   </th>
 <th>10
 </th>
@@ -159,57 +232,57 @@ during compilation time)
 <tr>
   <td>+
   </td>
-<td>0.80x
+<td>0.75x
 </td>
-<td>0.76x
+<td>0.69x
 </td>
-<td>0.61x
+<td>0.55x
 </td>
-<td>0.91x
+<td>0.79x
 </td>
-<td>0.87x
+<td>0.84x
 </td>
 </tr>
 <tr>
   <td>-
   </td>
-<td>0.88x
+<td>0.91x
 </td>
-<td>0.71x
+<td>0.72x
 </td>
-<td>0.57x
+<td>0.52x
 </td>
-<td>0.78x
+<td>0.76x
 </td>
-<td>0.80x
+<td>0.83x
 </td>
 </tr>
 <tr>
   <td>*
   </td>
-<td>0.83x
+<td>0.90x
 </td>
-<td>0.64x
+<td>0.69x
 </td>
-<td>0.51x
+<td>0.57x
 </td>
-<td>0.75x
+<td>0.78x
 </td>
-<td>0.79x
+<td>0.85x
 </td>
 </tr>
 <tr>
   <td>/
   </td>
-<td>0.73x
+<td>0.76x
 </td>
-<td>0.68x
+<td>0.71x
 </td>
-<td>0.67x
+<td>0.63x
 </td>
-<td>0.70x
+<td>0.77x
 </td>
-<td>0.73x
+<td>0.83x
 </td>
 </tr>
 <tr>
@@ -230,57 +303,57 @@ on actual array dimensions)
 <tr>
   <td>+
   </td>
-<td>0.56x
+<td>0.63x
 </td>
-<td>0.44x
+<td>0.48x
 </td>
 <td>0.17x
 </td>
-<td>1.08x
+<td>1.16x
 </td>
-<td>0.60x
+<td>0.62x
 </td>
 </tr>
 <tr>
   <td>-
   </td>
-<td>0.62x
+<td>0.72x
 </td>
-<td>0.47x
+<td>0.49x
 </td>
-<td>0.16x
+<td>0.17x
 </td>
-<td>1.09x
+<td>1.15x
 </td>
-<td>0.62x
+<td>0.59x
 </td>
 </tr>
 <tr>
   <td>*
   </td>
-<td>0.64x
+<td>0.71x
 </td>
-<td>0.45x
+<td>0.49x
 </td>
-<td>0.17x
+<td>0.18x
 </td>
-<td>1.11x
+<td>1.07x
 </td>
-<td>0.66x
+<td>0.57x
 </td>
 </tr>
 <tr>
   <td>/
   </td>
-<td>0.66x
+<td>0.72x
 </td>
-<td>0.45x
+<td>0.49x
 </td>
-<td>0.18x
+<td>0.19x
 </td>
-<td>1.16x
+<td>1.14x
 </td>
-<td>0.60x
+<td>0.59x
 </td>
 </tr>
 <tr>
@@ -301,15 +374,15 @@ as such this can be slower than numpy by a factor of 50)
 <tr>
   <td>Axis 0
   </td>
-<td>1.29x
+<td>1.26x
 </td>
-<td>1.66x
+<td>1.74x
 </td>
-<td>0.64x
+<td>0.69x
 </td>
-<td>0.56x
+<td>0.67x
 </td>
-<td>0.50x
+<td>0.49x
 </td>
 </tr>
   </table>
@@ -321,7 +394,7 @@ as such this can be slower than numpy by a factor of 50)
 
 - Everyone who has contributed to SBCL.
 - [u/love5an](https://www.reddit.com/user/love5an/) and [u/neil-lindquist](https://www.reddit.com/user/neil-lindquist/) for the required hand-holding and the [gist](https://gist.github.com/Lovesan/660866b96a2632b900359333a251cc1c).
-  - Paul Khuong for [some](https://pvk.ca/Blog/2013/06/05/fresh-in-sbcl-1-dot-1-8-sse-intrinsics/) [blog posts](https://pvk.ca/Blog/2014/08/16/how-to-define-new-intrinsics-in-sbcl/).
+- Paul Khuong for [some](https://pvk.ca/Blog/2013/06/05/fresh-in-sbcl-1-dot-1-8-sse-intrinsics/) [blog posts](https://pvk.ca/Blog/2014/08/16/how-to-define-new-intrinsics-in-sbcl/).
 - [guicho271828](https://github.com/guicho271828) for [SBCL Wiki](https://github.com/guicho271828/sbcl-wiki/wiki) as well as [numcl](https://github.com/numcl/numcl).
 - It's possible that I could have forgotten to mention somebody - so... yeah... happy number crunching!
 

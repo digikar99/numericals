@@ -249,7 +249,7 @@ compiler-macros to generate efficient code.")
   (etypecase na:numericals-array
     (array (apply #'aref na:numericals-array subscripts))
     (na:numericals-array
-     (with-slots (displaced-to element-type strides displaced-index-offset dimensions) na:numericals-array
+     (with-slots (displaced-to element-type strides displaced-index-offset dim) na:numericals-array
        (if (let ((use-cl-aref t))
              (loop :for subscript :in subscripts
                 :while use-cl-aref
@@ -262,7 +262,7 @@ compiler-macros to generate efficient code.")
                                                (* (the (signed-byte 31) stride)
                                                   (the (signed-byte 31) subscript)))))
            (multiple-value-bind (dimensions strides displaced-index-offset contiguous-p)
-               (let ((d dimensions)
+               (let ((d dim)
                      (s strides)
                      (new-displaced-index-offset 0)
                      new-dimensions new-strides
@@ -279,11 +279,11 @@ compiler-macros to generate efficient code.")
                               (setq new-dimensions (cons (car d) new-dimensions))
                               (setq new-strides (cons car-s new-strides))
                               (setq saw-a-t t))
-                            (setq new-displaced-index-offset (+ new-displaced-index-offset (* car-s (the (signed-byte 31)
-                                                                                                         subscript)))))
+                            (setq new-displaced-index-offset
+                                  (+ new-displaced-index-offset (* car-s (the (signed-byte 31)
+                                                                              subscript)))))
                         (when (and saw-a-t (typep subscript '(signed-byte 31)))
-                          (setq contiguous-p nil))
-                        (print contiguous-p))
+                          (setq contiguous-p nil)))
                       (setq d (cdr d))
                       (setq s (cdr s)))
                  (values (nconc (nreverse new-dimensions) d)
