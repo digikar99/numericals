@@ -48,7 +48,7 @@ def allocation_timeit(allocate_fn, sizes, num_operations):
 
 (def-test allocation-speed (:suite speed)
   (flet ((within-acceptable-limits (lisp-time numpy-time)
-           (<= (/ lisp-time numpy-time) 1)))
+           (<= (/ lisp-time numpy-time) 4)))
     (let* ((nu:*type* 'single-float)
            (sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
            (num-operations '(1e6 1e7 1e9 1e9 1e9))

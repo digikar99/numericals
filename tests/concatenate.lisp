@@ -43,7 +43,7 @@ def concatenate_timeit(sizes, num_operations, axis):
                                        (apply #'* 2 (elt sizes i))))
        :do (let ()
              (declare (optimize (speed 3))
-                      (type (simple-array single-float) a b c))
+                      (type (array single-float) a b c))
              (setq start (get-internal-real-time))
              (loop :for i fixnum :below num-operation
                 :do (nu:concatenate a b :out c :axis axis))

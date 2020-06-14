@@ -160,9 +160,9 @@
                           :1d-storage-array)
 
   (:import-from :trivial-types :function-designator)
-  (:import-from :numericals                
+  (:import-from :numericals
                 :*type*
-                :*lookup-type-at-compile-time*                
+                :*lookup-type-at-compile-time*
                 :numericals-array-element-type)
   
   #.(append '(:shadowing-import-from :numericals.array
@@ -189,7 +189,8 @@
   (:local-nicknames (:nu :numericals))
   (:import-from :numericals
                 :maybe-form-not-constant-error
-                :*type*)
+                :*type*
+                :*lookup-type-at-compile-time*)
   #.(append '(:shadowing-import-from :numericals.array)
             cl::+cl-array-symbols+
             cl::+numericals-array-symbols+))

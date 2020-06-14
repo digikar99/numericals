@@ -99,7 +99,6 @@ keyword args. For example
                                     ,(if (= identity 1)
                                          `(nu:ones broadcast-dimensions :type type)
                                          `(nu:zeros broadcast-dimensions :type type))))
-
                             (apply ',broadcast-operation type broadcast-dimensions out args))
                           (progn
                             (assert (not out-supplied-p) nil

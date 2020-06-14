@@ -33,60 +33,63 @@ def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
 ;; THis is better suited as a function because we don't want to care about the
 ;; "form" of the arguments - we want to play with the values of the arguments.
 (defun lisp-arithmetic-timeit (&key fn a-sizes b-sizes c-sizes num-operations)
-  (let ((nu:*type* 'single-float))
-    (eval
-     `(let ((fn ',fn))
-        (loop :for i :below (length ',num-operations)
-           :for a-size := (elt ',a-sizes i)
-           :for b-size := (elt ',b-sizes i)
-           :for c-size := (elt ',c-sizes i)
-           :collect
-             (eval
-              `(let (start
-                     end
-                     (a (nu:ones ',a-size))
-                     (b (nu:ones ',b-size))
-                     (c (nu:ones ',c-size))
-                     (num-operation (floor ,(/ (elt ',num-operations i)
-                                               (apply #'* c-size)))))
-                 (declare (optimize (speed 3))
-                          (type (simple-array single-float ,a-size) a)
-                          (type (simple-array single-float ,b-size) b)
-                          (type (simple-array single-float ,c-size) c))
-                 (setq start (get-internal-real-time))
-                 (loop :for i fixnum :below num-operation
-                    :do (,fn a b :out c))
-                 (setq end (get-internal-real-time))
-                 (coerce (/ (- end start)
-                            internal-time-units-per-second)
-                         'single-float))))))
-    ;; (loop :for i :below (length num-operations)
-    ;;    :for a = (nu:ones (elt a-sizes i))
-    ;;    :for b = (nu:ones (elt b-sizes i))
-    ;;    :for c = (nu:ones (elt c-sizes i))
-    ;;    :for num-operation := (floor (/ (elt num-operations i)
-    ;;                                    (apply #'* (elt c-sizes i))))
-    ;;    :do (eval `(let (start end)
-    ;;                 (declare (optimize (speed 3))
-    ;;                          (type (simple-array single-float ,(elt a-sizes i)) a)
-    ;;                          (type (simple-array single-float ,(elt b-sizes i)) b)
-    ;;                          (type (simple-array single-float ,(elt c-sizes i)) c))
-    ;;                 (setq start (get-internal-real-time))
-    ;;                 (loop :for i fixnum :below num-operation
-    ;;                    :do (,fn a b :out c))
-    ;;                 (setq end (get-internal-real-time))))
-    ;;    :collect (coerce (/ (- end start)
-    ;;                        internal-time-units-per-second)
-    ;;                     'single-float))
-    ))
+  ;; (eval
+  ;;  `(let ((fn ',fn))
+  ;;     (loop :for i :below (length ',num-operations)
+  ;;        :for a-size := (elt ',a-sizes i)
+  ;;        :for b-size := (elt ',b-sizes i)
+  ;;        :for c-size := (elt ',c-sizes i)
+  ;;        :collect
+  ;;          (eval
+  ;;           `(let (start
+  ;;                  end
+  ;;                  (a (nu:ones ',a-size))
+  ;;                  (b (nu:ones ',b-size))
+  ;;                  (c (nu:ones ',c-size))
+  ;;                  (num-operation (floor ,(/ (elt ',num-operations i)
+  ;;                                            (apply #'* c-size)))))
+  ;;              (declare (optimize (speed 3))
+  ;;                       (type (array single-float ,a-size) a)
+  ;;                       (type (array single-float ,b-size) b)
+  ;;                       (type (array single-float ,c-size) c))
+  ;;              (setq start (get-internal-real-time))
+  ;;              (loop :for i fixnum :below num-operation
+  ;;                 :do (,fn a b :out c))
+  ;;              (setq end (get-internal-real-time))
+  ;;              (coerce (/ (- end start)
+  ;;                         internal-time-units-per-second)
+  ;;                      'single-float))))))
+  (loop :for i :below (length num-operations)
+     :for a-size := (elt a-sizes i)
+     :for b-size := (elt b-sizes i)
+     :for c-size := (elt c-sizes i)
+     :collect
+       (let (start
+             end
+             (a (nu:ones a-size))
+             (b (nu:ones b-size))
+             (c (nu:ones c-size))
+             (num-operation (floor (/ (elt num-operations i)
+                                      (apply #'* c-size)))))
+         (declare (optimize (speed 3))
+                  (type (array single-float) a)
+                  (type (array single-float) b)
+                  (type (array single-float) c))
+         (setq start (get-internal-real-time))
+         (loop :for i fixnum :below num-operation
+            :do (funcall fn a b :out c))
+         (setq end (get-internal-real-time))
+         (coerce (/ (- end start)
+                    internal-time-units-per-second)
+                 'single-float))))
 
 (def-test non-broadcast-speed (:suite speed)
   (flet ((within-acceptable-limits (lisp-time numpy-time)
-           (<= (/ lisp-time numpy-time) 1.35)))
+           (<= (/ lisp-time numpy-time) 2)))
     (let* ((a-sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
            (b-sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
            (c-sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
-           (num-operations '(1e7 1e8 1e8 1e9 1e9))
+           (num-operations '(1e7 1e8 1e9 1e9 1e9))
            (numpy-operations '(np.add np.subtract np.multiply np.divide))
            (numericals-operations '(nu:+ nu:- nu:* nu:/)))
       (when *write-to-readme*
@@ -96,24 +99,27 @@ def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
                   :do (who:htm (:th (who:str size)))))))
       (loop :for numpy-operation :in numpy-operations
          :for numericals-operation :in numericals-operations
-         :do (let ((numpy-timings (py-arithmetic-timeit :fn numpy-operation
-                                                        :a-sizes a-sizes
-                                                        :b-sizes b-sizes
-                                                        :c-sizes c-sizes
-                                                        :num-operations num-operations))
-                   (numericals-timings (lisp-arithmetic-timeit :fn numericals-operation
-                                                               :a-sizes a-sizes
-                                                               :b-sizes b-sizes
-                                                               :c-sizes c-sizes
-                                                               :num-operations num-operations)))
-               (when *write-to-readme*
-                 (who:with-html-output (*write-to-readme-stream* nil :indent t)
-                   (:tr (:td (who:fmt "~D" numericals-operation))
-                        (loop :for lisp-time :in numericals-timings
-                           :for numpy-time :in numpy-timings
-                           :do (who:htm (:td (who:fmt "~,2f" (/ numpy-time lisp-time)) "x"))))))
-               (is (every #'within-acceptable-limits
-                          numericals-timings numpy-timings)))))))
+         :do (print numericals-operation)
+           (let ((numpy-timings
+                  (print (py-arithmetic-timeit :fn numpy-operation
+                                               :a-sizes a-sizes
+                                               :b-sizes b-sizes
+                                               :c-sizes c-sizes
+                                               :num-operations num-operations)))
+                 (numericals-timings
+                  (print (lisp-arithmetic-timeit :fn numericals-operation
+                                                 :a-sizes a-sizes
+                                                 :b-sizes b-sizes
+                                                 :c-sizes c-sizes
+                                                 :num-operations num-operations))))
+             (when *write-to-readme*
+               (who:with-html-output (*write-to-readme-stream* nil :indent t)
+                 (:tr (:td (who:fmt "~D" numericals-operation))
+                      (loop :for lisp-time :in numericals-timings
+                         :for numpy-time :in numpy-timings
+                         :do (who:htm (:td (who:fmt "~,2f" (/ numpy-time lisp-time)) "x"))))))
+             (is (every #'within-acceptable-limits
+                        numericals-timings numpy-timings)))))))
 
 (def-test non-broadcast-correctness (:suite correctness)
   (let ((dim (iota 8 :start 8)))
@@ -140,7 +146,7 @@ def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
 
 (def-test broadcast-speed (:suite speed)
   (flet ((within-acceptable-limits (lisp-time numpy-time)
-           (<= (/ lisp-time numpy-time) 2)))
+           (<= (/ lisp-time numpy-time) 3)))
     (let* ((a-sizes '((01 1) (01 10) (001 100) (0001 1000) (00001 10000)))
            (b-sizes '((10 1) (10 01) (100 001) (1000 0001) (10000 00001)))
            (c-sizes '((10 1) (10 10) (100 100) (1000 1000) (10000 10000)))
@@ -155,16 +161,18 @@ on actual array dimensions)")
                   :do (who:htm (:th (who:str size)))))))
       (loop :for numpy-operation :in numpy-operations
          :for numericals-operation :in numericals-operations
-         :do (let ((numpy-timings (py-arithmetic-timeit :fn numpy-operation
-                                                        :a-sizes a-sizes
-                                                        :b-sizes b-sizes
-                                                        :c-sizes c-sizes
-                                                        :num-operations num-operations))
-                   (numericals-timings (lisp-arithmetic-timeit :fn numericals-operation
-                                                               :a-sizes a-sizes
-                                                               :b-sizes b-sizes
-                                                               :c-sizes c-sizes
-                                                               :num-operations num-operations)))
+         :do (let ((numpy-timings
+                    (print (py-arithmetic-timeit :fn numpy-operation
+                                                 :a-sizes a-sizes
+                                                 :b-sizes b-sizes
+                                                 :c-sizes c-sizes
+                                                 :num-operations num-operations)))
+                   (numericals-timings
+                    (print (lisp-arithmetic-timeit :fn numericals-operation
+                                                   :a-sizes a-sizes
+                                                   :b-sizes b-sizes
+                                                   :c-sizes c-sizes
+                                                   :num-operations num-operations))))
                (when *write-to-readme*
                  (who:with-html-output (*write-to-readme-stream* nil :indent t)
                    (:tr (:td (who:fmt "~D" numericals-operation))

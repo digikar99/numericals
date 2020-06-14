@@ -82,7 +82,9 @@ compiler-macros to generate efficient code.")
                                 (:strides list)
                                 (:displaced-index-offset fixnum)
                                 (:initial-contents *)
-                                (:displaced-to simple-array))
+                                (:displaced-to simple-array)
+                                (:adjustable *)
+                                (:fill-pointer *))
                           (values na:numericals-array &optional))
                 na:make-array))
 
@@ -91,15 +93,22 @@ compiler-macros to generate efficient code.")
                         (initial-element nil initial-element-p)
                         (initial-contents nil initial-contents-p)
                         (strides nil strides-p)
-                        adjustable fill-pointer
+                        (adjustable nil adjustable-p)
+                        (fill-pointer nil fill-pointer-p)
                         (displaced-to nil displaced-to-p)
                         (displaced-index-offset 0))
   ;; TODO: Handle adjustable
   ;; TODO: Handle fill-pointer
   ;; TODO: Sanitize displaced-to and perhaps, displaced-index-offset
   ;; TODO: Take displaced-index-offset and strides into account while calculating dimensions
+  (declare (optimize speed)
+           (ignore args adjustable fill-pointer displaced-to-p))
   (when (and initial-element-p initial-contents-p)
     (error "Can't specify both :INITIAL-ELEMENT and :INITIAL-CONTENTS"))
+  (when fill-pointer-p
+    (error "FILL-POINTER has not been handled yet in NUMERICALS-ARRAY"))
+  (when adjustable-p
+    (error "FILL-POINTER has not been handled yet in NUMERICALS-ARRAY"))
   (let* ((displaced-to-initial-element
           (cond ((and initial-element-p
                       (typep initial-element 'function-designator))
@@ -116,14 +125,19 @@ compiler-macros to generate efficient code.")
                  :dim dimensions
                  :strides (if strides-p
                               strides
-                              (nconc (cdr (maplist (lambda (l) (apply #'* l))
-                                                   dimensions))
-                                     '(1)))
+                              (let ((product 1))
+                                (declare (optimize speed)
+                                         (type (signed-byte 31) product))
+                                (nreverse
+                                 (loop :for d fixnum :in (cons 1 (reverse (cdr dimensions)))
+                                    :do (setq product (* d product))
+                                    :collect product))))
                  :displaced-index-offset displaced-index-offset
                  :contiguous-p t)))
     (cond ((and initial-element-p (typep initial-element 'function-designator))
            (let ((row-major-index 0))
-             (declare (type (signed-byte 31) row-major-index))
+             (declare (type (signed-byte 31) row-major-index)
+                      (optimize (speed 1)))
              (apply #'map-product ; TODO: This unnecessarily collects the values.
                     (lambda (&rest subscripts)
                       (setf (aref displaced-to row-major-index)
@@ -133,6 +147,8 @@ compiler-macros to generate efficient code.")
                        :collect (iota d)))))
           (initial-contents-p
            (let ((row-major-index 0))
+             (declare (type (signed-byte 31) row-major-index)
+                      (optimize (speed 1)))
              (labels ((set-displaced-to (elt)
                         (if (listp elt)
                             (loop :for e :in elt
@@ -146,122 +162,6 @@ compiler-macros to generate efficient code.")
 (defun unable-to-optimize-call-note (callee reason &rest reason-args)
   (format *error-output* "~&; note: Unable to optimize call to ~S because~%;   ~D"
           callee (apply #'format nil reason reason-args)))
-
-;; (define-compiler-macro na:make-array
-;;     (&whole whole dimensions
-;;             &key (element-type *type* element-type-p)
-;;             (initial-element nil initial-element-p)
-;;             (strides nil strides-p)
-;;             (displaced-index-offset 0)
-;;             (initial-contents nil initial-contents-p)
-;;             &environment env)
-;;   ;; TODO: Write a proper compiler macro!!!
-;;   (when (and initial-element-p initial-contents-p)
-;;     (error "Can't specify both :INITIAL-ELEMENT and :INITIAL-CONTENTS"))
-;;   (if (= 3 (policy-quality 'speed env))
-;;       (flet ((utocn (reason &rest reason-args)
-;;                (apply #'unable-to-optimize-call-note
-;;                       'na:make-array reason reason-args)))
-
-;;         (when initial-contents-p
-;;           (utocn "INITIAL-CONTENTS case has not been optimized yet")
-;;           (return-from na:make-array whole))
-
-;;         (let ((element-type-known-p t)
-;;               (dimensions-known-p t)
-;;               (initial-element-known-p t)
-;;               (make-array-known-p t)
-;;               displaced-to)
-;;           ;; Handle element-type
-;;           (setq element-type                
-;;                 (if element-type-p
-;;                     (if (constantp element-type env)
-;;                         (constant-form-value element-type env)
-;;                         (progn
-;;                           (utocn "ELEMENT-TYPE ~D could not be determined to be a constant" element-type)
-;;                           (setq element-type-known-p nil)
-;;                           element-type))
-;;                     (if *lookup-type-at-compile-time*
-;;                         *type*
-;;                         (progn
-;;                           (utocn "Not using the compile-time value of *TYPE* because *LOOKUP-TYPE-AT-COMPILE-TIME* is NIL at compile-time")
-;;                           (setq element-type-known-p nil)
-;;                           '*type*))))
-;;           ;; Handle dimensions
-;;           (setq dimensions
-;;                 (if (constantp dimensions env)
-;;                     (constant-form-value dimensions env)
-;;                     (progn
-;;                       (utocn "DIMENSIONS ~D could not be determined to be a constant" dimensions)
-;;                       (setq dimensions-known-p nil)
-;;                       dimensions)))
-
-;;           (setq initial-element
-;;                 (if initial-element-p
-;;                     (if (constantp initial-element env)
-;;                         (if element-type-known-p
-;;                             (coerce (constant-form-value initial-element
-;;                                                          env)
-;;                                     element-type)
-;;                             (progn
-;;                               (utocn "INITIAL-ELEMENT cannot be determined at compile-time without knowing ELEMENT-TYPE")
-;;                               (setq initial-element-known-p nil)
-;;                               `(coerce ,(constant-form-value initial-element
-;;                                                              env)
-;;                                        ;; TODO: check this
-;;                                        ,element-type)))
-;;                         (progn
-;;                           (utocn "INITIAL-ELEMENT ~D could not be determined to be a constant"
-;;                                  initial-element)
-;;                           (setq initial-element-known-p nil)
-;;                           `(coerce ,initial-element ,(if element-type-known-p
-;;                                                          (list 'quote element-type)
-;;                                                          element-type))))
-;;                     (if element-type-known-p
-;;                         (coerce 0 element-type)
-;;                         (progn
-;;                           (utocn "INITIAL-ELEMENT cannot be determined at compile-time without knowing ELEMENT-TYPE")
-;;                           (setq initial-element-known-p nil)
-;;                           `(coerce 0 ,(list 'quote element-type))))))
-
-;;           (let ((displaced-to
-;;                  (cond ((and initial-element-known-p
-;;                              element-type-known-p
-;;                              dimensions-known-p)
-;;                         (make-array (apply #'* dimensions)
-;;                                     :initial-element initial-element
-;;                                     :element-type element-type))
-;;                        (t
-;;                         (utocn "DISPLACED-TO could not be allocated at compile-time without knowing all of INITIAL-ELEMENT, ELEMENT-TYPE and DIMENSIONS")
-;;                         (setq make-array-known-p nil)
-;;                         `(make-array ,(if dimensions-known-p
-;;                                           (apply #'* dimensions)
-;;                                           `(apply #'* ,dimensions))
-;;                                      :initial-element ,initial-element
-;;                                      :element-type ,(if element-type-known-p
-;;                                                         (list 'quote element-type)
-;;                                                         element-type)))))
-;;                 (strides (if strides-p
-;;                              strides
-;;                              (if dimensions-known-p
-;;                                  (list 'quote
-;;                                        (nconc (cdr (maplist (lambda (l) (apply #'* l))
-;;                                                             dimensions))
-;;                                               '(1)))
-;;                                  `(nconc (cdr (maplist (lambda (l) (apply #'* l))
-;;                                                        ,dimensions))
-;;                                          '(1))))))
-;;             `(make-numericals-array :displaced-to ,displaced-to
-;;                                     :element-type ,(if element-type-known-p
-;;                                                        (list 'quote element-type)
-;;                                                        element-type)
-;;                                     :dim ,(if dimensions-known-p
-;;                                                      (list 'quote dimensions)
-;;                                                      dimensions)
-;;                                     :strides ,strides
-;;                                     :displaced-index-offset ,displaced-index-offset
-;;                                     :contiguous-p t))))
-;;       whole))
 
 (defun na:array-rank (na:numericals-array)
   (length (na:array-dimensions na:numericals-array)))

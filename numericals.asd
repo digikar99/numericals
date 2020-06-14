@@ -14,7 +14,8 @@
                          (:file "arithmetic")))
                (:module "array"
                         :components
-                        ((:file "array")))
+                        ((:file "array")
+                         (:file "compiler-macros")))
                (:file "primitives")
                (:file "broadcast")
                (:file "with-simd-operations")
