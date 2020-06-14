@@ -62,119 +62,128 @@
     (number (make-array '(1) :element-type type
                         :initial-element (cast type object)))))
 
-(macrolet ((define-broadcast-wrapper (name broadcast-operation base-operation identity)
-             "ARGS must be a lambda list with the initial elements comprising of the list 
+(macrolet
+    ((define-broadcast-wrapper (name broadcast-operation base-operation identity)
+
+       ;; Assume quoted; because it looks good
+       (setq broadcast-operation (cadr broadcast-operation)
+             base-operation (print (cadr (print base-operation))))
+       ;; Do the checks to provide helpful error messages.
+       `(progn
+
+          ;; TODO: Separate docstrings into separate files
+          (defun ,name (&rest args)
+            "ARGS must be a lambda list with the initial elements comprising of the list
 of operands, and the final optional elements comprise of :OUT and :TYPE 
 keyword args. For example
   (* a b :out c :type 'single-float)
   (+ a b c :out d)"
-             ;; Assume quoted; because it looks good
-             (setq broadcast-operation (cadr broadcast-operation)
-                   base-operation (print (cadr (print base-operation))))
-             ;; Do the checks to provide helpful error messages.
-             `(progn
+            (declare (optimize (speed 3)))
+            (destructuring-bind (args (&key (out nil out-supplied-p)
+                                            (type *type*)))
+                (split-at-keywords args)
+              (let ((broadcast-dimensions nil)
+                    (orig-args args)
+                    (some-array-p (some #'array-like-p args)))
+                (declare (type list broadcast-dimensions))
+                (if some-array-p
+                    (progn
+                      (setq args (mapcar (curry #'ensure-array type) args))
+                      (setq broadcast-dimensions
+                            (nth-value 1 (apply #'broadcast-compatible-p args)))
+                      (unless broadcast-dimensions
+                        (error "Cannot broadcast ~D together" orig-args))
+                      (when out-supplied-p
+                        (assert (arrayp out) nil
+                                "Cannot supply result in non-array type ~D" out)
+                        (assert (equalp (array-dimensions out) broadcast-dimensions)))
+                      (when (not out-supplied-p)
+                        (setq out
+                              ,(if (= identity 1)
+                                   `(nu:ones broadcast-dimensions :type type)
+                                   `(nu:zeros broadcast-dimensions :type type))))
 
-                (defun ,name (&rest args)
-                  (declare (optimize (speed 3)))
+                      (apply ',broadcast-operation type broadcast-dimensions out args))
+                    (progn
+                      (assert (not out-supplied-p) nil
+                              "Cannot supply result in ~D when no argument is array-like."
+                              out)
+                      (coerce (apply ',base-operation args) type))))))
+
+          (define-compiler-macro ,name (&whole whole &rest orig-args &environment env)
+            (let ((optimizable-p (= 3 (policy-quality 'speed env))))
+              (if (member (car whole) (list ',name 'funcall)) ; ignoring the case of funcall or apply
                   (destructuring-bind (args (&key (out nil out-supplied-p)
-                                                  (type *type*)))
-                      (split-at-keywords args)
-                    (let ((broadcast-dimensions nil)
-                          (orig-args args)
-                          (some-array-p (some 'array-like-p args)))
-                      (declare (type list broadcast-dimensions))
-                      (if some-array-p
-                          (progn
-                            (setq args (mapcar (curry 'ensure-array type) args))
-                            (setq broadcast-dimensions
-                                  (nth-value 1 (apply 'broadcast-compatible-p args)))
-                            (unless broadcast-dimensions
-                              (error "Cannot broadcast ~D together" orig-args))
-                            (when out-supplied-p
-                              (assert (arrayp out) nil
-                                      "Cannot supply result in non-array type ~D" out)
-                              (assert (equalp (array-dimensions out) broadcast-dimensions)))
-                            (when (not out-supplied-p)
-                              (setq out
-                                    ,(if (= identity 1)
-                                         `(nu:ones broadcast-dimensions :type type)
-                                         `(nu:zeros broadcast-dimensions :type type))))
-                            (apply ',broadcast-operation type broadcast-dimensions out args))
-                          (progn
-                            (assert (not out-supplied-p) nil
-                                    "Cannot supply result in ~D when no argument is array-like."
-                                    out)
-                            (coerce (apply ',base-operation (print args)) type))))))
+                                                  (type *type* type-p)))
+                      (split-at-keywords orig-args)
+                    (declare (ignorable args out type type-p out-supplied-p))
+                    (when optimizable-p
+                      (setq type
+                            (cond ((and (not type-p)
+                                        *lookup-type-at-compile-time*)
+                                   (list 'quote *type*))
+                                  ;; TODO: These patterns of quoting abound in compiler macros the way I'm doing things. Abstract them out, or find (and abstract?) a better pattern.
+                                  ((and (listp type)
+                                        (eq (car type) 'quote)
+                                        (null (cddr type))
+                                        (valid-numericals-type-p (cadr type)))
+                                   type)
+                                  (t type))))
+                    (when optimizable-p
+                      (when (and (every #'(lambda (arg) (or (numberp arg)
+                                                            (typep arg 'number env)))
+                                        args)
+                                 (not out-supplied-p))
+                        (return-from ,name (list 'cast type (cons ',base-operation args)))))
 
-                (define-compiler-macro ,name (&whole whole &rest orig-args &environment env)
-                  (let ((optimizable-p (= 3 (policy-quality 'speed env))))
-                    (if (member (car whole) (list ',name 'funcall)) ; ignoring the case of funcall or apply
-                        (destructuring-bind (args (&key (out nil out-supplied-p)
-                                                        (type *type* type-p)))
-                            (split-at-keywords orig-args)
-                          (declare (ignorable args out type type-p out-supplied-p))
-                          (when optimizable-p
-                            (setq type
-                                  (cond ((and (not type-p) *lookup-type-at-compile-time*) (list 'quote *type*))
-                                        ((and (listp type)
-                                              (eq (car type) 'quote)
-                                              (null (cddr type))
-                                              (valid-numericals-type-p (cadr type)))
-                                         type)
-                                        (t type))))
-                          (when optimizable-p
-                            (when (and (every #'numberp args)
-                                       (not out-supplied-p))
-                              (return-from ,name (list 'cast type (cons ',base-operation args)))))
-
-                          ;; TODO: These notes should not be printed if call cannot be optimized.
-                          (when (and optimizable-p out-supplied-p)
-                            (let ((out-type (variable-type out env))
-                                  (*print-pretty* nil))
-                              (unless (= 3 (length out-type))
-                                (format t
-                                        "~&; note: Unable to determine optimizability of call to ~S because type of ~S ~S is not exact"
-                                        ',name
-                                        out out-type))
-                              (when (and (= 3 (length out-type))
-                                         (subtypep out-type
-                                                   '(simple-array single-float *))
-                                         (every
-                                          (lambda (x)
-                                            (let ((x-type (variable-type x env)))
-                                              (unless (= 3 (length x-type))
-                                                (format t
-                                                        "~&; note: Unable to determine optimizability of call to ~S because type of ~S ~S is not exact"
-                                                        ',name x x-type))
-                                              (equalp x-type out-type)))
-                                          args))
-                                (return-from ,name
-                                  (let ((base-operation ',base-operation))
-                                    `(nu:with-simd-operations 'single-float ,out (,base-operation ,@args)))))))
-                          
-                          ;; args is a list
-                          ;; (when optimizable-p
-                          ;;   (setq dimensions
-                          ;;         (if (null (cdr dimensions))
-                          ;;             (if (or (typep (car dimensions) '(or list fixnum))
-                          ;;                     (subtypep (variable-type (car dimensions) env)
-                          ;;                               '(or list fixnum)))
-                          ;;                 (car dimensions)
-                          ;;                 (progn
-                          ;;                   (setq optimizable-p nil)
-                          ;;                   (format
-                          ;;                    t "~&; note: ~D"
-                          ;;                    (format
-                          ;;                     nil
-                          ;;                     ,(format nil "Unable to optimize ~S without knowing type of ~~D at compile-time." name)
-                          ;;                     (car dimensions)))
-                          ;;                   dimensions))
-                          ;;             dimensions)))
-                          whole)
-                        (progn
-                          (when (= 3 (policy-quality 'speed env))
-                            (format t "~& note: Optimization for call to ~S is not implemented for ~S" ',name whole)
-                            whole))))))))
+                    ;; TODO: These notes should not be printed if call cannot be optimized.
+                    (when (and optimizable-p out-supplied-p)
+                      (let ((out-type (variable-type out env)))
+                        (unless (and (listp out-type) (= 3 (length out-type)))
+                          (format t
+                                  "~&; note: Unable to determine optimizability of call to ~S because type of ~S ~S is not exact"
+                                  ',name
+                                  out out-type))
+                        (when (and (listp out-type) (= 3 (length out-type))
+                                   (subtypep out-type
+                                             '(simple-array single-float *))
+                                   (every
+                                    (lambda (x)
+                                      (let ((x-type (variable-type x env)))
+                                        (unless (= 3 (length x-type))
+                                          (format t
+                                                  "~&; note: Unable to determine optimizability of call to ~S because type of ~S ~S is not exact"
+                                                  ',name x x-type))
+                                        (equalp x-type out-type)))
+                                    args))
+                          (return-from ,name
+                            (let ((base-operation ',base-operation))
+                              `(nu:with-elementwise-operations
+                                   'single-float ,out (,base-operation ,@args)))))))
+                    
+                    ;; args is a list ; TODO: What were we trying to do here?
+                    ;; (when optimizable-p
+                    ;;   (setq dimensions
+                    ;;         (if (null (cdr dimensions))
+                    ;;             (if (or (typep (car dimensions) '(or list fixnum))
+                    ;;                     (subtypep (variable-type (car dimensions) env)
+                    ;;                               '(or list fixnum)))
+                    ;;                 (car dimensions)
+                    ;;                 (progn
+                    ;;                   (setq optimizable-p nil)
+                    ;;                   (format
+                    ;;                    t "~&; note: ~D"
+                    ;;                    (format
+                    ;;                     nil
+                    ;;                     ,(format nil "Unable to optimize ~S without knowing type of ~~D at compile-time." name)
+                    ;;                     (car dimensions)))
+                    ;;                   dimensions))
+                    ;;             dimensions)))
+                    whole)
+                  (progn
+                    (when (= 3 (policy-quality 'speed env))
+                      (format t "~& note: Optimization for call to ~S is not implemented for ~S" ',name whole)
+                      whole))))))))
 
   (define-broadcast-wrapper nu:+ '%+ '+ 0)
   (define-broadcast-wrapper nu:- '%- '- 0)
@@ -182,54 +191,153 @@ keyword args. For example
   (define-broadcast-wrapper nu:/ '%/ '/ 1))
 
 ;; To be able to handle *max-broadcast-dimensions*, we need to generate %+ using a macro
-(progn
-  (defmacro define-broadcast-operation (name operation)
-    `(defun ,name (type broadcast-dimensions result &rest args)
-       (declare (optimize (speed 3)))
-       (ecase type
-         ,@(loop for type in '(single-float)
-              collect
-                `(,type
-                  (ecase (length broadcast-dimensions)
-                    ,@(loop for i from 1 to *max-broadcast-dimensions*
-                         collect
-                           `(,i ,(let ((specialized-op
-                                        (specialized-operation operation type i))
-                                       (non-broadcast-op
-                                        (non-broadcast-operation operation type)))
-                                   `(loop while (cddr args)
-                                       for a = (car args)
-                                       do
-                                         (if (equalp (array-dimensions result)
-                                                     (array-dimensions a))
-                                             (,non-broadcast-op result result a)
-                                             (,specialized-op result result a))
-                                         (setq args (cdr args))
-                                       finally
-                                         (if (cdr args) ; given (cddr args) is null
-                                             (if (and (equalp
-                                                       (array-dimensions result)
-                                                       (array-dimensions (car args)))
-                                                      (equalp
-                                                       (array-dimensions result)
-                                                       (array-dimensions (cadr args))))
-                                                 (,non-broadcast-op result
-                                                                    (car args)
-                                                                    (cadr args))
-                                                 (,specialized-op result
-                                                                  (car args)
-                                                                  (cadr args)))
-                                             (if (equalp (array-dimensions result)
-                                                         (array-dimensions (car args)))
-                                                 (,non-broadcast-op result
-                                                                    result
-                                                                    (car args))
-                                                 (,specialized-op result
-                                                                  result
-                                                                  (car args))))
-                                         (return result)))))))))))
+;; TODO: See if static-dispatch can help simplify this branching
+(macrolet
+    ((define-broadcast-operation (name operation)
+       `(defun ,name (type broadcast-dimensions result &rest args)
+          (declare (optimize (speed 3)))
+          (ecase type
+            ,@(loop for type in '(single-float)
+                 collect
+                   `(,type
+                     (ecase (length broadcast-dimensions)
+                       ,@(loop for i from 1 to *max-broadcast-dimensions*
+                            collect
+                              `(,i ,(let ((specialized-op
+                                           (specialized-operation operation type i))
+                                          (non-broadcast-op
+                                           (non-broadcast-operation operation type)))
+                                      `(loop while (cddr args)
+                                          for a = (car args)
+                                          do
+                                            (if (equalp (array-dimensions result)
+                                                        (array-dimensions a))
+                                                (,non-broadcast-op result result a)
+                                                (,specialized-op result result a))
+                                            (setq args (cdr args))
+                                          finally
+                                            (if (cdr args) ; given (cddr args) is null
+                                                (if (and (equalp
+                                                          (array-dimensions result)
+                                                          (array-dimensions (car args)))
+                                                         (equalp
+                                                          (array-dimensions result)
+                                                          (array-dimensions (cadr args))))
+                                                    (,non-broadcast-op result
+                                                                       (car args)
+                                                                       (cadr args))
+                                                    (,specialized-op result
+                                                                     (car args)
+                                                                     (cadr args)))
+                                                (if (equalp (array-dimensions result)
+                                                            (array-dimensions (car args)))
+                                                    (,non-broadcast-op result
+                                                                       result
+                                                                       (car args))
+                                                    (,specialized-op result
+                                                                     result
+                                                                     (car args))))
+                                            (return result))))))))))))
 
   (define-broadcast-operation %+ +)
   (define-broadcast-operation %- -)
   (define-broadcast-operation %/ /)
   (define-broadcast-operation %* *))
+
+(macrolet
+    ((define-unary-wrapper (name base-operation)
+       
+       ;; Assume quoted; because it looks good
+       (setq base-operation (print (cadr (print base-operation))))
+       ;; Do the checks to provide helpful error messages.
+       `(progn
+
+          ;; TODO: Separate docstrings into separate files
+          (defun ,name (arg &key (out nil out-supplied-p) (type *type*))
+            "ARGS must be a lambda list with the initial elements comprising of the list
+of operands, and the final optional elements comprise of :OUT and :TYPE
+keyword args. For example
+  (sqrt a :out c :type 'single-float)
+  (sqrt a :out d)"
+            (declare (optimize (speed 3)))
+            (if (array-like-p arg)
+                (let ((arg-dimensions (progn
+                                        (setq arg (ensure-array type arg))
+                                        (array-dimensions arg))))
+                  (when out-supplied-p
+                    (assert (arrayp out) nil
+                            "Cannot supply result in non-array type ~D" out)
+                    (assert (equalp (array-dimensions out) arg-dimensions)))
+                  (when (not out-supplied-p)
+                    (setq out (nu:zeros (array-dimensions arg) :type type)))
+                  (ecase type
+                    ,@(loop :for type :in '(single-float)
+                         :for non-broadcast-op := (non-broadcast-operation base-operation type)
+                         :collect `(,type (,non-broadcast-op out arg))))
+                  out)
+                (progn
+                  (assert (not out-supplied-p) nil
+                          "Cannot supply result in ~D when argument is not array-like."
+                          out)
+                  (coerce (,base-operation arg) type))))
+
+          (define-compiler-macro ,name (&whole whole arg
+                                               &key (out nil out-supplied-p)
+                                               (type *type* type-p)
+                                               &environment env)
+            (declare (ignorable arg out type type-p out-supplied-p))
+            (let ((optimizable-p (= 3 (policy-quality 'speed env))))
+              (if (member (car whole) (list ',name 'funcall)) ; ignoring the case of funcall or apply
+                  (progn
+                    (when optimizable-p
+                      (setq type
+                            (cond ((and (not type-p)
+                                        *lookup-type-at-compile-time*)
+                                   (list 'quote *type*))
+                                  ((and (listp type)
+                                        (eq (car type) 'quote)
+                                        (null (cddr type))
+                                        (valid-numericals-type-p (cadr type)))
+                                   type)
+                                  (t type))))
+
+                    ;; Takes care of the numberp branch
+                    (when optimizable-p
+                      (when (or (numberp arg) (typep arg 'number env))
+                        (if out-supplied-p
+                            (setq optimizable-p nil)
+                            (return-from ,name (list 'cast type
+                                                     (cons ',base-operation arg))))))
+
+                    ;; TODO: These notes should not be printed if call cannot be optimized.
+                    (when optimizable-p
+                      (if out-supplied-p
+                          (let ((out-type (variable-type out env)))
+                            (unless (and (listp out-type) (= 3 (length out-type)))
+                              (format t
+                                      "~&; note: Unable to determine optimizability of call to ~S because type of ~S ~S is not exact"
+                                      ',name
+                                      out out-type))
+                            (when (and (and (listp out-type) (= 3 (length out-type)))
+                                       (subtypep out-type
+                                                 '(simple-array single-float *))
+                                       (let ((arg-type (variable-type arg env)))
+                                         (unless (= 3 (length arg-type))
+                                           (format t
+                                                   "~&; note: Unable to determine optimizability of call to ~S because type of ~S ~S is not exact"
+                                                   ',name arg arg-type))
+                                         (equalp arg-type out-type)))
+                              (return-from ,name
+                                (let ((base-operation ',base-operation))
+                                  `(nu:with-elementwise-operations
+                                       'single-float ,out (,base-operation ,arg))))))))
+                    whole)
+                  (progn
+                    (when (= 3 (policy-quality 'speed env))
+                      (format t "~& note: Optimization for call to ~S is not implemented for ~S" ',name whole)
+                      whole))))))
+       
+       ;; TODO: Add compiler-macro
+       ))
+
+  (define-unary-wrapper nu:sqrt 'sqrt))

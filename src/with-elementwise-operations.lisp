@@ -5,19 +5,20 @@
     (single-float '(translate-to-simd-single simd-single-1d-aref +simd-single-1d-aref-stride+ single-float))
     (double-float '(translate-to-simd-double simd-double-1d-aref +simd-double-1d-aref-stride+ double-float))))
 
-(eval-when (:compile-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *simd-single-operation-translation-plist*
     '(cl:+ simd-single-+
       cl:- simd-single--
       cl:* simd-single-*
-      cl:/ simd-single-/))
-  (defparameter *with-simd-operations-symbol-translation-plist* nil
-    "Bound inside WITH-SIMD-OPERATIONS to help TRANSLATE-TO-SIMD-SINGLE and
+      cl:/ simd-single-/
+      cl:sqrt simd-single-sqrt))
+  (defparameter *with-elementwise-operations-symbol-translation-plist* nil
+    "Bound inside WITH-ELEMENTWISE-OPERATIONS to help TRANSLATE-TO-SIMD-SINGLE and
 TRANSLATE-TO-BASE with the symbol translation."))
 
 (defun-c simd-single-op (op) (getf *simd-single-operation-translation-plist* op))
 (defun-c translate-symbol (symbol)
-  (getf *with-simd-operations-symbol-translation-plist* symbol))
+  (getf *with-elementwise-operations-symbol-translation-plist* symbol))
 
 (defun-c translate-to-simd-single (body loop-var)
   "Returns BODY with OP replaced with corresponding SIMD-SINGLE-OP, 
@@ -54,11 +55,11 @@ Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
                                  collect (translate-to-base elt loop-var element-type)))))
         (t (error "Non-exhaustive!"))))
 
-(defmacro nu:with-simd-operations (element-type result-array body)
+(defmacro nu:with-elementwise-operations (element-type result-array body)
   "\"Open codes\" BODY using SIMD operations. BODY is expected to be made up of 
 CAR-symbols having corresponding SIMD-OP or REST symbols are expected to be bound 
 to an array. An example translation is:
-  (with-simd-operations :single result (+ a (* b c)))
+  (with-elementwise-operations :single result (+ a (* b c)))
 This is expanded to a form effective as: 
   (setf (simd-single-1d-aref result loop-var)
         (simd-single-+ (simd-single-1d-aref a loop-var)
@@ -79,7 +80,7 @@ This is expanded to a form effective as:
          ,(let* ((original-symbols (collect-symbols body))
                  (symbols (make-gensym-list (length original-symbols) "SYMBOL"))
                  (offsets (make-gensym-list (length original-symbols) "OFFSET"))
-                 (*with-simd-operations-symbol-translation-plist*
+                 (*with-elementwise-operations-symbol-translation-plist*
                   (apply #'append
                          (list result-array 1d-storage-array)
                          (mapcar #'list original-symbols symbols))))
@@ -113,22 +114,27 @@ This is expanded to a form effective as:
 (defun single-+ (result a b)
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
-   (nu:with-simd-operations 'single-float result (+ a b)))
+  (nu:with-elementwise-operations 'single-float result (+ a b)))
 
 (defun single-- (result a b)
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
-  (nu:with-simd-operations 'single-float result (- a b)))
+  (nu:with-elementwise-operations 'single-float result (- a b)))
 
 (defun single-* (result a b)
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
-  (nu:with-simd-operations 'single-float result (* a b)))
+  (nu:with-elementwise-operations 'single-float result (* a b)))
 
 (defun single-/ (result a b)
   (declare (optimize (speed 3))
            (type (array single-float) result a b))
-  (nu:with-simd-operations 'single-float result (/ a b)))
+  (nu:with-elementwise-operations 'single-float result (/ a b)))
+
+(defun single-sqrt (result a)
+  (declare (optimize (speed 3))
+           (type (array single-float) result a))
+  (nu:with-elementwise-operations 'single-float result (sqrt a)))
 
 (defun-c non-broadcast-operation (operation type)
   (intern (concatenate 'string

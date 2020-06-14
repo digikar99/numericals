@@ -45,7 +45,7 @@
   (:export
 
    :with-broadcast
-   :with-simd-operations
+   :with-elementwise-operations
    :with-inline
    :with-array
    :with-arrays*
@@ -71,7 +71,9 @@
    :+
    :-
    :/
-   :*))
+   :*
+
+   :sqrt))
 
 #+sbcl
 (defpackage :numericals.sbcl
@@ -124,6 +126,8 @@
            :simd-single--
            :simd-single-/
            :simd-single-*
+
+           :simd-single-sqrt
 
            :simd-and
            :simd-or
@@ -179,9 +183,9 @@
     `(progn
        ,@body)))
 
-#+sbcl
-#.`(declaim (sb-ext:maybe-inline ,@(iter (for s in-package :numericals external-only t)
-                                         (collect s))))
+#.(when (member :sbcl *features*)
+    `(declaim (sb-ext:maybe-inline ,@(iter (for s in-package :numericals external-only t)
+                                           (collect s)))))
 
 (defpackage :numericals.internals
   (:use :cl :alexandria :iterate :introspect-environment
@@ -211,5 +215,9 @@
                  simd-single-broadcast-1d-aref
                  simd-double-broadcast-1d-aref
                  1d-storage-array
-                 simd-single-+))
+                 simd-single-+
+                 simd-single--
+                 simd-single-/
+                 simd-single-*
+                 simd-single-sqrt))
 

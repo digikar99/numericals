@@ -11,16 +11,16 @@
                         :components
                         ((:file "accessors")
                          (:file "1d-storage-array")
-                         (:file "arithmetic")))
+                         (:file "arithmetic")
+                         (:file "boolean")))
                (:module "array"
                         :components
                         ((:file "array")
                          (:file "compiler-macros")))
                (:file "primitives")
                (:file "broadcast")
-               (:file "with-simd-operations")
+               (:file "with-elementwise-operations")
                (:file "arithmetic")
-               ;; (:file "aref")
                (:file "concatenate")
                (:file "outer")))
 
