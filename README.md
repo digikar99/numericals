@@ -100,9 +100,9 @@ to Intel Advanced Vector Extensions](https://software.intel.com/en-us/articles/i
 ## The Juicy Bits (Done)
 
 The following operations are in the "done" bucket for `single-float`s. [tests](./tests/) have been set up for the appropriate ones amongst these.
-So, none of the following should \*not\* work. If some thing doesn't work, [file an issue](https://github.com/digikar99/numericals/issues).
+So, none of the following should \*not\* work. If something doesn't work, [file an issue](https://github.com/digikar99/numericals/issues).
 
-Prerequisites: SBCL 2.0.4+.
+Prerequisites: SBCL 2.0.5.
 
 Operation list:
 
@@ -110,7 +110,8 @@ Operation list:
 - `-`
 - `*`
 - `/`
-- aref (unoptimized; hard to optimize; use map-outer if possible)
+- sqrt
+- aref
 - concatenate (unoptimized for axis != 0)
 - map-outer (speed untested)
 - zeros 
@@ -138,9 +139,6 @@ The current list of tasks along with I-feel-to-be difficulty include:
 - [SIMD Medium] Implementing comparison operators: translating between 1 and 0 of the non-lisp world
 to `t` and `nil` of the lisp world; perhaps, adding a parameter that enables or disables
 this translation
-- [SIMD Hard] Speeding up aref using SIMD or otherwise: we are 5-20x slower than numpy. A part of
-the reason is because numpy provides array slices, and I do not know the equivalent for common
-lisp based systems.
 - [SIMD Medium] Speeding up `concatenate` for axis>0.
 - [SIMD Easy] Determining and Implementing Trigonometric functions
 - [SIMD Easy] Implementing bit-wise boolean operators
@@ -176,43 +174,43 @@ during compilation time)
 <tr>
   <td>ONES
   </td>
-<td>7.52∞x
+<td>7.52x
 </td>
-<td>4.91∞x
+<td>4.91x
 </td>
-<td>0.47∞x
+<td>0.47x
 </td>
-<td>0.27∞x
+<td>0.27x
 </td>
-<td>0.28∞x
+<td>0.28x
 </td>
 </tr>
 <tr>
   <td>ZEROS
   </td>
-<td>3.14∞x
+<td>3.14x
 </td>
-<td>1.98∞x
+<td>1.98x
 </td>
-<td>0.16∞x
+<td>0.16x
 </td>
-<td>0.21∞x
+<td>0.21x
 </td>
-<td>0.00∞x
+<td>0.00x
 </td>
 </tr>
 <tr>
   <td>EMPTY
   </td>
-<td>3.64∞x
+<td>3.64x
 </td>
-<td>2.89∞x
+<td>2.89x
 </td>
-<td>0.09∞x
+<td>0.09x
 </td>
-<td>0.00∞x
+<td>0.00x
 </td>
-<td>0.00∞x
+<td>0.00x
 </td>
 </tr>
 <tr>
