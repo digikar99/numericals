@@ -56,6 +56,10 @@
                       (setq dimensions-known-p nil)
                       dimensions)))
 
+          (when dimensions-known-p
+            (unless (listp dimensions)
+              (setq dimensions (list dimensions))))
+
           (setq initial-element
                 (if initial-element-p
                     (if (constantp initial-element env)

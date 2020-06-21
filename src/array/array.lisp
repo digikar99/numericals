@@ -76,15 +76,15 @@ value of NUMERICALS:*LOOKUP-TYPE-AT-COMPILE-TIME*, this variable may be looked u
   "If the compile-time value is T, looks up the value of *TYPE* at compile-time to aid 
 compiler-macros to generate efficient code.")
 
-(declaim (ftype (function (list &key
-                                (:element-type numericals-array-element-type)
-                                (:initial-element *)
-                                (:strides list)
-                                (:displaced-index-offset fixnum)
-                                (:initial-contents *)
-                                (:displaced-to simple-array)
-                                (:adjustable *)
-                                (:fill-pointer *))
+(declaim (ftype (function ((or list fixnum) &key
+                           (:element-type numericals-array-element-type)
+                           (:initial-element *)
+                           (:strides list)
+                           (:displaced-index-offset fixnum)
+                           (:initial-contents *)
+                           (:displaced-to simple-array)
+                           (:adjustable *)
+                           (:fill-pointer *))
                           (values na:numericals-array &optional))
                 na:make-array))
 
@@ -109,6 +109,8 @@ compiler-macros to generate efficient code.")
     (error "FILL-POINTER has not been handled yet in NUMERICALS-ARRAY"))
   (when adjustable-p
     (error "FILL-POINTER has not been handled yet in NUMERICALS-ARRAY"))
+  (unless (listp dimensions)
+    (setq dimensions (list dimensions)))
   (let* ((displaced-to-initial-element
           (cond ((and initial-element-p
                       (typep initial-element 'function-designator))
