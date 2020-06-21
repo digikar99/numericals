@@ -7,16 +7,18 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *simd-single-operation-translation-plist*
-    '(cl:+ simd-single-+
-      cl:- simd-single--
-      cl:* simd-single-*
-      cl:/ simd-single-/
-      cl:sqrt simd-single-sqrt))
+    '(:+ simd-single-+
+      :- simd-single--
+      :* simd-single-*
+      :/ simd-single-/
+      :sqrt simd-single-sqrt))
   (defparameter *with-elementwise-operations-symbol-translation-plist* nil
     "Bound inside WITH-ELEMENTWISE-OPERATIONS to help TRANSLATE-TO-SIMD-SINGLE and
 TRANSLATE-TO-BASE with the symbol translation."))
 
-(defun-c simd-single-op (op) (getf *simd-single-operation-translation-plist* op))
+(defun-c simd-single-op (op)
+  (getf *simd-single-operation-translation-plist*
+        (intern (symbol-name op) :keyword)))
 (defun-c translate-symbol (symbol)
   (getf *with-elementwise-operations-symbol-translation-plist* symbol))
 
@@ -51,8 +53,9 @@ Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
         ((symbolp body) `(the ,element-type (aref ,(translate-symbol body) ,loop-var)))
         ((listp body)
          `(the ,element-type
-               (,(car body) ,@(loop for elt in (cdr body)
-                                 collect (translate-to-base elt loop-var element-type)))))
+               (,(intern (symbol-name (car body)) :common-lisp)
+                 ,@(loop for elt in (cdr body)
+                      collect (translate-to-base elt loop-var element-type)))))
         (t (error "Non-exhaustive!"))))
 
 (defmacro with-elementwise-operations (element-type result-array body)
@@ -136,7 +139,7 @@ This is expanded to a form effective as:
            (type (array single-float) result a))
   (with-elementwise-operations 'single-float result (sqrt a)))
 
-(defmacro nu:weop (out expression)
+(defmacro nu:weop (out expression &environment env)
   "\"Open codes\" EXPRESSION using SIMD operations. EXPRESSION is expected to be made up of 
 CAR-symbols having corresponding SIMD-OP or REST symbols are expected to be bound 
 to an array. An example translation is:
@@ -147,26 +150,35 @@ This is expanded to a form effective as:
                        (simd-single-* (simd-single-1d-aref b loop-var)
                                       (simd-single-1d-aref c loop-var))))"
   (let ((symbols (collect-symbols expression))
-        (new-out (gensym)))
-    `(let ((,new-out (or ,out (nu:zeros (array-dimensions ,(car symbols))
-                                        :type (array-element-type ,(car symbols))))))
-       (declare (optimize speed))
-       ,@(loop :for s :in symbols
-            :collect `(assert (eq (array-element-type ,new-out)
-                                  (array-element-type ,s))
-                              nil
-                              "Elementwise operations cannot be performed on arrays ~A and ~A"
-                              ,new-out ,s))
-       ,@(loop :for s :in symbols
-            :collect `(assert (equalp (array-dimensions ,new-out)
-                                      (array-dimensions ,s))
-                              nil
-                              "Elementwise operations cannot be performed on arrays ~A and ~A"
-                              ,new-out ,s))
-       (ecase (array-element-type ,new-out)
-         (single-float
-          (with-elementwise-operations 'single-float ,new-out ,expression)))
-       ,new-out)))
+        (new-out (gensym))
+        (unsafe-p (zerop (policy-quality 'safety env))))
+    `(locally
+         #+sbcl(declare (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+         (let ((,new-out (or ,out
+                             (nu:zeros (array-dimensions ,(car symbols))
+                                       :type (array-element-type ,(car symbols))))))
+           ,(unless unsafe-p
+              `(progn
+                 ,@(loop :for s :in symbols
+                      :collect
+                        `(assert (eq (array-element-type ,new-out)
+                                     (array-element-type ,s))
+                                 nil
+                                 "Elementwise operations cannot be performed on arrays ~A and ~A"
+                                 ,new-out ,s))))
+           ,(unless unsafe-p
+              `(progn
+                 ,@(loop :for s :in symbols
+                      :collect
+                        `(assert (equalp (array-dimensions ,new-out)
+                                         (array-dimensions ,s))
+                                 nil
+                                 "Elementwise operations cannot be performed on arrays ~A and ~A"
+                                 ,new-out ,s))))
+           (ecase (array-element-type ,new-out)
+             (single-float
+              (with-elementwise-operations 'single-float ,new-out ,expression)))
+           ,new-out))))
 
 (defun-c non-broadcast-operation (operation type)
   (intern (concatenate 'string
