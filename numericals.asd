@@ -12,6 +12,8 @@
                         ((:file "accessors")
                          (:file "1d-storage-array")
                          (:file "arithmetic")
+                         (:file "arithmetic-single")
+                         (:file "arithmetic-double")
                          (:file "boolean")))
                (:module "array"
                         :components

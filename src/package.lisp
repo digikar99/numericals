@@ -121,13 +121,17 @@
            :+simd-svref-stride+
            
            :simd-single-+
-           :simd-double-+
-
            :simd-single--
            :simd-single-/
            :simd-single-*
 
+           :simd-double-+
+           :simd-double--
+           :simd-double-/
+           :simd-double-*
+
            :simd-single-sqrt
+           :simd-double-sqrt
 
            :simd-and
            :simd-or
@@ -219,5 +223,10 @@
                  simd-single--
                  simd-single-/
                  simd-single-*
-                 simd-single-sqrt))
+                 simd-single-sqrt
+                 simd-double-+
+                 simd-double--
+                 simd-double-/
+                 simd-double-*
+                 simd-double-sqrt))
 

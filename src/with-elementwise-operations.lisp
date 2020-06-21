@@ -12,6 +12,12 @@
       :* simd-single-*
       :/ simd-single-/
       :sqrt simd-single-sqrt))
+  (defparameter *simd-double-operation-translation-plist*
+    '(:+ simd-double-+
+      :- simd-double--
+      :* simd-double-*
+      :/ simd-double-/
+      :sqrt simd-double-sqrt))
   (defparameter *with-elementwise-operations-symbol-translation-plist* nil
     "Bound inside WITH-ELEMENTWISE-OPERATIONS to help TRANSLATE-TO-SIMD-SINGLE and
 TRANSLATE-TO-BASE with the symbol translation."))
@@ -19,6 +25,11 @@ TRANSLATE-TO-BASE with the symbol translation."))
 (defun-c simd-single-op (op)
   (getf *simd-single-operation-translation-plist*
         (intern (symbol-name op) :keyword)))
+
+(defun-c simd-double-op (op)
+  (getf *simd-double-operation-translation-plist*
+        (intern (symbol-name op) :keyword)))
+
 (defun-c translate-symbol (symbol)
   (getf *with-elementwise-operations-symbol-translation-plist* symbol))
 
@@ -32,6 +43,19 @@ and each symbol S replaced with (SIMD-SINGLE-1D-AREF S LOOP-VAR)."
          (if-let (simd-op (simd-single-op (car body)))
            `(,simd-op ,@(loop for elt in (cdr body)
                            collect (translate-to-simd-single elt loop-var)))
+           (error "~D could not be translated to SIMD-OP" (car body))))
+        (t (error "Non-exhaustive!"))))
+
+(defun-c translate-to-simd-double (body loop-var)
+  "Returns BODY with OP replaced with corresponding SIMD-DOUBLE-OP, 
+and each symbol S replaced with (SIMD-DOUBLE-1D-AREF S LOOP-VAR)."
+  (cond ((null body) ())
+        ((symbolp body) `(simd-double-1d-aref ,(translate-symbol body)
+                                              ,loop-var))
+        ((listp body)
+         (if-let (simd-op (simd-double-op (car body)))
+           `(,simd-op ,@(loop for elt in (cdr body)
+                           collect (translate-to-simd-double elt loop-var)))
            (error "~D could not be translated to SIMD-OP" (car body))))
         (t (error "Non-exhaustive!"))))
 
@@ -114,30 +138,46 @@ This is expanded to a form effective as:
                              :do (setf (aref ,1d-storage-array ,final-loop-var)
                                        ,(translate-to-base body final-loop-var element-type))))))))))
 
-(defun single-+ (result a b)
-  (declare (optimize (speed 3))
-           (type (array single-float) result a b))
-  (with-elementwise-operations 'single-float result (+ a b)))
+(defun-c non-broadcast-operation (operation type)
+  (intern (concatenate 'string
+                       (ecase type
+                         (single-float "SINGLE")
+                         (double-float "DOUBLE")
+                         (fixnum "FIXNUM"))
+                       "-" (symbol-name operation))
+          :numericals.internals))
 
-(defun single-- (result a b)
-  (declare (optimize (speed 3))
-           (type (array single-float) result a b))
-  (with-elementwise-operations 'single-float result (- a b)))
+(macrolet ((def-binary (type cl-op)
+             (destructuring-bind (type base-name)
+                 (ecase type
+                   (:single '(single-float single))
+                   (:double '(double-float double)))
+               `(defun ,(non-broadcast-operation cl-op type)
+                    (result a b)
+                  (declare (optimize (speed 3))
+                           (type (array ,type) result a b))
+                  (with-elementwise-operations ',type result (,cl-op a b))))))
+  (def-binary :single +)
+  (def-binary :single -)
+  (def-binary :single /)
+  (def-binary :single *)
+  (def-binary :double +)
+  (def-binary :double -)
+  (def-binary :double /)
+  (def-binary :double *))
 
-(defun single-* (result a b)
-  (declare (optimize (speed 3))
-           (type (array single-float) result a b))
-  (with-elementwise-operations 'single-float result (* a b)))
-
-(defun single-/ (result a b)
-  (declare (optimize (speed 3))
-           (type (array single-float) result a b))
-  (with-elementwise-operations 'single-float result (/ a b)))
-
-(defun single-sqrt (result a)
-  (declare (optimize (speed 3))
-           (type (array single-float) result a))
-  (with-elementwise-operations 'single-float result (sqrt a)))
+(macrolet ((def-unary (type cl-op)
+             (destructuring-bind (type base-name)
+                 (ecase type
+                   (:single '(single-float single))
+                   (:double '(double-float double)))
+               `(defun ,(non-broadcast-operation cl-op type)
+                    (result a)
+                  (declare (optimize (speed 3))
+                           (type (array ,type) result a))
+                  (with-elementwise-operations ',type result (,cl-op a))))))
+  (def-unary :single sqrt)
+  (def-unary :double sqrt))
 
 (defmacro nu:weop (out expression &environment env)
   "\"Open codes\" EXPRESSION using SIMD operations. EXPRESSION is expected to be made up of 
@@ -177,17 +217,10 @@ This is expanded to a form effective as:
                                  ,new-out ,s))))
            (ecase (array-element-type ,new-out)
              (single-float
-              (with-elementwise-operations 'single-float ,new-out ,expression)))
+              (with-elementwise-operations 'single-float ,new-out ,expression))
+             (double-float
+              (with-elementwise-operations 'double-float ,new-out ,expression)))
            ,new-out))))
-
-(defun-c non-broadcast-operation (operation type)
-  (intern (concatenate 'string
-                       (ecase type
-                         (single-float "SINGLE")
-                         (double-float "DOUBLE")
-                         (fixnum "FIXNUM"))
-                       "-" (symbol-name operation))
-          :numericals.internals))
 
 ;; (let ((size 1048576))
 ;;   (defparameter a (make-array size :element-type 'single-float

@@ -197,7 +197,7 @@ keyword args. For example
        `(defun ,name (type broadcast-dimensions result &rest args)
           (declare (optimize (speed 3)))
           (ecase type
-            ,@(loop for type in '(single-float)
+            ,@(loop for type in '(single-float double-float)
                  collect
                    `(,type
                      (ecase (length broadcast-dimensions)
@@ -271,7 +271,7 @@ keyword args. For example
                   (when (not out-supplied-p)
                     (setq out (nu:zeros (array-dimensions arg) :type type)))
                   (ecase type
-                    ,@(loop :for type :in '(single-float)
+                    ,@(loop :for type :in '(single-float double-float)
                          :for non-broadcast-op := (non-broadcast-operation base-operation type)
                          :collect `(,type (,non-broadcast-op out arg))))
                   out)

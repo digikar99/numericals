@@ -147,7 +147,7 @@
       `(declaim (notinline ,name)) ;; Should this be inlined?
       `(defun ,name (result a b)
          (declare (optimize (speed 3))
-                  (type (array single-float)
+                  (type (array ,type)
                         a b result))
          (let* ((broadcast-dimensions (array-dimensions result)))
            (destructuring-bind ,bound-symbols broadcast-dimensions
@@ -223,24 +223,29 @@
                        "-" (write-to-string num-dimensions) "D-" (symbol-name operation))
           :numericals.internals))
 
-(defmacro define-nd-broadcast-operations (type simd-op base-op)
-  `(progn
-     ,@(loop for i from 1 to *max-broadcast-dimensions*
-          ;; assume quoted!
-          for specialized-op-name = (specialized-operation (second base-op)
-                                                           (second type)
-                                                           i)
-          collect `(define-nd-broadcast-operation
-                       ,specialized-op-name
-                       ,i
-                     ,type
-                     ,simd-op
-                     ,base-op))))
+(macrolet ((define-nd-broadcast-operations (type simd-op base-op)
+             `(progn
+                ,@(loop for i from 1 to *max-broadcast-dimensions*
+                     ;; assume quoted!
+                     for specialized-op-name = (specialized-operation (second base-op)
+                                                                      (second type)
+                                                                      i)
+                     collect `(define-nd-broadcast-operation
+                                  ,specialized-op-name
+                                  ,i
+                                ,type
+                                ,simd-op
+                                ,base-op)))))
 
-(define-nd-broadcast-operations 'single-float 'simd-single-+ '+)
-(define-nd-broadcast-operations 'single-float 'simd-single-- '-)
-(define-nd-broadcast-operations 'single-float 'simd-single-* '*)
-(define-nd-broadcast-operations 'single-float 'simd-single-/ '/)
+  (define-nd-broadcast-operations 'single-float 'simd-single-+ '+)
+  (define-nd-broadcast-operations 'single-float 'simd-single-- '-)
+  (define-nd-broadcast-operations 'single-float 'simd-single-* '*)
+  (define-nd-broadcast-operations 'single-float 'simd-single-/ '/)
+
+  (define-nd-broadcast-operations 'double-float 'simd-double-+ '+)
+  (define-nd-broadcast-operations 'double-float 'simd-double-- '-)
+  (define-nd-broadcast-operations 'double-float 'simd-double-* '*)
+  (define-nd-broadcast-operations 'double-float 'simd-double-/ '/))
 
 ;; (let ((size 1048576))
 ;;   (defparameter a (nu:asarray (make-list size :initial-element 0.1)))
