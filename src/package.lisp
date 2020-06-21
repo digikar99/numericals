@@ -4,7 +4,7 @@
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      ,@body))
 
-(eval-always
+(eval-always ; TODO: Avoid using the package CL
  (alexandria:define-constant +cl-array-symbols+
      '(:array :arrayp
        :array-dimensions
@@ -144,16 +144,16 @@
 ;;; internal use.
 (defpackage :numericals.array
   (:use)
-  #.(append '(:intern) +numericals-array-slots+)
-  #.(append '(:import-from :numericals
-              :*type*
-              :*lookup-type-at-compile-time*
-              :numericals-array-element-type)
-            +cl-array-symbols+)
-  #.(append '(:export)
-            +cl-array-symbols+)
-  #.(append '(:export)
-            +numericals-array-symbols+))
+  #.`(:intern ,@+numericals-array-slots+)
+  #.`(:import-from :numericals
+                   :*type*
+                   :*lookup-type-at-compile-time*
+                   :numericals-array-element-type
+                   ,@+cl-array-symbols+)
+  #.`(:export
+      ,@+cl-array-symbols+)
+  #.`(:export
+      ,@+numericals-array-symbols+))
 
 ;; This package implements a multidimensional displaced array. This is required to implement ;; faster aref-ing. Without this, aref can be 50 times slower than numpy - since all numpy
 ;; does while arefing is provides a "view", without actually copying over the data.
@@ -169,10 +169,10 @@
                 :*lookup-type-at-compile-time*
                 :numericals-array-element-type)
   
-  #.(append '(:shadowing-import-from :numericals.array
-              :make-numericals-array)
-            +numericals-array-symbols+
-            +numericals-array-slots+)
+  #.`(:shadowing-import-from :numericals.array
+                             :make-numericals-array
+                             ,@+numericals-array-symbols+
+                             ,@+numericals-array-slots+)
   (:local-nicknames (:na :numericals.array)))
 
 ;; How do we check for the presence of AVX2 support given that it's not a part of +features+ ?
@@ -195,9 +195,9 @@
                 :maybe-form-not-constant-error
                 :*type*
                 :*lookup-type-at-compile-time*)
-  #.(append '(:shadowing-import-from :numericals.array)
-            cl::+cl-array-symbols+
-            cl::+numericals-array-symbols+))
+  #.`(:shadowing-import-from :numericals.array
+                             ,@cl::+cl-array-symbols+
+                             ,@cl::+numericals-array-symbols+))
 
 (in-package :numericals.internals)
 
