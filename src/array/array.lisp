@@ -306,21 +306,28 @@ compiler-macros to generate efficient code.")
   ;; TODO: Handle non-integer subscripts
   (declare (optimize speed))
   (etypecase na:numericals-array
-    (array (setf (apply #'aref na:numericals-array subscripts) new-value))
+    (array (apply #'(setf aref) new-value na:numericals-array subscripts))
     (na:numericals-array
      (with-slots (displaced-to element-type strides displaced-index-offset dim) na:numericals-array
-       (if (length= subscripts (na:array-dimensions na:numericals-array))
+       (if (let ((use-cl-aref t))
+             (loop :for subscript :in subscripts
+                :while use-cl-aref
+                :unless (numberp subscript)
+                :do (setf use-cl-aref nil))
+             use-cl-aref)
            (setf (aref displaced-to (loop :for stride :in strides
                                        :for subscript :in subscripts
                                        :summing (the (signed-byte 31)
                                                      (* (the (signed-byte 31) stride)
                                                         (the (signed-byte 31) subscript)))))
                  new-value)
-           (multiple-value-bind (dim strides displaced-index-offset)
+           (multiple-value-bind (dimensions strides displaced-index-offset contiguous-p)
                (let ((d dim)
                      (s strides)
                      (new-displaced-index-offset 0)
-                     new-dimensions new-strides)
+                     new-dimensions new-strides
+                     (contiguous-p t)
+                     (saw-a-t nil))
                  (declare (type (signed-byte 31) new-displaced-index-offset))
                  (loop :for subscript :in subscripts
                     :do
@@ -330,20 +337,26 @@ compiler-macros to generate efficient code.")
                         (if (eq t subscript)
                             (progn
                               (setq new-dimensions (cons (car d) new-dimensions))
-                              (setq new-strides (cons car-s new-strides)))
-                            (setq new-displaced-index-offset (+ new-displaced-index-offset (* car-s (the (signed-byte 31)
-                                                                                                         subscript))))))
+                              (setq new-strides (cons car-s new-strides))
+                              (setq saw-a-t t))
+                            (setq new-displaced-index-offset
+                                  (+ new-displaced-index-offset (* car-s (the (signed-byte 31)
+                                                                              subscript)))))
+                        (when (and saw-a-t (typep subscript '(signed-byte 31)))
+                          (setq contiguous-p nil)))
                       (setq d (cdr d))
                       (setq s (cdr s)))
                  (values (nconc (nreverse new-dimensions) d)
                          (nconc (nreverse new-strides) s)
-                         new-displaced-index-offset))
+                         new-displaced-index-offset
+                         contiguous-p))
              (make-numericals-array
               :displaced-to displaced-to
               :element-type element-type
-              :dim dim
+              :dim dimensions
               :strides strides
-              :displaced-index-offset displaced-index-offset)))))))
+              :displaced-index-offset displaced-index-offset
+              :contiguous-p contiguous-p)))))))
 
 (defun na:row-major-aref (na:numericals-array index)
   (if (na:array-contiguous-p na:numericals-array)

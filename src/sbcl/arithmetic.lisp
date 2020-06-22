@@ -72,9 +72,9 @@
     (define-single-binary-vop-operation %simd-single-/ vdivps)
 
     (define-double-binary-vop-operation %simd-double-+ vaddpd)
-    (define-double-binary-vop-operation %simd-double-- vaddpd)
-    (define-double-binary-vop-operation %simd-double-* vaddpd)
-    (define-double-binary-vop-operation %simd-double-/ vaddpd))
+    (define-double-binary-vop-operation %simd-double-- vsubpd)
+    (define-double-binary-vop-operation %simd-double-* vmulpd)
+    (define-double-binary-vop-operation %simd-double-/ vdivpd))
 
   (macrolet ((define-single-unary-vop-operation (name avx2-operation)
                `(eval-when (:compile-toplevel :load-toplevel :execute)

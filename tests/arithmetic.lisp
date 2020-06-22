@@ -97,7 +97,7 @@ def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
                           numericals-timings numpy-timings)))))))
 
 (def-test non-broadcast-correctness (:suite correctness)
-  (let ((dim (iota 8 :start 8))
+  (let ((dim (append '(1 2 3) (iota 8 :start 8)))
         (binary-numericals-op '(nu:+ nu:- nu:* nu:/))
         (binary-numpy-op '(np.add np.subtract np.multiply np.divide))
         (unary-numericals-op '(nu:sqrt))
@@ -107,16 +107,24 @@ def arithmetic_timeit(fn, a_sizes, b_sizes, c_sizes, num_operations):
           (iter (for d in dim)
                 (for a = (nu:asarray (pycall 'np.random.random (list 3 d))))
                 (for b = (nu:asarray (pycall 'np.random.random (list 3 d))))
-                (is (np:allclose :a (pycall np-op a b)
-                                 :b (funcall nu-op a b)
-                                 :atol 1e-7))))
+                (let ((py (pycall np-op a b))
+                      (nu (funcall nu-op a b)))
+                  (is (np:allclose :a py
+                                   :b nu
+                                   :atol 1e-7)
+                      "~%~D~% and ~%~D~% differ from each other: ~%~D~%"
+                      py nu (np:subtract py nu)))))
     (iter (for np-op in unary-numpy-op)
           (for nu-op in unary-numericals-op)
           (iter (for d in dim)
                 (for a = (pycall 'np.random.random (list 3 d)))
-                (is (np:allclose :a (pycall np-op a)
-                                 :b (funcall nu-op (nu:asarray a))
-                                 :atol 1e-7))))))
+                (let ((py (pycall np-op a))
+                      (nu (funcall nu-op a)))
+                  (is (np:allclose :a py
+                                   :b nu
+                                   :atol 1e-7)
+                      "~%~D~% and ~%~D~% differ from each other: ~%~D~%"
+                      py nu (np:subtract py nu)))))))
 
 (def-test broadcast-correctness (:suite correctness)
   (iter (for np-op in '(np.add np.subtract np.multiply np.divide))

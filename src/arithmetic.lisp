@@ -47,7 +47,7 @@
                (%broadcast-compatible-p broadcast-dimensions
                                         broadcast-dimensions-rest)))))))  )
 
-(defun array-like-p (object) (or (listp object) (arrayp object)))
+(defun array-like-p (object) (or (listp object) (arrayp object) (cl:arrayp object)))
 ;; support only 1d lists currently
 
 ;; What do we do when this variable is modified?
@@ -108,7 +108,7 @@ keyword args. For example
                       (assert (not out-supplied-p) nil
                               "Cannot supply result in ~D when no argument is array-like."
                               out)
-                      (coerce (apply ',base-operation args) type))))))
+                      (%cast type (apply ',base-operation args)))))))
 
           (define-compiler-macro ,name (&whole whole &rest orig-args &environment env)
             (let ((optimizable-p (= 3 (policy-quality 'speed env))))
@@ -279,7 +279,7 @@ keyword args. For example
                   (assert (not out-supplied-p) nil
                           "Cannot supply result in ~D when argument is not array-like."
                           out)
-                  (coerce (,base-operation arg) type))))
+                  (%cast type (,base-operation arg)))))
 
           (define-compiler-macro ,name (&whole whole arg
                                                &key (out nil out-supplied-p)
@@ -335,9 +335,6 @@ keyword args. For example
                   (progn
                     (when (= 3 (policy-quality 'speed env))
                       (format t "~& note: Optimization for call to ~S is not implemented for ~S" ',name whole)
-                      whole))))))
-       
-       ;; TODO: Add compiler-macro
-       ))
+                      whole))))))))
 
   (define-unary-wrapper nu:sqrt 'sqrt))

@@ -75,7 +75,7 @@
                                    :initial-element (array-initial-element type)))
          (ra-storage-vector (1d-storage-array return-array)))
     (loop for i fixnum from 0 below (length storage-vector)
-       do (setf (aref ra-storage-vector i)
+       do (setf (cl:aref ra-storage-vector i)
                 (cast type (aref storage-vector i)))
        finally (return return-array))))
 

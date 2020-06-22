@@ -18,7 +18,7 @@
       :* simd-double-*
       :/ simd-double-/
       :sqrt simd-double-sqrt))
-  (defparameter *with-elementwise-operations-symbol-translation-plist* nil
+  (defparameter *with-elementwise-operations-symbol-translation-alist* nil
     "Bound inside WITH-ELEMENTWISE-OPERATIONS to help TRANSLATE-TO-SIMD-SINGLE and
 TRANSLATE-TO-BASE with the symbol translation."))
 
@@ -31,31 +31,29 @@ TRANSLATE-TO-BASE with the symbol translation."))
         (intern (symbol-name op) :keyword)))
 
 (defun-c translate-symbol (symbol)
-  (getf *with-elementwise-operations-symbol-translation-plist* symbol))
+  (cdr (assoc symbol *with-elementwise-operations-symbol-translation-alist*)))
 
-(defun-c translate-to-simd-single (body loop-var)
+(defun-c translate-to-simd-single (body)
   "Returns BODY with OP replaced with corresponding SIMD-SINGLE-OP, 
 and each symbol S replaced with (SIMD-SINGLE-1D-AREF S LOOP-VAR)."
   (cond ((null body) ())
-        ((symbolp body) `(simd-single-1d-aref ,(translate-symbol body)
-                                              ,loop-var))
+        ((symbolp body) `(simd-single-1d-aref ,@(translate-symbol body)))
         ((listp body)
          (if-let (simd-op (simd-single-op (car body)))
            `(,simd-op ,@(loop for elt in (cdr body)
-                           collect (translate-to-simd-single elt loop-var)))
+                           collect (translate-to-simd-single elt)))
            (error "~D could not be translated to SIMD-OP" (car body))))
         (t (error "Non-exhaustive!"))))
 
-(defun-c translate-to-simd-double (body loop-var)
+(defun-c translate-to-simd-double (body)
   "Returns BODY with OP replaced with corresponding SIMD-DOUBLE-OP, 
 and each symbol S replaced with (SIMD-DOUBLE-1D-AREF S LOOP-VAR)."
   (cond ((null body) ())
-        ((symbolp body) `(simd-double-1d-aref ,(translate-symbol body)
-                                              ,loop-var))
+        ((symbolp body) `(simd-double-1d-aref ,@(translate-symbol body)))
         ((listp body)
          (if-let (simd-op (simd-double-op (car body)))
            `(,simd-op ,@(loop for elt in (cdr body)
-                           collect (translate-to-simd-double elt loop-var)))
+                           collect (translate-to-simd-double elt)))
            (error "~D could not be translated to SIMD-OP" (car body))))
         (t (error "Non-exhaustive!"))))
 
@@ -70,16 +68,16 @@ and each symbol S replaced with (SIMD-DOUBLE-1D-AREF S LOOP-VAR)."
              (error "~D could not be translated to SIMD-OP" (car body))))
         (t (error "Non-exhaustive!"))))
 
-(defun-c translate-to-base (body loop-var element-type)
+(defun-c translate-to-base (body element-type)
   "Returns BODY with symbol S not in the CAR replaced with (THE ELEMENT-TYPE (AREF S LOOP-VAR)).
 Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
   (cond ((null body) ())
-        ((symbolp body) `(the ,element-type (aref ,(translate-symbol body) ,loop-var)))
+        ((symbolp body) `(the ,element-type (aref ,@(translate-symbol body))))
         ((listp body)
          `(the ,element-type
                (,(intern (symbol-name (car body)) :common-lisp)
                  ,@(loop for elt in (cdr body)
-                      collect (translate-to-base elt loop-var element-type)))))
+                      collect (translate-to-base elt element-type)))))
         (t (error "Non-exhaustive!"))))
 
 (defmacro with-elementwise-operations (element-type result-array body)
@@ -95,8 +93,7 @@ This is expanded to a form effective as:
   (setq element-type (second element-type))
   (with-gensyms (1d-storage-array
                  offset
-                 loop-var
-                 final-loop-var)
+                 loop-var)
     (destructuring-bind (translate-to-simd-fn
                          accessor-fn
                          stride-size
@@ -107,10 +104,10 @@ This is expanded to a form effective as:
          ,(let* ((original-symbols (collect-symbols body))
                  (symbols (make-gensym-list (length original-symbols) "SYMBOL"))
                  (offsets (make-gensym-list (length original-symbols) "OFFSET"))
-                 (*with-elementwise-operations-symbol-translation-plist*
-                  (apply #'append
-                         (list result-array 1d-storage-array)
-                         (mapcar #'list original-symbols symbols))))
+                 (loop-vars (make-gensym-list (length original-symbols) "LOOP"))
+                 (*with-elementwise-operations-symbol-translation-alist*
+                  (cons (list result-array 1d-storage-array loop-var)
+                        (mapcar #'list original-symbols symbols loop-vars))))
             `(let* (,@symbols
                     ,@offsets
                     (start ,offset)
@@ -122,21 +119,27 @@ This is expanded to a form effective as:
                (declare (type (or (simple-array ,element-type) null) ,@symbols)
                         (type (or (signed-byte 31) null) ,@offsets)
                         (type (signed-byte 31) start stop simd-stop)
-                        (optimize (speed 3)))
+                        (optimize (speed 3) (safety 0)))
                ,@(loop :for symbol :in symbols
                     :for offset :in offsets
                     :for original-symbol :in original-symbols
                     :collect `(multiple-value-setq (,symbol ,offset)
                                 (1d-storage-array ,original-symbol)))
-               (loop :for ,loop-var fixnum :from start
-                  :below simd-stop
-                  :by ,stride-size
-                  :do (setf (,accessor-fn ,1d-storage-array ,loop-var)
-                            ,(funcall translate-to-simd-fn body loop-var))
-                  finally (loop :for ,final-loop-var fixnum :from ,loop-var
+               (loop ,@(loop :for loop-var :in loop-vars
+                          :for offset :in offsets
+                          :appending `(:for ,loop-var fixnum :from ,offset :by ,stride-size))
+                  :for ,loop-var fixnum :from start
+                  :below simd-stop :by ,stride-size                  
+                  :do ;; (print (list ,loop-var ,@loop-vars))
+                  (setf (,accessor-fn ,1d-storage-array ,loop-var)
+                        ,(funcall translate-to-simd-fn body))
+                  finally (loop :for ,loop-var fixnum :from ,loop-var
                              :below stop
-                             :do (setf (aref ,1d-storage-array ,final-loop-var)
-                                       ,(translate-to-base body final-loop-var element-type))))))))))
+                               ,@(loop :for loop-var :in loop-vars
+                                    :appending `(:for ,loop-var fixnum :from ,loop-var))
+                             :do ;; (print (list ,loop-var ,@loop-vars))
+                               (setf (cl:aref ,1d-storage-array ,loop-var)
+                                     ,(translate-to-base body element-type))))))))))
 
 (defun-c non-broadcast-operation (operation type)
   (intern (concatenate 'string
@@ -148,36 +151,30 @@ This is expanded to a form effective as:
           :numericals.internals))
 
 (macrolet ((def-binary (type cl-op)
-             (destructuring-bind (type base-name)
-                 (ecase type
-                   (:single '(single-float single))
-                   (:double '(double-float double)))
-               `(defun ,(non-broadcast-operation cl-op type)
-                    (result a b)
-                  (declare (optimize (speed 3))
-                           (type (array ,type) result a b))
-                  (with-elementwise-operations ',type result (,cl-op a b))))))
-  (def-binary :single +)
-  (def-binary :single -)
-  (def-binary :single /)
-  (def-binary :single *)
-  (def-binary :double +)
-  (def-binary :double -)
-  (def-binary :double /)
-  (def-binary :double *))
+             (setq type (cadr type)) ; assume quoted
+             `(defun ,(non-broadcast-operation cl-op type)
+                  (result a b)
+                (declare (optimize (speed 3))
+                         (type (array ,type) result a b))
+                (with-elementwise-operations ',type result (,cl-op a b)))))
+  (def-binary 'single-float +)
+  (def-binary 'single-float -)
+  (def-binary 'single-float /)
+  (def-binary 'single-float *)
+  (def-binary 'double-float +)
+  (def-binary 'double-float -)
+  (def-binary 'double-float /)
+  (def-binary 'double-float *))
 
 (macrolet ((def-unary (type cl-op)
-             (destructuring-bind (type base-name)
-                 (ecase type
-                   (:single '(single-float single))
-                   (:double '(double-float double)))
-               `(defun ,(non-broadcast-operation cl-op type)
-                    (result a)
-                  (declare (optimize (speed 3))
-                           (type (array ,type) result a))
-                  (with-elementwise-operations ',type result (,cl-op a))))))
-  (def-unary :single sqrt)
-  (def-unary :double sqrt))
+             (setq type (cadr type)) ; assume quoted
+             `(defun ,(non-broadcast-operation cl-op type)
+                  (result a)
+                (declare (optimize (speed 3))
+                         (type (array ,type) result a))
+                (with-elementwise-operations ',type result (,cl-op a)))))
+  (def-unary 'single-float sqrt)
+  (def-unary 'double-float sqrt))
 
 (defmacro nu:weop (out expression &environment env)
   "\"Open codes\" EXPRESSION using SIMD operations. EXPRESSION is expected to be made up of 
