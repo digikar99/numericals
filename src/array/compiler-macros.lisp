@@ -151,7 +151,10 @@
                                               dimensions)
                                     :strides ,strides
                                     :displaced-index-offset ,displaced-index-offset
-                                    :contiguous-p t))))
+                                    :contiguous-p t
+                                    :total-size ,(if dimensions-known-p
+                                                     (apply #'* dimensions)
+                                                     `(apply #'* ,dimensions))))))
       whole))
 
 

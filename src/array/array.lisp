@@ -31,6 +31,10 @@
    :type cl:fixnum)
   (contiguous-p
    (cl:error "CONTIGUOUS-P must be supplied during NUMERICALS-ARRAY initialization")
+   :read-only cl:t)
+  (total-size
+   (cl:error "TOTAL-SIZE must be supplied during NUMERICALS-ARRAY initialization")
+   :type cl:fixnum
    :read-only cl:t))
 
 ;; Doing this is necessary to maintain speeds. (See next comment block.)
@@ -135,7 +139,8 @@ compiler-macros to generate efficient code.")
                                     :do (setq product (* d product))
                                     :collect product))))
                  :displaced-index-offset displaced-index-offset
-                 :contiguous-p t)))
+                 :contiguous-p t
+                 :total-size (apply #'* dimensions))))
     (cond ((and initial-element-p (typep initial-element 'function-designator))
            (let ((row-major-index 0))
              (declare (type (signed-byte 31) row-major-index)
@@ -174,9 +179,6 @@ compiler-macros to generate efficient code.")
 (defun na:array-stride (na:numericals-array axis-number)
   (elt (na:array-strides na:numericals-array) axis-number))
 (declaim (ftype (function (na:numericals-array) fixnum) na:array-total-size))
-(defun na:array-total-size (na:numericals-array)
-  (declare (optimize speed))
-  (apply #'* (na:array-dimensions na:numericals-array)))
 
 (defun na:array-displacement (na:numericals-array)
   (declare (optimize speed)
@@ -258,11 +260,14 @@ compiler-macros to generate efficient code.")
                 :unless (numberp subscript)
                 :do (setf use-cl-aref nil))
              use-cl-aref)
-           (aref displaced-to (loop :for stride :in strides
-                                 :for subscript :in subscripts
-                                 :summing (the (signed-byte 31)
-                                               (* (the (signed-byte 31) stride)
-                                                  (the (signed-byte 31) subscript)))))
+           (aref displaced-to
+                 (the (signed-byte 31)
+                      (+ (the (signed-byte 31) displaced-index-offset)
+                         (loop :for stride :in strides
+                            :for subscript :in subscripts
+                            :summing (the (signed-byte 31)
+                                          (* (the (signed-byte 31) stride)
+                                             (the (signed-byte 31) subscript)))))))
            (multiple-value-bind (dimensions strides displaced-index-offset contiguous-p)
                (let ((d dim)
                      (s strides)
@@ -298,7 +303,8 @@ compiler-macros to generate efficient code.")
               :dim dimensions
               :strides strides
               :displaced-index-offset displaced-index-offset
-              :contiguous-p contiguous-p)))))))
+              :contiguous-p contiguous-p
+              :total-size (apply #'* dimensions))))))))
 
 (defun (setf na:aref) (new-value na:numericals-array &rest subscripts)
   ;; TODO: Handle nested aref
@@ -315,11 +321,14 @@ compiler-macros to generate efficient code.")
                 :unless (numberp subscript)
                 :do (setf use-cl-aref nil))
              use-cl-aref)
-           (setf (aref displaced-to (loop :for stride :in strides
-                                       :for subscript :in subscripts
-                                       :summing (the (signed-byte 31)
-                                                     (* (the (signed-byte 31) stride)
-                                                        (the (signed-byte 31) subscript)))))
+           (setf (aref displaced-to
+                       (the (signed-byte 31)
+                            (+ (the (signed-byte 31) displaced-index-offset)
+                               (loop :for stride :in strides
+                                  :for subscript :in subscripts
+                                  :summing (the (signed-byte 31)
+                                                (* (the (signed-byte 31) stride)
+                                                   (the (signed-byte 31) subscript)))))))
                  new-value)
            (multiple-value-bind (dimensions strides displaced-index-offset contiguous-p)
                (let ((d dim)
@@ -356,7 +365,8 @@ compiler-macros to generate efficient code.")
               :dim dimensions
               :strides strides
               :displaced-index-offset displaced-index-offset
-              :contiguous-p contiguous-p)))))))
+              :contiguous-p contiguous-p
+              :total-size (apply #'* dimensions))))))))
 
 (defun na:row-major-aref (na:numericals-array index)
   (if (na:array-contiguous-p na:numericals-array)
@@ -390,7 +400,8 @@ compiler-macros to generate efficient code.")
                            :displaced-index-offset displaced-index-offset
                            :displaced-to displaced-to
                            ;; TODO: Determine contiguity
-                           :contiguous-p nil)))
+                           :contiguous-p nil
+                           :total-size (apply #'* broadcast-dimensions))))
 
 (defun na:cl-array-array (array)
   (declare (type cl:array array))
@@ -406,4 +417,5 @@ compiler-macros to generate efficient code.")
                                                   (loop :for d :in (reverse dimensions)
                                                      :collect stride
                                                      :do (setq stride (* stride d)))))
-                             :contiguous-p t))))
+                             :contiguous-p t
+                             :total-size (apply #'* dimensions)))))
