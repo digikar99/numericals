@@ -72,7 +72,7 @@ and each symbol S replaced with (SIMD-DOUBLE-1D-AREF S LOOP-VAR)."
   "Returns BODY with symbol S not in the CAR replaced with (THE ELEMENT-TYPE (AREF S LOOP-VAR)).
 Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
   (cond ((null body) ())
-        ((symbolp body) `(the ,element-type (aref ,@(translate-symbol body))))
+        ((symbolp body) `(the ,element-type (cl:aref ,@(translate-symbol body))))
         ((listp body)
          `(the ,element-type
                (,(intern (symbol-name (car body)) :common-lisp)
@@ -80,11 +80,11 @@ Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
                       collect (translate-to-base elt element-type)))))
         (t (error "Non-exhaustive!"))))
 
-(defmacro with-elementwise-operations (element-type result-array body)
+(defmacro nu:with-elementwise-operations (element-type result-array body)
   "\"Open codes\" BODY using SIMD operations. BODY is expected to be made up of 
 CAR-symbols having corresponding SIMD-OP or REST symbols are expected to be bound 
 to an array. An example translation is:
-  (with-elementwise-operations :single result (+ a (* b c)))
+  (nu:with-elementwise-operations :single result (+ a (* b c)))
 This is expanded to a form effective as: 
   (setf (simd-single-1d-aref result loop-var)
         (simd-single-+ (simd-single-1d-aref a loop-var)
@@ -100,7 +100,8 @@ This is expanded to a form effective as:
                          element-type)
         (use-array-element-type element-type)
       `(multiple-value-bind (,1d-storage-array ,offset) (1d-storage-array ,result-array)
-         (declare (type (simple-array ,element-type) ,1d-storage-array))
+         (declare (type (simple-array ,element-type) ,1d-storage-array)
+                  (optimize speed))
          ,(let* ((original-symbols (collect-symbols body))
                  (symbols (make-gensym-list (length original-symbols) "SYMBOL"))
                  (offsets (make-gensym-list (length original-symbols) "OFFSET"))
@@ -108,26 +109,31 @@ This is expanded to a form effective as:
                  (*with-elementwise-operations-symbol-translation-alist*
                   (cons (list result-array 1d-storage-array loop-var)
                         (mapcar #'list original-symbols symbols loop-vars))))
-            `(let* (,@symbols
-                    ,@offsets
-                    (start ,offset)
-                    ;; should we wrap 1d-storage-array in once-only?
-                    ;; it's intended to be a symbol though
-                    (stop (+ ,offset (array-total-size ,result-array)))
-                    (simd-stop (+ ,offset (* ,stride-size
-                                             (floor (- stop start) ,stride-size)))))
-               (declare (type (or (simple-array ,element-type) null) ,@symbols)
-                        (type (or (signed-byte 31) null) ,@offsets)
+            `(let* (,@(loop :for s :in symbols
+                         :for os :in original-symbols
+                         :collect `(,s (nth-value 0 (1d-storage-array ,os))))
+                    ,@(loop :for offset :in offsets
+                         :for os :in original-symbols
+                         :collect `(,offset (nth-value 1 (1d-storage-array ,os))))
+                      (start ,offset)
+                      ;; should we wrap 1d-storage-array in once-only?
+                      ;; it's intended to be a symbol though
+                      (stop (+ ,offset (array-total-size ,result-array)))
+                      (simd-stop (+ ,offset (* ,stride-size
+                                               (floor (- stop start) ,stride-size)))))
+               (declare (type (simple-array ,element-type) ,@symbols)
+                        (type (signed-byte 31) ,@offsets)
                         (type (signed-byte 31) start stop simd-stop)
                         (optimize (speed 3) (safety 0)))
-               ,@(loop :for symbol :in symbols
-                    :for offset :in offsets
-                    :for original-symbol :in original-symbols
-                    :collect `(multiple-value-setq (,symbol ,offset)
-                                (1d-storage-array ,original-symbol)))
-               (loop ,@(loop :for loop-var :in loop-vars
-                          :for offset :in offsets
-                          :appending `(:for ,loop-var fixnum :from ,offset :by ,stride-size))
+               ;; ,@(loop :for symbol :in symbols
+               ;;      :for offset :in offsets
+               ;;      :for original-symbol :in original-symbols
+               ;;      :collect `(multiple-value-setq (,symbol ,offset)
+               ;;                  (1d-storage-array ,original-symbol)))
+               (loop
+                  ,@(loop :for loop-var :in loop-vars
+                       :for offset :in offsets
+                       :appending `(:for ,loop-var fixnum :from ,offset :by ,stride-size))
                   :for ,loop-var fixnum :from start
                   :below simd-stop :by ,stride-size                  
                   :do ;; (print (list ,loop-var ,@loop-vars))
@@ -156,7 +162,7 @@ This is expanded to a form effective as:
                   (result a b)
                 (declare (optimize (speed 3))
                          (type (array ,type) result a b))
-                (with-elementwise-operations ',type result (,cl-op a b)))))
+                (nu:with-elementwise-operations ',type result (,cl-op a b)))))
   (def-binary 'single-float +)
   (def-binary 'single-float -)
   (def-binary 'single-float /)
@@ -172,7 +178,7 @@ This is expanded to a form effective as:
                   (result a)
                 (declare (optimize (speed 3))
                          (type (array ,type) result a))
-                (with-elementwise-operations ',type result (,cl-op a)))))
+                (nu:with-elementwise-operations ',type result (,cl-op a)))))
   (def-unary 'single-float sqrt)
   (def-unary 'double-float sqrt))
 
@@ -214,9 +220,9 @@ This is expanded to a form effective as:
                                  ,new-out ,s))))
            (ecase (array-element-type ,new-out)
              (single-float
-              (with-elementwise-operations 'single-float ,new-out ,expression))
+              (nu:with-elementwise-operations 'single-float ,new-out ,expression))
              (double-float
-              (with-elementwise-operations 'double-float ,new-out ,expression)))
+              (nu:with-elementwise-operations 'double-float ,new-out ,expression)))
            ,new-out))))
 
 ;; (let ((size 1048576))

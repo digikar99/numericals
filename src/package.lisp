@@ -45,7 +45,8 @@
   (:export
 
    :with-broadcast
-   :weop ; with-elementwise-operations
+   :with-elementwise-operations
+   :weop ; convenient wrapper for with-elementwise-operations
    :with-inline
    :with-array
    :with-arrays*
@@ -101,9 +102,9 @@
 
            ;; In SBCL, the natural inputs to such functions are 
            ;; 1d simple-arrays. I'd like to hear a better name :).
-           :%single-1d-aref
-           :%double-1d-aref
-           :%fixnum-1d-aref
+           :single-1d-aref
+           :double-1d-aref
+           :fixnum-1d-aref
            :svref
            
            :simd-single-1d-aref
@@ -112,7 +113,7 @@
            :simd-svref
            
            :simd-single-broadcast-1d-aref
-           :simd-single-broadcast-1d-aref
+           :simd-double-broadcast-1d-aref
            :simd-fixnum-broadcast-1d-aref
            
            :+simd-single-1d-aref-stride+
