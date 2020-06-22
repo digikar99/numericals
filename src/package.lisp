@@ -14,6 +14,8 @@
        :array-displacement
        :1d-storage-array
        :aref
+       :cl-aref
+       :cl-array
        :row-major-aref
        :array-rank
        :make-array)
@@ -25,6 +27,7 @@
        :array-displaced-to
        :array-displaced-index-offset
        :array-dim
+       :array-cl-array
        :broadcast-array
        :array-contiguous-p
        :numericals-array
