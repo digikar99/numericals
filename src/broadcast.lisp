@@ -52,7 +52,7 @@
          (simd-broadcast-aref (ecase type
                                 (single-float 'simd-single-broadcast-1d-aref)
                                 (double-float 'simd-double-broadcast-1d-aref)))
-         (aref 'aref)
+         (aref 'cl:aref)
          (broadcast-fn-name-simd (intern (concatenate 'string
                                                       (symbol-name broadcast-fn-name)
                                                       "-SIMD"))))
