@@ -1,11 +1,11 @@
-(in-package :numericals.internals)
+(cl:in-package #.numericals.helper:*numericals-internals-package*)
+;;; The value is set in package / package+array file.
 
 ;; Numpy uses an array wrapper, and a slice of the matrix
 ;; is actually a part of the original matrix - meaning writing to the
 ;; slice actually writes to the original array - and this is imaginable
 ;; to be efficient. And even though make-array doesn't cost much,
 ;; copying the data over to this new array definitely costs much.
-;; I don't know of the multi-dimensional displaced array support in lisp.
 
 ;; The closest thing, perhaps, would be to add an iteration macro do-aref
 ;; or an iterate clause, or both.
@@ -17,6 +17,8 @@
 ;; This is also about 5 times slower than numpy. While this does not use SIMD,
 ;; it's not clear how to use it. And this is regardless of SIMD. At moments,
 ;; when numpy can use SIMD (= data is local), numpy is about 20 times faster!
+
+;; Use the "numericals+array" system that uses "numericals/array" under the hood for speed
 
 (declaim (inline tp))
 (defun-c tp (object) (eq t object))

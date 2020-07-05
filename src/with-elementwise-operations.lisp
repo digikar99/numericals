@@ -1,4 +1,5 @@
-(in-package :numericals.internals)
+(cl:in-package #.numericals.helper:*numericals-internals-package*)
+;;; The value is set in package / package+array file.
 
 (defun-c use-array-element-type (element-type)
   (ecase element-type
@@ -154,7 +155,7 @@ This is expanded to a form effective as:
                          (double-float "DOUBLE")
                          (fixnum "FIXNUM"))
                        "-" (symbol-name operation))
-          :numericals.internals))
+          numericals.helper:*numericals-internals-package*))
 
 (macrolet ((def-binary (type cl-op)
              (setq type (cadr type)) ; assume quoted

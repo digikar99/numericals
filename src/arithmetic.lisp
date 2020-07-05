@@ -1,4 +1,5 @@
-(in-package :numericals.internals)
+(cl:in-package #.numericals.helper:*numericals-internals-package*)
+;;; The value is set in package / package+array file.
 
 (defun %broadcast-compatible-p (dimensions-a dimensions-b)
   "Returns two values:

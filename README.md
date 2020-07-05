@@ -99,6 +99,8 @@ to Intel Advanced Vector Extensions](https://software.intel.com/en-us/articles/i
 
 ## The Juicy Bits (Done)
 
+There are two systems: `"numericals"` and `"numericals+array"` - the former works on with the usual Common Lisp arrays; the latter is intended to provide a drop-in replacement to Common Lisp arrays with the additional ability to provide numpy-like array views. Turns out this happens to be necessary for fast slicing - since all you now do is "provide a view". All else is intended to be identical.
+
 The following operations are in the "done" bucket for `single-float`s. [tests](./tests/) have been set up for the appropriate ones amongst these.
 So, none of the following should \*not\* work. If something doesn't work, [file an issue](https://github.com/digikar99/numericals/issues).
 
@@ -111,10 +113,10 @@ Operation list:
 - `*`
 - `/`
 - sqrt
-- aref
+- aref (`1 t` works but anything more detailed does not yet)
 - concatenate (unoptimized for axis != 0)
 - map-outer (speed untested)
-- zeros 
+- zeros
 - ones
 - empty (same as zeros)
 - asarray (unoptimized and not done for arrays inside nested lists)
@@ -135,7 +137,9 @@ Operation list:
 
 The current list of tasks along with I-feel-to-be difficulty include:
 
-- [SIMD Easy] Ensuring functionality for fixnums and double-floats 
+- [Medium] Adding tests and functionality to `"numericals/array"` system to ensure CL complaint
+- [Medium] Adding/Refactoring tests for double-float
+- [SIMD Easy] Ensuring functionality for fixnums
 - [SIMD Medium] Implementing comparison operators: translating between 1 and 0 of the non-lisp world
 to `t` and `nil` of the lisp world; perhaps, adding a parameter that enables or disables
 this translation

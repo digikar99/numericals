@@ -1,4 +1,5 @@
-(in-package :numericals/tests)
+(cl:in-package #.numericals.helper:*numericals-tests-package*)
+;;; The value is set in package / package+array file.
 
 (def-test map-outer-correctness (:suite correctness)
   ;; The following actually ensures the correctness of arithmetic operations

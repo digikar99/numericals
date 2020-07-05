@@ -1,5 +1,5 @@
-(in-package :numericals/tests)
-
+(cl:in-package #.numericals.helper:*numericals-tests-package*)
+;;; The value is set in package / package+array file.
 
 ;; Seems like SBCL allocates arrays during compile time.
 (eval-when (:compile-toplevel :load-toplevel :execute)

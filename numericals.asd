@@ -1,26 +1,50 @@
-(asdf:defsystem "numericals"
-  :pathname "src/"
-  :version "0.1.0"
-  :serial t
-  :depends-on ("alexandria"
+(asdf:defsystem "numericals/helper"
+  :pathname ""
+  :depends-on ("alexandria" "iterate")
+  :components ((:file "helper")))
+
+(asdf:defsystem "numericals/array"
+  ;; TODO: Add tests!
+  :pathname "array/"
+  :depends-on ("numericals/helper"
+               "alexandria"
                "iterate"
                "trivial-types"
                "introspect-environment")
   :components ((:file "package")
-               (:module "sbcl"
-                        :components
-                        ((:file "accessors")
-                         (:file "1d-storage-array")
-                         (:file "arithmetic")
-                         (:file "arithmetic-single")
-                         (:file "arithmetic-double")
-                         (:file "boolean")))
-               (:module "array"
-                        :components
-                        ((:file "array")
-                         (:file "compiler-macros")))
+               (:file "array")
+               (:file "compiler-macros")))
+
+(asdf:defsystem "numericals/sbcl"
+  :pathname "sbcl/"
+  :depends-on ("numericals/helper"
+               "alexandria"
+               "iterate")
+  :components ((:file "package")
+               (:file "accessors")
+               (:file "1d-storage-array")
+               (:file "arithmetic")
+               (:file "arithmetic-single")
+               (:file "arithmetic-double")
+               (:file "boolean")))
+
+(asdf:defsystem "numericals"
+  :pathname "src/"
+  :version "0.1.0"
+  :serial t
+  :depends-on ("numericals/helper"
+               #+sbcl "numericals/sbcl"
+               "alexandria"
+               "iterate"
+               "trivial-types"
+               "introspect-environment")
+  :components ((:file "package")
                (:file "primitives")
-               (:file "broadcast")
+               (:module "broadcast"
+                        :components
+                        ((:file "broadcast-core")
+                         (:file "broadcast")
+                         (:file "broadcast-operations")))
                (:file "with-elementwise-operations")
                (:file "arithmetic")
                (:file "concatenate")
@@ -30,7 +54,8 @@
   :pathname "tests/"
   :version "0.1.0"
   :serial t
-  :depends-on ("alexandria"
+  :depends-on ("numericals"
+               "alexandria"
                "iterate"
                "py4cl2"
                "cl-ppcre"

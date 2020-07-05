@@ -26,10 +26,12 @@ install:
 
 script:
   - ros -e '(push (uiop:getcwd) ql:*local-project-directories*)
-            (ql:quickload :numericals)
             (ql:quickload :numericals/tests)
+            (ql:quickload :numericals+array/tests)
             (setq 5am:*on-error* nil)
-            (setq 5am:*on-failure* nil)' run -- --dynamic-space-size 2048 --eval '(uiop:quit (if (numericals/tests:run-correctness-tests) 0 1))'
+            (setq 5am:*on-failure* nil)' run -- --dynamic-space-size 2048 --eval '(uiop:quit (if (and (numericals/tests:run-correctness-tests)
+              (numericals+array/tests:run-correctness-tests))
+         0 1))'
     [ $? -eq 1 ]
 
 notifications:

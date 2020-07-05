@@ -36,9 +36,9 @@
    :type cl:fixnum
    :read-only cl:t)
   (cl-array
-   (progn
-     (cl:error "CL-ARRAY must be supplied during NUMERICALS-ARRAY initialization")
-     cl:nil)
+   (cl:progn
+    (cl:error "CL-ARRAY must be supplied during NUMERICALS-ARRAY initialization")
+    cl:nil)
    :read-only cl:t))
 
 ;; Doing this is necessary to maintain speeds. (See next comment block.)
@@ -64,8 +64,8 @@
 ;;; - Even safety 0 makes for a 7 times slower implementation than array-dimensions
 ;;; - Generic functions make for a 5-6 times slower implementation array-dimensions
 
-(deftype numericals-array-element-type ()
-  `(member single-float double-float fixnum))
+;; (deftype numericals-array-element-type ()
+;;   `(member single-float double-float fixnum))
 
 (deftype na:array (&optional (element-type * element-type-p) (dimensions * dimensions-p))
   (declare (ignore element-type dimensions))
@@ -75,17 +75,10 @@
 
 (defun na:arrayp (object) (typep object 'na:numericals-array))
 
-(declaim (type numericals:numericals-array-element-type *type*))
-(defparameter *type* 'single-float
-  "Can only be one of FIXNUM, SINGLE-FLOAT, or DOUBLE-FLOAT. Depending on the compile-time
-value of NUMERICALS:*LOOKUP-TYPE-AT-COMPILE-TIME*, this variable may be looked up at compile-time or run-time by certain constructs.")
-
-(defparameter *lookup-type-at-compile-time* t
-  "If the compile-time value is T, looks up the value of *TYPE* at compile-time to aid 
-compiler-macros to generate efficient code.")
+;; (declaim (type numericals:numericals-array-element-type *type*))
 
 (declaim (ftype (function ((or list fixnum) &key
-                           (:element-type numericals-array-element-type)
+                           (:element-type t)
                            (:initial-element *)
                            (:strides list)
                            (:displaced-index-offset fixnum)
@@ -97,7 +90,7 @@ compiler-macros to generate efficient code.")
                 na:make-array))
 
 (defun na:make-array (dimensions &rest args
-                      &key (element-type *type*)
+                      &key (element-type t)
                         (initial-element nil initial-element-p)
                         (initial-contents nil initial-contents-p)
                         (strides nil strides-p)
@@ -131,7 +124,7 @@ compiler-macros to generate efficient code.")
                        (make-array dimensions
                                    :initial-element displaced-to-initial-element
                                    :element-type element-type)))
-         (displaced-to (cond (cl-array (1d-storage-array cl-array))
+         (displaced-to (cond (cl-array (array-storage-vector cl-array))
                              (displaced-to displaced-to)
                              (t (make-array (apply #'* dimensions)
                                             :initial-element displaced-to-initial-element
@@ -442,7 +435,9 @@ compiler-macros to generate efficient code.")
   ;; TODO: Take *type* into consideration
   (let ((dimensions (array-dimensions array)))
     (multiple-value-bind (displaced-to displaced-index-offset)
-        (1d-storage-array array)
+        (if (typep array 'simple-array)
+            (values (array-storage-vector array) 0)
+            (array-displacement array))
       (make-numericals-array :displaced-to displaced-to
                              :displaced-index-offset displaced-index-offset
                              :dim dimensions

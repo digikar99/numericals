@@ -1,4 +1,5 @@
-(in-package :numericals.internals)
+(cl:in-package #.numericals.helper:*numericals-internals-package*)
+;;; The value is set in package / package+array file.
 
 ;; A common use case I have known is having the data arranged in row-major-order
 ;; so that the first index is the "data point index". May be we could make this
