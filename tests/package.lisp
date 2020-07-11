@@ -37,7 +37,7 @@
                        (5am:run! 'speed))))
            (who:with-html-output-to-string (s nil :indent t)
              (:div :id "benchmark"
-                   (:p "SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations): ")
+                   (:p "For non-aref operations, you'd typically get a wee-bit higher speed using native common-lisp-arrays than the provided \"numericals/arrays\". The below numbers are for \"numericals+array\". SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations): ")
                    (:table (who:str rows))))))
         (5am:run! 'speed))))
 
