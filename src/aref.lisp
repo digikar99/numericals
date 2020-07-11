@@ -96,7 +96,7 @@ Examples: (array '(t t 3) :out out)."
                           (ecase num-dim
                             ,@(loop for i from 1 to *max-broadcast-dimensions*
                                  collect `(,i
-                                           (apply ',(specialized-operation 'aref type i)
+                                           (apply #',(specialized-operation 'aref type i)
                                                   out array
                                                   (nconc ,@(loop for j below i
                                                               collect

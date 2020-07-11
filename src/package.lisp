@@ -22,6 +22,7 @@
    :*lookup-type-at-compile-time*
    :astype
    :asarray
+   :aref
    :concatenate
    :zeros
    :ones

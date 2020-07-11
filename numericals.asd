@@ -48,7 +48,8 @@
                (:file "with-elementwise-operations")
                (:file "arithmetic")
                (:file "concatenate")
-               (:file "outer")))
+               (:file "outer")
+			   (:file "aref")))
 
 (asdf:defsystem "numericals/tests"
   :pathname "tests/"
