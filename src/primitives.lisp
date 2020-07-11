@@ -37,28 +37,19 @@ compile-time to aid compiler-macros to generate efficient code.")
       '(() ())))
 
 (defun array-initial-element (type)
+  (declare (optimize speed))
   (ecase type
     (single-float 0.0)
     (double-float 0.0d0)
     (fixnum 0)))
 
-;;; Should error handling be improved?
-(defun %cast (to-type object)
-  (if (eq to-type 'fixnum)
-      (nth-value 0 (floor object))
-      (coerce object to-type)))
-
-(defun map-tree (function tree)
-  (when tree
-    (if (listp tree)
-        (loop for tr in tree
-           collect (map-tree function tr))
-        (funcall function tree))))
-
 (defun cast (to-type object)
-  (if (arrayp object)
-      (nu:astype object to-type)
-      (map-tree (curry '%cast to-type) object)))
+  (etypecase object
+    (sequence (map 'list (curry #'cast to-type) object))
+    (array (nu:astype object to-type))
+    (t (case to-type
+         (fixnum (nth-value 0 (floor object)))
+         (t (coerce object to-type))))))
 
 (define-compiler-macro cast (&whole whole to-type object &environment env)
   (if (= 3 (policy-quality 'speed env))
@@ -87,28 +78,45 @@ compile-time to aid compiler-macros to generate efficient code.")
          (ra-storage-vector (1d-storage-array return-array)))
     (loop for i fixnum from 0 below (length storage-vector)
        do (setf (cl:aref ra-storage-vector i)
-                (cast type (aref storage-vector i)))
+                (cast type (cl:aref storage-vector i)))
        finally (return return-array))))
 
 (defun nu:shape (array-like)
-  (cond ((arrayp array-like)
-         (array-dimensions array-like))
-        ((listp array-like)
-         (cons (length array-like)
-               (nu:shape (car array-like))))
-        (t nil)))
+  (typecase array-like
+    (sequence (cons (length array-like)
+                    (nu:shape (elt array-like 0))))
+    (array (array-dimensions array-like))
+    (t nil)))
 
-(defun nu:zeros (&rest args)
-  "ARGS: (&rest array-dimensions &key (type *type*))
-Examples: 
-  (zeros 2 3)
-  (zeros 3 3 :type 'fixnum)"
-  (declare (optimize (speed 3)))
-  (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
-    (when (and (listp (car dimensions)) (null (cdr dimensions)))
-      (setq dimensions (car dimensions)))
-    (make-array dimensions :element-type type
-                :initial-element (%cast type 0))))
+(defun %asarray (array-like)
+  (etypecase array-like
+    (sequence (map nil #'%asarray array-like))
+    (array (multiple-value-bind (storage-array offset) (1d-storage-array array-like)
+             (loop for i from offset below (+ offset (array-total-size array-like))
+                do (setf (cl:aref *result-array* *index*)
+                         (cast *result-type* (cl:aref storage-array i)))
+                  (incf *index*))))
+    (t (setf (cl:aref *result-array* *index*)
+             (cast *result-type* array-like))
+       (incf *index*))))
+
+(defun nu:asarray (array-like &key (type *type*))
+  "ARRAY-LIKE can be a nested sequence of sequences, or an array."
+  ;; TODO: Optimize this!
+  ;; TODO: Define the predicate array-like-p.
+  (cond ((typep array-like 'sequence)
+         (let ((result-array (nu:zeros (nu:shape array-like) :type type)))
+           (let ((*index* 0)
+                 (*result-array* (1d-storage-array result-array))
+                 (*result-type* type))           
+             (declare (special *result-array* *index* *result-type*))
+             (%asarray array-like))
+           result-array))
+        ((arrayp array-like)
+         (nu:astype array-like type))
+        ((cl:arrayp array-like)
+         (nu:astype (cl-array-array array-like) type))
+        (t (error "Non-exhaustive cases!"))))
 
 (macrolet
     ((define-allocation-function (name initial-element)
@@ -128,7 +136,7 @@ Examples:
               (when (and (listp (car dimensions)) (null (cdr dimensions)))
                 (setq dimensions (car dimensions)))
               (make-array dimensions :element-type type
-                          :initial-element (%cast type ,initial-element))))
+                          :initial-element (cast type ,initial-element))))
           ;; TODO: portable way of signalling compiler notes
           (define-compiler-macro ,name (&whole whole &rest args &environment env)
             (let ((optimizable-p (= 3 (policy-quality 'speed env))))
@@ -166,7 +174,7 @@ Examples:
                         ;; DOUBLE-FLOAT, FIXNUM. And DIMENSIONS is either a LIST or a FIXNUM
                         ;; - precisely the type of arguments accepted by MAKE-ARRAY.
                         `(make-array ,dimensions :element-type ,type
-                                     :initial-element (%cast ,type ,,initial-element))
+                                     :initial-element (cast ,type ,,initial-element))
                         whole))
                   (progn
                     (when (= 3 (policy-quality 'speed env))
@@ -180,15 +188,6 @@ Examples:
   (declare (optimize (speed 3)))
   (let ((type 'double-float))    
     (nu:zeros 100 :type type)))
-
-(defun nu:asarray (array-like &key (type *type*))
-  (cond ((arrayp array-like)
-         (nu:astype array-like type))
-        ((cl:arrayp array-like)
-         (nu:astype (cl-array-array array-like) type)) ; TODO: Optimize this!
-        (t (make-array (nu:shape array-like)
-                       :element-type type
-                       :initial-contents (cast type array-like)))))
 
 (defmacro nu:with-inline (&body body)
   `(let ()

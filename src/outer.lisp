@@ -24,7 +24,7 @@
             (multiple-value-bind (result-storage-array result-offset)
                 (1d-storage-array result)              
               (loop :for i fixnum :below outer-dimension
-                 :for out := (make-array (cons 1 (cdr (array-dimensions result)))
+                 :for out := (make-array (cdr (array-dimensions result))
                                          :element-type (array-element-type result)
                                          :displaced-to result-storage-array
                                          :displaced-index-offset
@@ -41,7 +41,7 @@
                                 :collect
                                   (multiple-value-bind (1d-storage-array offset)
                                       (1d-storage-array array)
-                                    (make-array (cons 1 (cdr (array-dimensions array)))
+                                    (make-array (cdr (array-dimensions array))
                                                 :element-type (array-element-type array)
                                                 :displaced-to 1d-storage-array
                                                 :displaced-index-offset
@@ -63,18 +63,25 @@
                                     (1d-storage-array array)
                                   (declare (type (signed-byte 31) offset)
                                            (type (simple-array) 1d-storage-array))
-                                  (make-array (cons 1 (cdr (array-dimensions array)))
+                                  (make-array (cdr (array-dimensions array))
                                               :element-type (array-element-type array)
                                               :displaced-to 1d-storage-array
                                               :displaced-index-offset
                                               (the fixnum
                                                    (+ (* i elt-size) offset))))))
-                    :if result :collect (apply function sub-arrays)
+                    :if result :collect ; (apply function sub-arrays)
+					  (let ((result-array (apply function sub-arrays)))
+						(make-array (array-dimensions result-array)
+									:element-type
+									(array-element-type result-array)
+									:displaced-to
+									(1d-storage-array result-array)
+									:displaced-index-offset 0))
                     :else :do (apply function sub-arrays))))
             (ecase result
               ((nil) nil)
               (list result-list)
-              (array (apply #'nu:concatenate result-list))))))))
+              (array (nu:asarray result-list))))))))
 
 ;; (defun nu:map-outer (result function &rest arrays)
 ;;   "Result can be a object of type array or the symbol LIST or the symbol ARRAY."
