@@ -16,6 +16,8 @@ compile-time to aid compiler-macros to generate efficient code.")
 (defparameter *max-broadcast-dimensions* 4)
 ;; several macros need to be re-expanded for change in this to be reflected.
 
+(deftype uint32 () '(unsigned-byte 32))
+
 (deftype nu:numericals-array-element-type ()
   `(member single-float double-float fixnum))
 

@@ -28,6 +28,7 @@
    :ones
    :empty
    :shape
+   :transpose
 
    :+
    :-

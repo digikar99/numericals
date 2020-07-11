@@ -38,4 +38,5 @@
                (:file "arithmetic")
                (:file "concatenate")
                (:file "outer")
+			   (:file "transpose")
                (:static-file "readme" :pathname #P"../README.md")))

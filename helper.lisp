@@ -35,7 +35,6 @@
         :1d-storage-array
         :aref
         :cl-aref
-        :cl-array
         :row-major-aref
         :array-rank
         :make-array)
@@ -52,6 +51,7 @@
         :array-contiguous-p
         :numericals-array
         :make-numericals-array
+		:transpose
         :cl-array-array)
     :test 'equalp)
 
@@ -60,5 +60,8 @@
         :displaced-to
         :strides
         :dim
-        :element-type)
+        :element-type
+		:cl-array
+		:contiguous-p
+		:total-size)
     :test 'equalp))

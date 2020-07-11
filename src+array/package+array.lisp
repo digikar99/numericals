@@ -1,7 +1,7 @@
 (cl:in-package :numericals.helper)
 
 (defpackage :numericals+array
-  #.`(:shadowing-import-from :numericals.array ,@+cl-array-symbols+)
+  #.`(:shadowing-import-from :numericals.array ,@+cl-array-symbols+ :transpose)
   #.`(:export ,@+cl-array-symbols+)
   (:export
 
@@ -25,6 +25,7 @@
    :astype
    :asarray
    :concatenate
+   :transpose
    :zeros
    :ones
    :empty

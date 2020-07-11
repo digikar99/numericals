@@ -68,7 +68,7 @@
 
        ;; Assume quoted; because it looks good
        (setq broadcast-operation (cadr broadcast-operation)
-             base-operation (print (cadr (print base-operation))))
+             base-operation (cadr base-operation))
        ;; Do the checks to provide helpful error messages.
        `(progn
 
@@ -249,7 +249,7 @@ keyword args. For example
     ((define-unary-wrapper (name base-operation)
        
        ;; Assume quoted; because it looks good
-       (setq base-operation (print (cadr (print base-operation))))
+       (setq base-operation (cadr base-operation))
        ;; Do the checks to provide helpful error messages.
        `(progn
 

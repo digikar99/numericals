@@ -15,22 +15,17 @@
 
 (in-package :numericals+array/tests)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (pyexec "def _pythonize_numericals_array(array, strides):
+  array.strides = tuple(s*8 for s in strides) # double-float
+  return array
+"))
+
 (defmethod pythonize ((object numericals.array::numericals-array))
-  (when (and (config-var 'numpy-pickle-lower-bound)
-             (config-var 'numpy-pickle-location)
-             (>= (array-total-size object)
-                 (config-var 'numpy-pickle-lower-bound)))
-    (let ((filename (concatenate 'string
-                                 (config-var 'numpy-pickle-location)
-                                 ".to." (write-to-string (incf *numpy-pickle-index*)))))
-      (numpy-file-format:store-array object filename)
-      (return-from pythonize
-        (concatenate 'string "_py4cl_load_pickled_ndarray('"
-                     filename"')"))))
   
   ;; Handle case of empty array
   (if (= (array-total-size object) 0)
-      (return-from pythonize "[]"))
+      (return-from pythonize "_py4cl_numpy.array([])"))
   
   ;; First convert the array to 1D [0,1,2,3,...]
   (let ((array1d (with-output-to-string (stream)
@@ -41,13 +36,10 @@
                      (write-char #\, stream)
                      (princ (pythonize (row-major-aref object indx)) stream))
                    (write-char #\] stream))))
-    (if (= (array-rank object) 1)
-        ;; 1D array return as-is
-        array1d
-        ;; Multi-dimensional array. Call NumPy to resize
-        (concatenate 'string
-                     "_py4cl_numpy.resize(" array1d ", "
-                     (pythonize (array-dimensions object)) ")"))))
+    (concatenate 'string
+                 "_pythonize_numericals_array(_py4cl_numpy.resize(" array1d ", "
+                 (pythonize (array-dimensions object)) "), "
+                 (pythonize (numericals.array:array-strides object)) ")")))
 
 (py4cl2:defpymodule "numpy" nil :lisp-package "NP")
 (def-suite :numericals)

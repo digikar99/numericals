@@ -47,9 +47,10 @@
                          (:file "broadcast-operations")))
                (:file "with-elementwise-operations")
                (:file "arithmetic")
-               (:file "concatenate")
                (:file "outer")
-			   (:file "aref")))
+               (:file "concatenate")
+			   (:file "aref")
+			   (:file "transpose")))
 
 (asdf:defsystem "numericals/tests"
   :pathname "tests/"
@@ -68,4 +69,5 @@
                (:file "arithmetic")
                (:file "concatenate")
                (:file "outer")
+			   (:file "transpose")
                (:static-file "readme" :pathname #P"../README.md")))

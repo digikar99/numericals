@@ -9,6 +9,11 @@
 ;;; This deftype-d array must reduce to the new array, meaning the actual
 ;;; array type and the deftype wrapper need to have different names.
 (cl:in-package :numericals.array)
+
+(cl:declaim (cl:inline array-displaced-to array-element-type
+                       array-dim array-strides array-displaced-index-offset
+                       array-displaced-to array-total-size array-cl-array))
+
 (cl:defstruct (numericals-array (:conc-name array-))
   ;; TODO: Add more documentation with a proper example
   "- DIMENSIONS is a list of dimensions.
@@ -20,7 +25,10 @@
    (cl:error "ELEMENT-TYPE must be supplied during NUMERICALS-ARRAY initialization."))
   (dim
    (cl:error "DIM must be supplied during NUMERICALS-ARRAY initialization")
-   :read-only cl:t)
+   ;; :read-only cl:t
+   ;; This is actually a read-only slot; however, in TRANSPOSE, for performance reasons,
+   ;; we, first copy an existing array, and then write to this slot
+   )
   (strides
    (cl:error "STRIDES must be supplied during NUMERICALS-ARRAY initialization"))
   (displaced-index-offset
@@ -39,7 +47,10 @@
    (cl:progn
     (cl:error "CL-ARRAY must be supplied during NUMERICALS-ARRAY initialization")
     cl:nil)
-   :read-only cl:t))
+   ;; :read-only cl:t
+   ;; This is actually a read-only slot; however, in TRANSPOSE, for performance reasons,
+   ;; we, first copy an existing array, and then write to this slot
+   ))
 
 ;; Doing this is necessary to maintain speeds. (See next comment block.)
 ;; #+sbcl (declare (sb-ext:maybe-inline na:array-dimensions))
@@ -449,3 +460,14 @@
                              :contiguous-p t
                              :total-size (apply #'* dimensions)
                              :cl-array array))))
+
+(defun na:transpose (na:numericals-array)
+  (declare (optimize speed)
+           (type na:numericals-array na:numericals-array))
+  ;; Copy and then replace for performance reasons
+  (let ((result (na::copy-numericals-array na:numericals-array)))
+    (with-slots (dim strides) na:numericals-array
+      (setf (na:array-dim result) (reverse dim)
+            (na:array-strides result) (reverse strides)
+            (na:array-cl-array result) nil))
+    result))
