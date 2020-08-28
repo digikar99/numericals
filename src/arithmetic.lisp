@@ -109,7 +109,7 @@ keyword args. For example
                       (assert (not out-supplied-p) nil
                               "Cannot supply result in ~D when no argument is array-like."
                               out)
-                      (%cast type (apply ',base-operation args)))))))
+                      (cast type (apply ',base-operation args)))))))
 
           (define-compiler-macro ,name (&whole whole &rest orig-args &environment env)
             (let ((optimizable-p (= 3 (policy-quality 'speed env))))
@@ -280,7 +280,7 @@ keyword args. For example
                   (assert (not out-supplied-p) nil
                           "Cannot supply result in ~D when argument is not array-like."
                           out)
-                  (%cast type (,base-operation arg)))))
+                  (cast type (,base-operation arg)))))
 
           (define-compiler-macro ,name (&whole whole arg
                                                &key (out nil out-supplied-p)

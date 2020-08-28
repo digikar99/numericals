@@ -20,7 +20,7 @@
           (unless (equalp dimensions (array-dimensions out))
             (error "Expected OUT to be of dimensions ~D but has dimensions ~D"
                    dimensions (array-dimensions out))))
-        (setq out (nu:zeros dimensions)))
+        (setq out (nu:zeros dimensions :type (array-element-type array))))
     (let ((ndim (length (array-dimensions array)))
           (rstrides (coerce (nreverse (strides array))
                             'vector))
