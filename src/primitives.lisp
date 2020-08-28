@@ -83,12 +83,15 @@ compile-time to aid compiler-macros to generate efficient code.")
                 (cast type (cl:aref storage-vector i)))
        finally (return return-array))))
 
-(defun nu:shape (array-like)
-  (typecase array-like
-    (sequence (cons (length array-like)
-                    (nu:shape (elt array-like 0))))
-    (array (array-dimensions array-like))
-    (t nil)))
+(defun nu:shape (array-like &optional (axis nil axis-p))
+  (let ((dimensions (typecase array-like
+                      (sequence (cons (length array-like)
+                                      (nu:shape (elt array-like 0))))
+                      (array (array-dimensions array-like))
+                      (t nil))))
+    (if axis-p
+        (elt dimensions axis)
+        dimensions)))
 
 (defun %asarray (array-like)
   (etypecase array-like
