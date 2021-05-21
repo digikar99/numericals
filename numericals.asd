@@ -3,18 +3,6 @@
   :depends-on ("alexandria" "iterate")
   :components ((:file "helper")))
 
-(asdf:defsystem "numericals/array"
-  ;; TODO: Add tests!
-  :pathname "array/"
-  :depends-on ("numericals/helper"
-               "alexandria"
-               "iterate"
-               "trivial-types"
-               "introspect-environment")
-  :components ((:file "package")
-               (:file "array")
-               (:file "compiler-macros")))
-
 (asdf:defsystem "numericals/sbcl"
   :pathname "sbcl/"
   :depends-on ("numericals/helper"
