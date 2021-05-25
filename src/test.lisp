@@ -1,7 +1,7 @@
 (in-package :numericals.internals)
 
 (5am:def-suite :numericals)
-(5am:def-suite cl:array :in :numericals)
+(5am:def-suite nu::array :in :numericals)
 
 (defmacro define-numericals-one-arg-test
     (name array-type

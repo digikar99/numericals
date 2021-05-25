@@ -601,7 +601,7 @@
   (two-arg-fn 'nu:expt base power))
 (defpolymorph nu:expt (base power &key ((out (not null)))) t
   (two-arg-fn 'nu:expt base power :out out))
-(define-numericals-two-arg-test nu:expt array
+(define-numericals-two-arg-test nu:expt nu::array
     (2f-7  0.0f0 10.0f0 single-float)
     (1d-15 0.0d0 10.0d0 double-float))
 
@@ -618,7 +618,7 @@
   (two-arg-fn 'nu::atan2 x y))
 (defpolymorph nu::atan2 (x y &key ((out (not null)))) t
   (two-arg-fn 'nu::atan2 x y :out out))
-(define-numericals-two-arg-test nu::atan2 array
+(define-numericals-two-arg-test nu::atan2 nu::array
     (2f-7  0.0f0 10.0f0 single-float)
     (1d-15 0.0d0 10.0d0 double-float))
 
@@ -641,7 +641,7 @@
                   (two-arg-fn ',name x y))
                 (defpolymorph ,name (x y &key ((out (not null)))) t
                   (two-arg-fn ',name x y :out out))
-                (define-numericals-two-arg-test ,name array
+                (define-numericals-two-arg-test ,name nu::array
                     (,single-float-error ,sf-min ,sf-max ,single-float-return-type)
                     (,double-float-error ,df-min ,df-max ,double-float-return-type)))))
 

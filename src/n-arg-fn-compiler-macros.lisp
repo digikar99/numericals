@@ -44,8 +44,6 @@
                      (introspect-environment:typexpand-1 'nu:numericals-array-element-type)
                      (condition-type c)))))
 
-()
-(&whole form &rest args &environment env)
 
 (defun n-arg-fn-compiler-macro (form &optional env)
   (compiler-macro-notes:with-notes (form :optimization-note-condition
@@ -82,7 +80,7 @@
                                         (first args))
                                        ((eq fn-name 'nu:-)
                                         `(,two-arg-fn 0 ,@args))
-                                       ((eq fn-name '(nu:/ nu:< nu:<= nu:= nu:/= nu:>= nu:>))
+                                       ((member fn-name '(nu:/ nu:< nu:<= nu:= nu:/= nu:>= nu:>))
                                         `(,two-arg-fn 1 ,@args))
                                        (t (error "Unexpected!")))))
                               ((= 2 (length arg-types))

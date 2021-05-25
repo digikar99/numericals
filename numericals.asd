@@ -1,21 +1,3 @@
-(asdf:defsystem "numericals/helper"
-  :pathname ""
-  :depends-on ("alexandria" "iterate")
-  :components ((:file "helper")))
-
-(asdf:defsystem "numericals/sbcl"
-  :pathname "sbcl/"
-  :depends-on ("numericals/helper"
-               "alexandria"
-               "iterate")
-  :components ((:file "package")
-               (:file "accessors")
-               (:file "1d-storage-array")
-               (:file "arithmetic")
-               (:file "arithmetic-single")
-               (:file "arithmetic-double")
-               (:file "boolean")))
-
 (asdf:defsystem "numericals"
   :pathname "src/"
   :version "0.1.0"
@@ -24,10 +6,11 @@
                "array-operations"
                "cl-form-types"
                "compiler-macro-notes"
+               "compiler-macro"
                "bmas"
                "cblas"
                "fiveam"
-               #+sbcl "numericals/sbcl"
+               ;; #+sbcl "numericals/sbcl"
                "alexandria"
                "iterate"
                "cffi"
@@ -58,30 +41,16 @@
                ;; (:file "with-elementwise-operations")
                (:file "n-arg-fn")
                (:file "n-arg-fn-compiler-macros")
+               (:file "n-arg-fn-tests")
                (:file "outer")
                ;; (:file "concatenate")
                ;; FIXME: Do we really want a "good" AREF? Because that was one of the
                ;; main points of DENSE-ARRAYS; besides, NUMCL and SELECT already provide
                ;; the "good" aref
 			   ;; (:file "aref")
-			   (:file "transpose")))
-
-(asdf:defsystem "numericals/tests"
-  :pathname "tests/"
-  :version "0.1.0"
-  :serial t
-  :depends-on ("numericals"
-               "alexandria"
-               "iterate"
-               "py4cl2"
-               "cl-ppcre"
-               "numericals"
-               "fiveam"
-               "cl-who")
-  :components ((:file "package")
-               (:file "primitives")
-               (:file "arithmetic")
-               (:file "concatenate")
-               (:file "outer")
-			   (:file "transpose")
-               (:static-file "readme" :pathname #P"../README.md")))
+			   (:file "transpose"))
+  :perform (test-op (o c)
+             (declare (ignore o c))
+             (eval (read-from-string "(LET ((5AM:*ON-ERROR* :DEBUG)
+                                            (5AM:*ON-FAILURE* :DEBUG))
+                                       (5AM:RUN :NUMERICALS))"))))

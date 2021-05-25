@@ -1,5 +1,3 @@
-(cl:in-package :numericals.helper)
-
 (defpackage :numericals
   (:export
 
@@ -104,8 +102,7 @@
 
 (uiop:define-package :numericals.internals
     (:mix :cl :alexandria :iterate :introspect-environment
-          :polymorphic-functions
-          #+sbcl :numericals.sbcl)
+          :polymorphic-functions)
   (:import-from :numericals
                 #:maybe-form-not-constant-error
                 #:*type*
@@ -120,8 +117,6 @@
 `(declaim (sb-ext:maybe-inline
            ,@(iter (for s in-package :numericals external-only t)
                    (collect s))))
-
-(setq numericals.helper:*numericals-internals-package* :numericals.internals)
 
 (trivial-package-local-nicknames:add-package-local-nickname :nu :numericals)
 

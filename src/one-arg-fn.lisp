@@ -90,7 +90,7 @@
                   (one-arg-fn ',name x))
                 (defpolymorph ,name (x &key ((out (not null)))) t
                   (one-arg-fn ',name x :out out))
-                (define-numericals-one-arg-test ,name cl:array
+                (define-numericals-one-arg-test ,name nu::array
                     (,single-float-error ,sf-min ,sf-max)
                     (,double-float-error ,df-min ,df-max)))))
   (def nu:sin (2f-7) (1d-15))
@@ -120,7 +120,7 @@
   (one-arg-fn 'nu:atan x))
 (defpolymorph nu:atan (x &key ((out (not null)))) t
   (one-arg-fn 'nu:atan x :out out))
-(define-numericals-one-arg-test nu:atan cl:array (2f-7) (1d-15))
+(define-numericals-one-arg-test nu:atan nu::array (2f-7) (1d-15))
 
 
 (macrolet ((def (name
@@ -134,7 +134,7 @@
                   (one-arg-fn ',name x))
                 (defpolymorph ,name (x &key ((out (not null)))) t
                   (one-arg-fn ',name x :out out))
-                (define-numericals-one-arg-test ,name cl:array
+                (define-numericals-one-arg-test ,name nu::array
                     (,single-float-error) (,double-float-error)))))
   (def nu:log       (2f-7)  (1d-15))
   (def nu:fround    (0.0f0) (0.0d0))
