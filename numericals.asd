@@ -57,7 +57,7 @@
                ;; This operation stays important for large arrays because of cpu caches
                ;; (:file "with-elementwise-operations")
                (:file "n-arg-fn")
-               (:file "n-arg-fn-compiler-macro")
+               (:file "n-arg-fn-compiler-macros")
                (:file "outer")
                ;; (:file "concatenate")
                ;; FIXME: Do we really want a "good" AREF? Because that was one of the
