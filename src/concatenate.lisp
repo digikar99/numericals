@@ -1,5 +1,4 @@
-(cl:in-package #.numericals.helper:*numericals-internals-package*)
-;;; The value is set in package / package+array file.
+(cl:in-package :numericals.internals)
 
 (defun concatenate-compatible-p (axis &rest arrays-or-dimensions)
   "Returns two values:

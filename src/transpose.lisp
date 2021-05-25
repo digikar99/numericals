@@ -1,4 +1,4 @@
-(cl:in-package #.numericals.helper:*numericals-internals-package*)
+(cl:in-package :numericals.internals)
 ;;; The value is set in package / package+array file.
 
 ;; Numpy uses an array wrapper, so that transposing is merely defining a new wrapper.
@@ -10,6 +10,7 @@
 ;; TODO: Add ability to transpose about "any" axis. (Hint: https://numpy.org/doc/stable/reference/generated/numpy.transpose.html suggests this should just be a matter of permuting the dimensions and strides.)
 
 (defun nu:transpose (array &key (out nil out-supplied-p))
+  ;; Quite a bit slower than TORCH, also thanks to multithreading
   (declare (optimize speed)
            (type cl:array array))
   (let ((dimensions (nreverse (array-dimensions array))))
@@ -21,13 +22,13 @@
             (error "Expected OUT to be of dimensions ~D but has dimensions ~D"
                    dimensions (array-dimensions out))))
         (setq out (nu:zeros dimensions :type (array-element-type array))))
-    (let ((ndim (length (array-dimensions array)))
-          (rstrides (coerce (nreverse (strides array))
+    (let ((ndim     (array-rank array))
+          (rstrides (coerce (nreverse (strides (array-dimensions array)))
                             'vector))
-          (i (nth-value 1 (1d-storage-array array)))
+          (i  (cl-array-offset array))
           (ri 0)
-          (storage-array (nth-value 0 (1d-storage-array array)))
-          (rstorage-array (1d-storage-array out))
+          (storage-array  (array-storage array))
+          (rstorage-array (array-storage out))
           (rdim (coerce (nreverse (array-dimensions array))
                         'vector))
           (dim-idx 0))

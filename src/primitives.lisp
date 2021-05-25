@@ -1,22 +1,32 @@
-(cl:in-package #.numericals.helper:*numericals-internals-package*)
+(cl:in-package :numericals.internals)
 ;;; The value is set in package / package+array file.
 
 ;;; DO NOT INLINE CODE UNLESS NECESSARY
 
-(defparameter *type* 'single-float
-  "Can only be one of FIXNUM, SINGLE-FLOAT, or DOUBLE-FLOAT. Depending on 
-the compile-time value of NUMERICALS:*LOOKUP-TYPE-AT-COMPILE-TIME*, this
- variable may be looked up at compile-time or run-time by certain constructs.")
-
-(defparameter *lookup-type-at-compile-time* t
-  "If the compile-time value is T, looks up the value of *TYPE* at 
-compile-time to aid compiler-macros to generate efficient code.")
-
-
-(defparameter *max-broadcast-dimensions* 4)
-;; several macros need to be re-expanded for change in this to be reflected.
-
 (deftype uint32 () '(unsigned-byte 32))
+
+(defvar nu:*array-element-type*)
+
+(setf (documentation 'nu:*array-element-type* 'variable)
+      "If BOUND, this is the default value of the ELEMENT-TYPE or TYPE argument.
+Overrides *ARRAY-ELEMENT-TYPE-ALIST*.
+Is overriden by explicitly passing an ELEMENT-TYPE or TYPE argument.")
+
+(defvar nu:*array-element-type-alist* nil
+  "An ALIST mapping package to the default element-type used in that package.
+(Inspired from SWANK:*READTABLE-ALIST*)
+Overrides none.
+Is overriden by *ARRAY-ELEMENT-TYPE* when bound, or by explicitly passing an
+  ELEMENT-TYPE or TYPE argument.")
+
+(define-symbol-macro package-local-element-type
+    (cdr (assoc *package* nu:*array-element-type-alist*)))
+
+(define-symbol-macro default-element-type
+    (or (when (boundp 'nu:*array-element-type*)
+          nu:*array-element-type*)
+        package-local-element-type
+        t))
 
 (deftype nu:numericals-array-element-type ()
   `(member single-float double-float fixnum))
@@ -25,25 +35,110 @@ compile-time to aid compiler-macros to generate efficient code.")
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (defun ,name ,lambda-list ,@body)))
 
-(defun-c valid-numericals-type-p (type) (member type '(fixnum single-float double-float)))
-
 (defun split-at-keywords (args)
-  "Example: (1 2 3 :a 2 :b 3) => ((1 2 3) (:a 2 :b 3))"
+  "Example: (1 2 3 :a 2 :b 3) => ((1 2 3) :a 2 :b 3)"
   (if args
       (if (keywordp (car args))
-          (list () args)
-          (destructuring-bind (non-keyword-args keyword-args)
+          (cons () args)
+          (destructuring-bind (non-keyword-args &rest keyword-args)
               (split-at-keywords (cdr args))
-            (list (cons (car args) non-keyword-args)
-                  keyword-args)))
-      '(() ())))
+            (append (list (cons (car args) non-keyword-args))
+                    keyword-args)))
+      '(nil)))
 
-(defun array-initial-element (type)
-  (declare (optimize speed))
-  (ecase type
-    (single-float 0.0)
-    (double-float 0.0d0)
-    (fixnum 0)))
+
+(macrolet
+    ((def (name initial-value)
+       `(progn
+          (declaim (inline ,name))
+          (defun ,name (&rest args)
+            ,(format nil "ARGS: (&rest array-dimensions &key (type default-element-type))
+Examples: 
+  (~D 2 3)
+  (~D '(5 5))
+  (~D 3 3 :type 'fixnum)"
+                     (string-downcase name)
+                     (string-downcase name)
+                     (string-downcase name))
+            (destructuring-bind (shape &key (type default-element-type))
+                (split-at-keywords args)
+              (when (listp (first shape))
+                (assert (null (rest shape)) (shape)
+                        "Expected (REST SHAPE) to be NULL but is ~S" (rest shape))
+                (setq shape (first shape)))
+              (make-array shape :element-type type
+                                :initial-element (coerce ,initial-value type))))
+
+          (define-compiler-macro ,name (&whole form &rest args &environment env)
+            (let ((arg-types
+                    (mapcar (lm arg (cl-form-types:nth-form-type arg env 0 t t))
+                            args)))
+              (let* ((first-type  (first arg-types))
+                     (second-type (second arg-types))
+                     (args-length (length args))
+                     (second-last-type (when (>= args-length 2)
+                                         (nth (- args-length 2) arg-types))))
+                (cond ((or (subtypep first-type 'list)
+                           (and (subtypep first-type 'size)
+                                (or (null (rest args))
+                                    (and (subtypep second-type '(eql :type))
+                                         (= 3 args-length)))))
+                       (return-from ,name
+                         `((lambda (shape &key (type default-element-type))
+                             (make-array shape :element-type type))
+                           ,@args)))
+                      ((every (lm type (subtypep type 'size)) arg-types)
+                       (return-from ,name
+                         `((lambda (shape &key (type default-element-type))
+                             (make-array shape :element-type type))
+                           (list ,@args))))
+                      ((and (>= args-length 2)
+                            (every (lm type (subtypep type 'size))
+                                   (subseq arg-types 0 (- args-length 2)))
+                            (subtypep second-last-type '(eql :type)))
+                       (return-from ,name
+                         `((lambda (shape &key (type default-element-type))
+                             (make-array shape :element-type type))
+                           (list ,@args) :type (lastcar args))))
+                      (t
+                       form))))))))
+  (def nu:zeros 0)
+  (def nu:ones 1))
+
+(defun nu:rand (&rest args)
+  "Lambda List: (shape &key (type default-element-type) (min 0) (max 1))"
+  (destructuring-bind
+      (shape &key (type default-element-type) (min 0) (max 1))
+      (split-at-keywords args)
+    (when (listp (first shape))
+      (assert (null (rest shape)))
+      (setq shape (first shape)))
+    (let* ((a (nu:zeros (the list shape) :type type))
+           (asv (array-storage a))
+           (range (coerce (- max min) type))
+           (min (coerce min type)))
+      (declare (type (cl:simple-array * 1) asv))
+      ;; A good use of specialized function :)
+      (specialized-function:specializing (asv min range) ()
+        (dotimes (index (array-total-size a))
+          (funcall #'(setf row-major-aref) (+ min (random range)) asv index)))
+      a)))
+
+(declaim (inline nu:zeros-like nu:ones-like nu:rand-like))
+(defun nu:zeros-like (array)
+  ;; FIXME: Expand this to array-like
+  (declare (type cl:array array))
+  (nu:zeros (array-dimensions array) :type (array-element-type array)))
+(defun nu:ones-like (array)
+  ;; FIXME: Expand this to array-like
+  (declare (type cl:array array))
+  (nu:ones (array-dimensions array) :type (array-element-type array)))
+(defun nu:rand-like (array)
+  ;; FIXME: Expand this to array-like
+  (declare (type cl:array array))
+  (nu:rand (array-dimensions array) :type (array-element-type array)))
+
+
 
 (defun cast (to-type object)
   (etypecase object
@@ -72,6 +167,7 @@ compile-time to aid compiler-macros to generate efficient code.")
       whole))
 
 ;;; Possibly do this using SIMD
+;;; TODO: Rewrite
 (defun nu:astype (array type)
   (let* ((storage-vector (1d-storage-array array))
          (return-array (make-array (array-dimensions array)
@@ -79,11 +175,13 @@ compile-time to aid compiler-macros to generate efficient code.")
                                    :initial-element (array-initial-element type)))
          (ra-storage-vector (1d-storage-array return-array)))
     (loop for i fixnum from 0 below (length storage-vector)
-       do (setf (cl:aref ra-storage-vector i)
-                (cast type (cl:aref storage-vector i)))
-       finally (return return-array))))
+          do (setf (cl:aref ra-storage-vector i)
+                   (cast type (cl:aref storage-vector i)))
+          finally (return return-array))))
 
 (defun nu:shape (array-like &optional (axis nil axis-p))
+  ;; This is a potentially domain specific functionality; since
+  ;; there exists the ambiguity of what should one do with strings
   (let ((dimensions (typecase array-like
                       (sequence (cons (length array-like)
                                       (nu:shape (elt array-like 0))))
@@ -93,106 +191,50 @@ compile-time to aid compiler-macros to generate efficient code.")
         (elt dimensions axis)
         dimensions)))
 
-(defun %asarray (array-like)
-  (etypecase array-like
-    (sequence (map nil #'%asarray array-like))
-    (array (multiple-value-bind (storage-array offset) (1d-storage-array array-like)
-             (loop for i from offset below (+ offset (array-total-size array-like))
-                do (setf (cl:aref *result-array* *index*)
-                         (cast *result-type* (cl:aref storage-array i)))
-                  (incf *index*))))
-    (t (setf (cl:aref *result-array* *index*)
-             (cast *result-type* array-like))
-       (incf *index*))))
+(defun single-float-type-p (object)
+  (type= object 'single-float))
+(deftype our-type= (type)
+  (eswitch (type :test #'type=)
+    ('single-float `(satisfies single-float-type-p))))
 
-(defun nu:asarray (array-like &key (type *type*))
-  "ARRAY-LIKE can be a nested sequence of sequences, or an array."
-  ;; TODO: Optimize this!
+(define-polymorphic-function nu:asarray (array-like &key type) :overwrite t
+  :documentation "ARRAY-LIKE can be a nested sequence of sequences, or an array.")
+(defpolymorph nu:asarray (array-like &key (type default-element-type))
+    (values cl:array &optional)
   ;; TODO: Define the predicate array-like-p.
-  (cond ((typep array-like 'sequence)
-         (let ((result-array (nu:zeros (nu:shape array-like) :type type)))
-           (let ((*index* 0)
-                 (*result-array* (1d-storage-array result-array))
-                 (*result-type* type))           
-             (declare (special *result-array* *index* *result-type*))
-             (%asarray array-like))
-           result-array))
-        ((arrayp array-like)
-         (nu:astype array-like type))
-        ((cl:arrayp array-like)
-         (nu:astype (cl-array-array array-like) type))
-        (t (error "Non-exhaustive cases!"))))
-
-(macrolet
-    ((define-allocation-function (name initial-element)
-       `(progn
-          
-          (defun ,name (&rest args)
-            ,(format nil "ARGS: (&rest array-dimensions &key (type *type*))
-Examples: 
-  (~D 2 3)
-  (~D '(5 5))
-  (~D 3 3 :type 'fixnum)"
-                     (string-downcase name)
-                     (string-downcase name)
-                     (string-downcase name))
-            (declare (optimize (speed 3)))
-            (destructuring-bind (dimensions (&key (type *type*))) (split-at-keywords args)
-              (when (and (listp (car dimensions)) (null (cdr dimensions)))
-                (setq dimensions (car dimensions)))
-              (make-array dimensions :element-type type
-                          :initial-element (cast type ,initial-element))))
-          ;; TODO: portable way of signalling compiler notes
-          (define-compiler-macro ,name (&whole whole &rest args &environment env)
-            (let ((optimizable-p (= 3 (policy-quality 'speed env))))
-              (if (member (car whole) (list ',name 'funcall)) ; ignoring the case of funcall or apply
-                  (destructuring-bind (dimensions (&key (type '*type* type-p))) (split-at-keywords args)
-                    (when optimizable-p
-                      (setq type
-                            (cond ((and (not type-p) *lookup-type-at-compile-time*) (list 'quote *type*))
-                                  ((and (listp type)
-                                        (eq (car type) 'quote)
-                                        (null (cddr type))
-                                        (valid-numericals-type-p (cadr type)))
-                                   type)
-                                  (t type))))
-                    ;; dimensions is a list
-                    (when optimizable-p
-                      (setq dimensions
-                            (if (null (cdr dimensions))
-                                (if (or (typep (car dimensions) '(or list fixnum))
-                                        (subtypep (variable-type (car dimensions) env)
-                                                  '(or list fixnum)))
-                                    (car dimensions)
-                                    (progn
-                                      (setq optimizable-p nil)
-                                      (format
-                                       t "~&; note: ~D"
-                                       (format
-                                        nil
-                                        ,(format nil "Unable to optimize ~S without knowing type of ~~D at compile-time." name)
-                                        (car dimensions)))
-                                      dimensions))
-                                dimensions)))
-                    (if optimizable-p
-                        ;; At this point, if OPTIMIZABLE-P is T, then type is either of SINGLE-FLOAT,
-                        ;; DOUBLE-FLOAT, FIXNUM. And DIMENSIONS is either a LIST or a FIXNUM
-                        ;; - precisely the type of arguments accepted by MAKE-ARRAY.
-                        `(make-array ,dimensions :element-type ,type
-                                     :initial-element (cast ,type ,,initial-element))
-                        whole))
-                  (progn
-                    (when (= 3 (policy-quality 'speed env))
-                      (format t "~& note: Optimization for call to ~S is not implemented for ~S" ',name whole)
-                      whole))))))))
-  (define-allocation-function nu:zeros 0)
-  (define-allocation-function nu:empty 0)
-  (define-allocation-function nu:ones 1))
-
-(defun foo ()
-  (declare (optimize (speed 3)))
-  (let ((type 'double-float))    
-    (nu:zeros 100 :type type)))
+  (etypecase array-like
+    (sequence
+     (let* ((result-array (nu:zeros (nu:shape array-like) :type type))
+            (index 0)
+            (rsv (array-storage result-array)))
+       (labels ((%asarray (array-like)
+                  (etypecase array-like
+                    (sequence
+                     (map nil #'%asarray array-like))
+                    (array
+                     (let ((asv (array-storage array-like))
+                           (offset (cl-array-offset array-like)))
+                       (loop :for i :from offset
+                               :below (+ offset (array-total-size array-like))
+                             :do (setf (cl:aref rsv index)
+                                       ;; We will leave the optimization for this
+                                       ;; to cl-form-types
+                                       (trivial-coerce:coerce
+                                        (cl:aref asv i)
+                                        type))
+                                 (incf index))))
+                    (real
+                     (setf (cl:aref rsv index)
+                           (trivial-coerce:coerce (the real array-like) type))
+                     (incf index))
+                    (t
+                     (setf (cl:aref rsv index)
+                           (trivial-coerce:coerce array-like type))
+                     (incf index)))))
+         (%asarray array-like))
+       result-array))
+    (array
+     (nu:astype array-like type))))
 
 (defmacro nu:with-inline (&body body)
   `(let ()
@@ -204,7 +246,7 @@ Examples:
 
 (defmacro nu:def-array
     (var dimensions &rest args
-     &key (type *type*) initial-element initial-contents
+     &key (type default-element-type) initial-element initial-contents
        adjustable fill-pointer displaced-to displaced-index-offset
        (proclaim-type t) doc)
   ;; TODO: use array as function
@@ -227,10 +269,10 @@ Examples:
        ,(when doc `(setf (documentation ',var 'variable) ,doc))))  )
 
 (defmacro nu:with-array ((var dimensions &rest args
-                              &key (type *type* type-p) initial-element initial-contents
+                              &key (type default-element-type type-p) initial-element initial-contents
                               adjustable fill-pointer displaced-to displaced-index-offset
                               (declare-type t)) &body body &environment env)
-  ;; Compile time value of *TYPE* is used!!
+  ;; Compile time value of DEFAULT-ELEMENT-TYPE is used!!
   (declare (ignorable initial-element initial-contents adjustable fill-pointer
                       displaced-to displaced-index-offset))
   (remf args :type)
@@ -240,7 +282,7 @@ Examples:
   (setq type (cond ((not type-p) type)
                    ((constantp type env)
                     (constant-form-value type env))
-                   ((eq type '*type*) *type*)
+                   ((eq type 'default-element-type) default-element-type)
                    (t (error 'maybe-form-not-constant-error :form type))))
   
   ;; Parse dimensions
@@ -284,7 +326,7 @@ Examples:
 ;;   (unless (constantp value env)
 ;;     (error 'maybe-form-not-constant-error :form value))
 ;;   (if (eq :special (variable-information var))
-;;       (if (eq var '*type*)
+;;       (if (eq var 'default-element-type)
 ;;           (let ((*type* (ensure-get-constant-value value env)))
 ;;             (print `(let ((*type* ',(ensure-get-constant-value value env)))
 ;;                       ,@(mapcar (rcurry #'macroexpand env) body))))

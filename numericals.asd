@@ -20,24 +20,50 @@
   :pathname "src/"
   :version "0.1.0"
   :serial t
-  :depends-on ("numericals/helper"
+  :depends-on ("polymorphic-functions"
+               "array-operations"
+               "cl-form-types"
+               "compiler-macro-notes"
+               "bmas"
+               "cblas"
+               "fiveam"
                #+sbcl "numericals/sbcl"
                "alexandria"
                "iterate"
+               "cffi"
+               "lparallel"
+               "policy-cond"
+               "specialized-function"
                "trivial-types"
+               "trivial-package-local-nicknames"
                "introspect-environment")
   :components ((:file "package")
-               (:file "primitives")
-               (:module "broadcast"
-                        :components
-                        ((:file "broadcast-core")
-                         (:file "broadcast")
-                         (:file "broadcast-operations")))
-               (:file "with-elementwise-operations")
-               (:file "arithmetic")
+               ;; FIXME: Simplify primitives
+               (:file "utils")
+               (:file "primitives")               
+               (:file "translations")
+               (:file "lparallel")
+               (:file "test")
+               (:file "one-arg-fn")
+               (:file "two-arg-fn-non-broadcast")
+               (:file "broadcast")
+               (:file "ptr-iterate-but-inner")
+               (:file "two-arg-fn")
+               ;; FIXME: with-elementwise-operations
+               ;; It's not sanely possible to implement this without SB-SIMD or CL-SIMD
+               ;; or being able to call CFFI with SIMD packs, because of cases like
+               ;;   (nu:weop c (+ (+ a b) (+ b b)))
+               ;; ^This necessitates temporary memory allocation
+               ;; This operation stays important for large arrays because of cpu caches
+               ;; (:file "with-elementwise-operations")
+               (:file "n-arg-fn")
+               (:file "n-arg-fn-compiler-macro")
                (:file "outer")
-               (:file "concatenate")
-			   (:file "aref")
+               ;; (:file "concatenate")
+               ;; FIXME: Do we really want a "good" AREF? Because that was one of the
+               ;; main points of DENSE-ARRAYS; besides, NUMCL and SELECT already provide
+               ;; the "good" aref
+			   ;; (:file "aref")
 			   (:file "transpose")))
 
 (asdf:defsystem "numericals/tests"

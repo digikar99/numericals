@@ -1,8 +1,36 @@
 # numericals
 
-THIS PROJECT IS (VERY) UNSTABLE YET. THINGS ARE SUBJECT TO CHANGE.
+> THIS PROJECT IS (VERY) UNSTABLE YET. THINGS ARE SUBJECT TO CHANGE.
 
-This project was previously named `sbcl-numericals`. That project now sits unmaintained in the [sbcl-numericals](./sbcl-numericals) directory.
+The project intends to offer a numpy-like (not exactly numpy!) API and equivalent performance for high performance number crunching. This is enabled by the use of SIMD using libraries like [BMAS](https://github.com/digikar99/bmas) backed by [SLEEF](https://sleef.org/) as well as [BLAS](http://www.netlib.org/blas/). This is further coupled with multithreading using [lparallel](https://lparallel.org/).
+
+## Functionality So Far
+
+Performant functionality so far includes:
+
+- Utilities
+  - ones
+  - zeros
+  - rand
+  - ones-like
+  - zeros-like
+  - rand-like
+  - asarray
+- Actual Math
+  - Supported functions so far (see [src/package.lisp](src/package.lisp)):
+    - DMAS: `+ - * /`
+    - Comparisons: `< <= = /= >= >`
+    - Trigonometric: `sin cos tan asin acos atan`
+    - Hyperbolic `sinh cosh tanh asinh acosh atanh`
+    - `log exp expt`
+    - `ffloor fceiling fround ftruncate abs`
+
+These functions should be within a factor of two of numpy/torch for "common cases". If they are not inspite of type declarations, feel free to report an [issue](https://github.com/digikar99/numericals/issues)!
+
+## Project Predecessors
+
+- [sbcl-numericals](./sbcl-numericals)
+- [numericals-2020.08](https://github.com/digikar99/numericals/releases/tag/2020.08)
 
 The project renaming reflects an attempt to separate the ANSI standard parts of the codebase
 from the SBCL-specific part, so that a portability attempt may be made in the future.
@@ -10,8 +38,8 @@ from the SBCL-specific part, so that a portability attempt may be made in the fu
 ## Background
 
 Curiosity got the better of me one day, and I set out to explore the limits of numerical computing with Common Lisp. I mean - what does speed require? Just memory-locality and SIMD?
-SBCL has memory-locality. What about SIMD? Well, the functionality hasn't been "standardized" yet, and there are several attempts. Indeed, 
-SBCL needs more documentation - think Emacs! But knowledge exists in people's heads. People are willing to share it. So, this was possible. 
+SBCL has memory-locality. What about SIMD? Well, the functionality hasn't been "standardized" yet, and there are several attempts. Indeed,
+SBCL needs more documentation - think Emacs! But knowledge exists in people's heads. People are willing to share it. So, this was possible.
 
 PS: This library began as a [reddit post](https://www.reddit.com/r/lisp/comments/fkfgjn/sbcl_with_simd_how_to_optimize_sseavx2_to_pointer/), that, in turn, was triggered by [this reddit post](https://www.reddit.com/r/lisp/comments/fjmm6y/deep_learning_with_gpus/).
 
@@ -50,7 +78,7 @@ NIL
 NIL
 
 (let ((a (nu:zeros '(1000 1000)))   ; There are other macros with help which automatically declare
-      (b (nu:zeros '(1000 1000)))   ; things for you as well, though more work still needs to be 
+      (b (nu:zeros '(1000 1000)))   ; things for you as well, though more work still needs to be
       (c (nu:zeros '(1000 1000))))  ; done to optimize for more special cases.
   (time (loop :for i :below 1000 :do
              (nu:weop c (+ a b))))) ; elementwise operations
@@ -72,18 +100,6 @@ And I didn't see any equivalent of `nu:aref` there:
 ```
 
 
-To enable fast numpy-like view-based slicing, we have provided a drop-in replacement for common lisp arrays. Besides being used like usual specialized arrays, these include an additional `strides` slot that enables the slicing.
-
-Also broadcasting:
-
-```lisp
-(nu:+ (nu:asarray '((1 2 3)))
-      (nu:asarray '((1) (2))))
-; #2A((2.0 3.0 4.0)
-;  (3.0 4.0 5.0)
-; )
-```
-
 ## What about others?
 
 I don't know. There are [many others](https://www.cliki.net/linear%20algebra).
@@ -97,304 +113,13 @@ to the existing python ecosystem. This should eliminate the ~10000 op/sec limita
 SIMD is rich. See [Introduction
 to Intel Advanced Vector Extensions](https://software.intel.com/en-us/articles/introduction-to-intel-advanced-vector-extensions) for the full realm of possibilities.
 
-## The Juicy Bits (Done)
-
-There are two systems: `"numericals"` and `"numericals+array"` - the former works on with the usual Common Lisp arrays; the latter is intended to provide a drop-in replacement to Common Lisp arrays with the additional ability to provide numpy-like array views. Turns out this happens to be necessary for fast slicing - since all you now do is "provide a view". All else is intended to be identical.
-
-The following operations are in the "done" bucket for `single-float`s. [tests](./tests/) have been set up for the appropriate ones amongst these.
-So, none of the following should \*not\* work. If something doesn't work, [file an issue](https://github.com/digikar99/numericals/issues).
-
-Prerequisites: SBCL 2.0.5.
-
-Operation list:
-
-- `+`
-- `-`
-- `*`
-- `/`
-- sqrt
-- aref (`1 t` works but anything more detailed does not yet)
-- concatenate (unoptimized for axis != 0)
-- map-outer (speed untested)
-- zeros
-- ones
-- empty (same as zeros)
-- asarray (unoptimized and not done for arrays inside nested lists)
-- astype (unoptimized)
-- shape (unoptimized)
-
-- weop [macro]
-- with-inline [macro]
-- with-array / `with-arrays*` [macro]
-- with-constant / with-constants [macro]
-- maybe-form-not-constant-error
-- def-array [macro]
-- numericals-array-element-type
-- `*type*`
-- `*lookup-type-at-compile-time*`
-
-## TODO (Contributing)
-
-The current list of tasks along with I-feel-to-be difficulty include:
-
-- [Medium] Adding tests and functionality to `"numericals/array"` system to ensure CL complaint
-- [Medium] Adding/Refactoring tests for double-float
-- [SIMD Easy] Ensuring functionality for fixnums
-- [SIMD Medium] Implementing comparison operators: translating between 1 and 0 of the non-lisp world
-to `t` and `nil` of the lisp world; perhaps, adding a parameter that enables or disables
-this translation
-- [SIMD Medium] Speeding up `concatenate` for axis>0.
-- [SIMD Easy] Determining and Implementing Trigonometric functions
-- [SIMD Easy] Implementing bit-wise boolean operators
-- [Easy] Implementing package (perhaps not based on SIMD) for non-SBCL systems
-- [Easy] Adding tests for not-yet-tested things
-- [Medium] Adding more compiler macros and checks for greater efficiency
-- [Hard] Implementing `asarray` for arrays nested inside lists of lists reasonably efficiently
-
-## Benchmarks
-
-
-<div id='benchmark'>
-  <p>For non-aref operations, you'd typically get a wee-bit higher speed using native common-lisp-arrays than the provided "numericals/array". The below numbers are for "numericals+array". SBCL is faster than NUMPY by (horizontal indicates array sizes; vertical indicates various operations):
-  </p>
-  <table>
-<tr>
-  <th>Allocation array operations (seems like SBCL allocates arrays
-during compilation time)
-  </th>
-<th>10
-</th>
-<th>100
-</th>
-<th>10000
-</th>
-<th>1000000
-</th>
-<th>100000000
-</th>
-</tr>
-<tr>
-  <td>ONES
-  </td>
-<td>5.07x
-</td>
-<td>4.18x
-</td>
-<td>0.50x
-</td>
-<td>0.28x
-</td>
-<td>0.35x
-</td>
-</tr>
-<tr>
-  <td>ZEROS
-  </td>
-<td>1.63x
-</td>
-<td>1.20x
-</td>
-<td>0.18x
-</td>
-<td>0.21x
-</td>
-<td>0.00x
-</td>
-</tr>
-<tr>
-  <td>EMPTY
-  </td>
-<td>1.72x
-</td>
-<td>1.69x
-</td>
-<td>0.08x
-</td>
-<td>0.00x
-</td>
-<td>0.00x
-</td>
-</tr>
-<tr>
-  <th>Non-broadcast array operations (If you know you do not need broadcast, you might want to try using WEOP that is specialized for element-wise operations)
-  </th>
-<th>10
-</th>
-<th>100
-</th>
-<th>10000
-</th>
-<th>1000000
-</th>
-<th>100000000
-</th>
-</tr>
-<tr>
-  <td>+
-  </td>
-<td>0.97x
-</td>
-<td>1.12x
-</td>
-<td>1.08x
-</td>
-<td>1.00x
-</td>
-<td>0.94x
-</td>
-</tr>
-<tr>
-  <td>-
-  </td>
-<td>1.28x
-</td>
-<td>1.26x
-</td>
-<td>0.89x
-</td>
-<td>0.89x
-</td>
-<td>0.94x
-</td>
-</tr>
-<tr>
-  <td>*
-  </td>
-<td>1.05x
-</td>
-<td>1.11x
-</td>
-<td>0.87x
-</td>
-<td>0.89x
-</td>
-<td>0.91x
-</td>
-</tr>
-<tr>
-  <td>/
-  </td>
-<td>1.37x
-</td>
-<td>1.01x
-</td>
-<td>1.09x
-</td>
-<td>0.93x
-</td>
-<td>0.94x
-</td>
-</tr>
-<tr>
-  <th>Broadcast array operations (warning: can vary quite a bit depending
-on actual array dimensions)
-  </th>
-<th>10
-</th>
-<th>100
-</th>
-<th>10000
-</th>
-<th>1000000
-</th>
-<th>100000000
-</th>
-</tr>
-<tr>
-  <td>+
-  </td>
-<td>1.02x
-</td>
-<td>1.18x
-</td>
-<td>1.39x
-</td>
-<td>1.65x
-</td>
-<td>0.82x
-</td>
-</tr>
-<tr>
-  <td>-
-  </td>
-<td>1.31x
-</td>
-<td>1.19x
-</td>
-<td>1.28x
-</td>
-<td>1.41x
-</td>
-<td>0.77x
-</td>
-</tr>
-<tr>
-  <td>*
-  </td>
-<td>1.28x
-</td>
-<td>1.15x
-</td>
-<td>1.20x
-</td>
-<td>1.54x
-</td>
-<td>0.70x
-</td>
-</tr>
-<tr>
-  <td>/
-  </td>
-<td>1.42x
-</td>
-<td>1.30x
-</td>
-<td>1.47x
-</td>
-<td>1.56x
-</td>
-<td>0.80x
-</td>
-</tr>
-<tr>
-  <th>Concatenate (currently unoptimized for axis != 0; 
-as such this can be slower than numpy by a factor of 50)
-  </th>
-<th>10
-</th>
-<th>100
-</th>
-<th>10000
-</th>
-<th>1000000
-</th>
-<th>100000000
-</th>
-</tr>
-<tr>
-  <td>Axis 0
-  </td>
-<td>1.59x
-</td>
-<td>2.29x
-</td>
-<td>1.04x
-</td>
-<td>0.80x
-</td>
-<td>0.61x
-</td>
-</tr>
-  </table>
-</div>
-
-<!-- The above div would be filled by :numericals/tests when *write-to-readme* is T. -->
-
 ## Acknowledgements
 
 - Everyone who has contributed to SBCL.
 - [u/love5an](https://www.reddit.com/user/love5an/) and [u/neil-lindquist](https://www.reddit.com/user/neil-lindquist/) for the required hand-holding and the [gist](https://gist.github.com/Lovesan/660866b96a2632b900359333a251cc1c).
 - Paul Khuong for [some](https://pvk.ca/Blog/2013/06/05/fresh-in-sbcl-1-dot-1-8-sse-intrinsics/) [blog posts](https://pvk.ca/Blog/2014/08/16/how-to-define-new-intrinsics-in-sbcl/).
 - [guicho271828](https://github.com/guicho271828) for [SBCL Wiki](https://github.com/guicho271828/sbcl-wiki/wiki) as well as [numcl](https://github.com/numcl/numcl).
+- All the [SLEEF](https://github.com/shibatch/sleef) contributors
+- All the contributors of [c2ffi](https://github.com/rpav/c2ffi/) and [cl-autowrap](https://github.com/rpav/cl-autowrap)
 - It's possible that I could have forgotten to mention somebody - so... yeah... happy number crunching!
 

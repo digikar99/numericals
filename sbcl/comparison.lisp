@@ -13,7 +13,7 @@
                   (:args (a :scs (single-avx2-reg))
                          (b :scs (single-avx2-reg)))
                   (:arg-types simd-pack-256-single simd-pack-256-single)
-                  (:results (dest :scs (sb-vm::unsigned-reg)))
+                  (:results (dest :scs (single-avx2-reg)))
                   (:result-types simple-bit-vector)
                   (:generator 1 ;; TODO: what should be the cost?
                               (inst vcmpps ,avx2-operation dest a b)))))) 

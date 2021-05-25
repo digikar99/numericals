@@ -23,50 +23,45 @@
     "Bound inside WITH-ELEMENTWISE-OPERATIONS to help TRANSLATE-TO-SIMD-SINGLE and
 TRANSLATE-TO-BASE with the symbol translation."))
 
-(defun-c simd-single-op (op)
-  (getf *simd-single-operation-translation-plist*
-        (intern (symbol-name op) :keyword)))
+(defparameter *vectorizable-operations*
+  (append (hash-table-keys *translation-table*)
+          '(nu:+ nu:- nu:* nu:/ nu:< nu:<= nu:= nu:/= nu:>= nu:>)))
 
-(defun-c simd-double-op (op)
-  (getf *simd-double-operation-translation-plist*
-        (intern (symbol-name op) :keyword)))
+(defun vectorizable-operation-p (op)
+  (member op *vectorizable-operations* :test #'string=))
 
-(defun-c translate-symbol (symbol)
-  (cdr (assoc symbol *with-elementwise-operations-symbol-translation-alist*)))
+(defun translate-symbol (symbol)
+  (find symbol *vectorizable-operations* :test #'string=))
 
-(defun-c translate-to-simd-single (body)
-  "Returns BODY with OP replaced with corresponding SIMD-SINGLE-OP, 
-and each symbol S replaced with (SIMD-SINGLE-1D-AREF S LOOP-VAR)."
-  (cond ((null body) ())
-        ((symbolp body) `(simd-single-1d-aref ,@(translate-symbol body)))
-        ((listp body)
-         (if-let (simd-op (simd-single-op (car body)))
-           `(,simd-op ,@(loop for elt in (cdr body)
-                           collect (translate-to-simd-single elt)))
-           (error "~D could not be translated to SIMD-OP" (car body))))
-        (t (error "Non-exhaustive!"))))
-
-(defun-c translate-to-simd-double (body)
-  "Returns BODY with OP replaced with corresponding SIMD-DOUBLE-OP, 
-and each symbol S replaced with (SIMD-DOUBLE-1D-AREF S LOOP-VAR)."
-  (cond ((null body) ())
-        ((symbolp body) `(simd-double-1d-aref ,@(translate-symbol body)))
-        ((listp body)
-         (if-let (simd-op (simd-double-op (car body)))
-           `(,simd-op ,@(loop for elt in (cdr body)
-                           collect (translate-to-simd-double elt)))
-           (error "~D could not be translated to SIMD-OP" (car body))))
-        (t (error "Non-exhaustive!"))))
-
-(defun-c collect-symbols (body)
+(defun collect-symbols (body)
   (cond ((null body) ())
         ((symbolp body) (list body))
         ((listp body)
-         (if (simd-single-op (car body))
+         (if (vectorizable-operation-p (car body))
              (remove-duplicates
               (apply 'append (loop for elt in (cdr body)
                                 collect (collect-symbols elt))))
-             (error "~D could not be translated to SIMD-OP" (car body))))
+             (error "~S is not a vectorizable operation" (car body))))
+        (t (error "Non-exhaustive!"))))
+(cond ((null body) ())
+        ((symbolp body) (list body))
+        ((listp body)
+         (if (vectorizable-operation-p (car body))
+             (remove-duplicates
+              (apply 'append (loop for elt in (cdr body)
+                                collect (collect-symbols elt))))
+             (error "~S is not a vectorizable operation" (car body))))
+        (t (error "Non-exhaustive!")))
+
+(defun translate-body (body)
+  (cond ((null body) ())
+        ((symbolp body) (translate-symbol body))
+        ((listp body)
+         (if (vectorizable-operation-p (car body))
+             (remove-duplicates
+              (apply 'append (loop for elt in (cdr body)
+                                collect (collect-symbols elt))))
+             (error "~S is not a vectorizable operation" (car body))))
         (t (error "Non-exhaustive!"))))
 
 (defun-c translate-to-base (body element-type)
@@ -77,8 +72,8 @@ Each FORM in BODY is also surrounded with (THE ELEMENT-TYPE FORM)."
         ((listp body)
          `(the ,element-type
                (,(intern (symbol-name (car body)) :common-lisp)
-                 ,@(loop for elt in (cdr body)
-                      collect (translate-to-base elt element-type)))))
+                ,@(loop for elt in (cdr body)
+                        collect (translate-to-base elt element-type)))))
         (t (error "Non-exhaustive!"))))
 
 (defmacro nu:with-elementwise-operations (element-type result-array body)
