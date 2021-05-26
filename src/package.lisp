@@ -1,4 +1,5 @@
 (defpackage :numericals
+  (:import-from :trivial-coerce #:coerce)
   (:export
 
    #:*multithreaded-threshold*
@@ -7,7 +8,7 @@
 
    :with-broadcast
    :with-elementwise-operations
-   :weop ; convenient wrapper for with-elementwise-operations
+   :weop          ; convenient wrapper for with-elementwise-operations
    :with-inline
    :with-array
    :with-arrays*
@@ -23,7 +24,7 @@
    :*type*
    :*lookup-type-at-compile-time*
    :astype
-   :asarray
+   #:asarray
    :aref
    :concatenate
    #:array=

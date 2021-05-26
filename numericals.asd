@@ -23,10 +23,11 @@
   :components ((:file "package")
                ;; FIXME: Simplify primitives
                (:file "utils")
-               (:file "primitives")               
+               (:file "primitives")
                (:file "translations")
                (:file "lparallel")
                (:file "test")
+               (:file "coerce")
                (:file "one-arg-fn")
                (:file "two-arg-fn-non-broadcast")
                (:file "broadcast")
@@ -47,8 +48,9 @@
                ;; FIXME: Do we really want a "good" AREF? Because that was one of the
                ;; main points of DENSE-ARRAYS; besides, NUMCL and SELECT already provide
                ;; the "good" aref
-			   ;; (:file "aref")
-			   (:file "transpose"))
+               ;; (:file "aref")
+               (:file "transpose")
+               (:file "misc"))
   :perform (test-op (o c)
              (declare (ignore o c))
              (eval (read-from-string "(LET ((5AM:*ON-ERROR* :DEBUG)

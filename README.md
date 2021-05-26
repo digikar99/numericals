@@ -17,13 +17,14 @@ Performant functionality so far includes:
   - rand-like
   - asarray
 - Actual Math
-  - Supported functions so far (see [src/package.lisp](src/package.lisp)):
+  - Supported single-float/double-float functions so far (see [src/package.lisp](src/package.lisp)):
     - DMAS: `+ - * /`
     - Comparisons: `< <= = /= >= >`
     - Trigonometric: `sin cos tan asin acos atan`
     - Hyperbolic `sinh cosh tanh asinh acosh atanh`
     - `log exp expt`
     - `ffloor fceiling fround ftruncate abs`
+    - `copy`
 
 These functions should be within a factor of two of numpy/torch for "common cases". If they are not inspite of type declarations, feel free to report an [issue](https://github.com/digikar99/numericals/issues)!
 
