@@ -110,6 +110,7 @@
                                             (,name rand1 rand2 :out return-array)
                                             :test #'close-p))
                                "Simple Multithreaded")
+                  ;; FIXME: Add a test for broadcasting
                   (5am:is-true (let* ((rand1 (cl:make-array '(10 50)
                                                             :element-type ',type
                                                             :displaced-to

@@ -99,7 +99,8 @@ Examples:
                        (return-from ,name
                          `((lambda (shape &key (type default-element-type))
                              (make-array shape :element-type type))
-                           (list ,@args) :type (lastcar args))))
+                           (list ,@(subseq args 0 (- args-length 2)))
+                           :type ,(lastcar args))))
                       (t
                        form))))))))
   (def nu:zeros 0)
