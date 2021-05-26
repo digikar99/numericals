@@ -21,8 +21,6 @@
    :numericals-array-element-type
    :map-outer
    
-   :*type*
-   :*lookup-type-at-compile-time*
    :astype
    #:asarray
    :aref
@@ -37,13 +35,6 @@
    :empty
    :shape
    :transpose
-
-   :+
-   :-
-   :/
-   :*
-
-   :sqrt
 
    #:sin
    #:cos
@@ -62,7 +53,7 @@
    #:log
    #:expt
 
-   #:sqrt
+   :sqrt
 
    #:ffloor
    #:fceiling

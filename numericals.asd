@@ -17,6 +17,7 @@
                "lparallel"
                "policy-cond"
                "specialized-function"
+               "trivial-coerce"
                "trivial-types"
                "trivial-package-local-nicknames"
                "introspect-environment")
@@ -27,11 +28,11 @@
                (:file "translations")
                (:file "lparallel")
                (:file "test")
-               (:file "coerce")
                (:file "one-arg-fn")
                (:file "two-arg-fn-non-broadcast")
                (:file "broadcast")
                (:file "ptr-iterate-but-inner")
+               (:file "coerce")
                (:file "two-arg-fn")
                ;; FIXME: with-elementwise-operations
                ;; It's not sanely possible to implement this without SB-SIMD or CL-SIMD
