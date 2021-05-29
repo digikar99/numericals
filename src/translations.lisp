@@ -41,7 +41,9 @@
                       (nu:two-arg-=  bmas:seq  bmas:deq  cl:=)
                       (nu:two-arg-/= bmas:sneq bmas:dneq cl:/=)
                       (nu:two-arg->= bmas:sge  bmas:dge  cl:>=)
-                      (nu:two-arg->  bmas:sgt  bmas:dgt  cl:>))))
+                      (nu:two-arg->  bmas:sgt  bmas:dgt  cl:>)
+
+                      (nu:copy cblas:scopy cblas:dcopy))))
 
 (macrolet ((def (fn-name index)
              `(progn

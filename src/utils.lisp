@@ -1,10 +1,5 @@
 (in-package :numericals.internals)
 
-(defun ensure-appropriate-array (array-like)
-  (if (typep array-like `(array ,default-element-type))
-      array-like
-      (nu:asarray (ensure-list array-like) :type default-element-type)))
-
 (defmacro with-pointers-to-vectors-data (bindings &body body)
   (if bindings
       `(cffi:with-pointer-to-vector-data ,(first bindings)

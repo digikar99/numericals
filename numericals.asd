@@ -3,8 +3,8 @@
   :version "0.1.0"
   :serial t
   :depends-on ("polymorphic-functions"
-               "array-operations"
                "cl-form-types"
+               "array-operations"
                "compiler-macro-notes"
                "compiler-macro"
                "bmas"
@@ -32,7 +32,7 @@
                (:file "two-arg-fn-non-broadcast")
                (:file "broadcast")
                (:file "ptr-iterate-but-inner")
-               (:file "coerce")
+               (:file "copy-coerce")
                (:file "two-arg-fn")
                ;; FIXME: with-elementwise-operations
                ;; It's not sanely possible to implement this without SB-SIMD or CL-SIMD

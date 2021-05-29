@@ -1,4 +1,4 @@
-(cl:in-package :numericals.internals)
+(in-package :numericals.internals)
 ;;; The value is set in package / package+array file.
 
 ;;; DO NOT INLINE CODE UNLESS NECESSARY
@@ -27,6 +27,11 @@ Is overriden by *ARRAY-ELEMENT-TYPE* when bound, or by explicitly passing an
           nu:*array-element-type*)
         package-local-element-type
         t))
+
+(defun ensure-appropriate-array (array-like)
+  (if (typep array-like `(array ,default-element-type))
+      array-like
+      (nu:asarray (ensure-list array-like) :type default-element-type)))
 
 (deftype nu:numericals-array-element-type ()
   `(member single-float double-float fixnum))

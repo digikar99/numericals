@@ -28,6 +28,12 @@ Performant functionality so far includes:
 
 These functions should be within a factor of two of numpy/torch for "common cases". If they are not inspite of type declarations, feel free to report an [issue](https://github.com/digikar99/numericals/issues)!
 
+## Planned
+
+- `transpose` with arbitrary axes
+- SIMD support for integer types
+- More operations from BLAS
+
 ## Project Predecessors
 
 - [sbcl-numericals](./sbcl-numericals)

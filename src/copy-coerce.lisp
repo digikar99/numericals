@@ -10,6 +10,16 @@
 ;;; But, how does one broadcast 1x1000 against 1000x1000 parallely without strided arrays?
 ;;; We avoid lparallel in this case :(
 
+(defpolymorph nu:copy ((x (array single-float)) &key ((out (array single-float))))
+    (array single-float)
+  (one-arg-fn 'nu:copy x :out out)
+  out)
+
+(defpolymorph nu:copy ((x (array double-float)) &key ((out (array double-float))))
+    (array double-float)
+  (one-arg-fn 'nu:copy x :out out)
+  out)
+
 (defpolymorph nu:copy ((x (array single-float)) &key ((out (array double-float))))
     (array double-float)
   (let ((dim-x (array-dimensions x))
