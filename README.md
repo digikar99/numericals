@@ -28,6 +28,37 @@ Performant functionality so far includes:
 
 These functions should be within a factor of two of numpy/torch for "common cases". If they are not inspite of type declarations, feel free to report an [issue](https://github.com/digikar99/numericals/issues)!
 
+## Usage and Features
+
+
+#### Native CL arrays
+
+As of this writing,
+
+- The only libraries that offer broadcasted operations on arrays are this and [numcl](https://github.com/numcl/numcl)
+- `numcl` does not yet have a focus on high performance - though, it [should be possible to implement the current einsum based backend using BLAS and BMAS](https://github.com/numcl/numcl/issues/57); instead the focus there is on functionality; by contrast, the focus here is on performance first, and functionality second. Users do not have to choose. `:mix` option of `uiop:define-package` can be useful for mixing the two libraries as per user preferences
+- Other minor differences wrt numcl include:
+  - Both `(ones 2 3 :type 'single-float)` and `(ones '(2 3) :type 'single-float)` are legal in numericals; while only the latter is legal in numcl
+  - `numericals` provides a `*array-element-type-alist*` equivalent to `swank:*readtable-alist*` to provide a package local way of specifying the default element-type for arrays. This can be further overriden by binding `*array-element-type*`. This does impose performance penalties however.
+  - `numcl` relies on JIT backed by [specialized-function](https://github.com/numcl/specialized-function), while `numericals` relies on AOT backed by [polymorphic-functions](https://github.com/digikar99/polymorphic-functions/) and [cl-form-types](https://github.com/alex-gutev/cl-form-types). Again, these are not either-or, high level user functions can (in theory) utilize specialized-function, while the innards can use static-dispatch either by polymorphic-functions or [static-dispatch](https://github.com/alex-gutev/static-dispatch) or [fast-generic-functions](https://github.com/marcoheisig/fast-generic-functions/).
+- In addition to these two, another performant library operating on CL arrays includes [lla](https://github.com/tpapp/lla). Again, `uiop:define-package` with `:mix` can be used suitably.
+
+The author of `numericals` [did not find other libraries operating on native CL arrays](https://gist.github.com/digikar99/16066dbf24b8789c969ea58837e0fbef).
+
+#### Non-native CL arrays
+
+There are [quite](https://github.com/CodyReichert/awesome-cl#machine-learning) a [few](https://github.com/CodyReichert/awesome-cl#numerical-and-scientific) libraries in Common Lisp in this domain. I have only managed to take a peak at [femlisp-matlisp](https://gist.github.com/digikar99/16066dbf24b8789c969ea58837e0fbef#femlisp-matlisp).
+
+That said, the goal of `numericals` is not to *replace* python ecosystems, at least not in the short run, but instead to overcome the limitations of libraries like [py4cl](https://github.com/bendudson/py4cl)/[2](https://github.com/digikar99/py4cl2) of sub-10,000 instructions per second.
+
+#### Usage
+
+For the time being, preferably, [fetch from this dist of ultralisp](https://github.com/digikar99/polymorphic-functions#getting-it-from-ultralisp). Users may need to `bash make.sh` [bmas](https://github.com/digikar99/bmas) manually; this currently requires `gcc`, but the `make.sh` should be trivial enough to edit per the user's configurations. This step may be automated in the future.
+
+Once `(ql:quickload "numericals")` is successful; use inside your own package using `:mix` option of `uiop:define-package` (see above discussion), or [package-local-nicknames](https://common-lisp-libraries.readthedocs.io/#libraries).
+
+Run tests using `(asdf:test-system "numericals")`; these are scattered throughout the system.
+
 ## Planned
 
 In no order of priority:
@@ -39,6 +70,8 @@ In no order of priority:
 - Handle better configuration variable pertaining to whether compile time value of `default-element-type` should be used
 - Introduce a compile time configuration variable to enable/disable the use of lparallel
 - Introduce dense-numericals into this repository
+- Reviving `weop` and `with-elementwise-operations` using [sb-simd](https://github.com/marcoheisig/sb-simd/) or [cl-simd](https://github.com/angavrilov/cl-simd) (or one of its forks!)
+- Automate installation of [bmas](https://github.com/digikar99/bmas), and avoid hardcoding paths in cl-bmas and cl-cblas
 
 ## Project Predecessors
 
@@ -58,73 +91,6 @@ PS: This library began as a [reddit post](https://www.reddit.com/r/lisp/comments
 
 You should probably use the latest [SBCL (get from git)](https://github.com/sbcl/sbcl), at least SBCL-2.0.4. The build is fairly easy: `sh make.sh && sh run-sbcl.sh # or install.sh`.
 
-## Why not matlisp?
-
-Because ...
-
-```lisp
-(let ((a (zeros 1000 1000))
-      (b (zeros 1000 1000)))
-  (declare (optimize (speed 3)))
-  (time (loop :for i :below 1000 :do (m+ a b))))
-; Evaluation took:
-;   4.001 seconds of real time
-;   4.004066 seconds of total run time (3.807962 user, 0.196104 system)
-;   [ Run times consist of 0.361 seconds GC time, and 3.644 seconds non-GC time. ]
-;   100.07% CPU
-;   8,828,045,634 processor cycles
-;   8,000,016,000 bytes consed
-NIL
-```
-
-```lisp
-(let ((a (nu:zeros '(1000 1000)))
-      (b (nu:zeros '(1000 1000))))
-  (time (loop :for i :below 1000 :do (nu:+ a b))))
-; Evaluation took:
-;   1.727 seconds of real time
-;   1.728858 seconds of total run time (1.556757 user, 0.172101 system)
-;   [ Run times consist of 0.199 seconds GC time, and 1.530 seconds non-GC time. ]
-;   100.12% CPU
-;   3,810,797,604 processor cycles
-;   4,000,343,680 bytes consed
-NIL
-
-(let ((a (nu:zeros '(1000 1000)))   ; There are other macros with help which automatically declare
-      (b (nu:zeros '(1000 1000)))   ; things for you as well, though more work still needs to be
-      (c (nu:zeros '(1000 1000))))  ; done to optimize for more special cases.
-  (time (loop :for i :below 1000 :do
-             (nu:weop c (+ a b))))) ; elementwise operations
-; Evaluation took:
-;   0.775 seconds of real time
-;   0.775492 seconds of total run time (0.775492 user, 0.000000 system)
-;   100.00% CPU
-;   1,712,306,568 processor cycles
-;   131,072 bytes consed
-NIL
-```
-
-And I didn't see any equivalent of `nu:aref` there:
-
-```lisp
-(let ((a (nu:asarray '((1 2 3) (4 5 6)))))
-  (nu:aref a t 2))
-;=> #1A(3.0 6.0)
-```
-
-
-## What about others?
-
-I don't know. There are [many others](https://www.cliki.net/linear%20algebra).
-
-## The Plan
-
-The plan is to enable number crunching using this, coupled with py4cl/2. For "light" array
-manipulation, we stay within lisp. While for heavy manipulation - deep learning - we offload
-to the existing python ecosystem. This should eliminate the ~10000 op/sec limitations of py4cl/2.
-
-SIMD is rich. See [Introduction
-to Intel Advanced Vector Extensions](https://software.intel.com/en-us/articles/introduction-to-intel-advanced-vector-extensions) for the full realm of possibilities.
 
 ## Acknowledgements
 

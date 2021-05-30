@@ -57,3 +57,16 @@
              (eval (read-from-string "(LET ((5AM:*ON-ERROR* :DEBUG)
                                             (5AM:*ON-FAILURE* :DEBUG))
                                        (5AM:RUN :NUMERICALS))"))))
+
+(defsystem "numericals/benchmarks"
+  :pathname "benchmarks/"
+  :version "0.1.0"
+  :depends-on ("alexandria"
+               "cl-ascii-table"
+               "numericals"
+               "py4cl2"
+               "fiveam")
+  :components ((:file "package")
+               (:file "benchmark")
+               (:file "one-arg-fn")
+               (:file "two-arg-fn")))
