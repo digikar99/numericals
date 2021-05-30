@@ -146,16 +146,11 @@
                                    array-like-syms array-likes)
                          (,out-sym ,out-arg))
                     (declare
-                     (type
-                      (,(if (and (subtypep out-type (quote simple-array))
-                                 (every
-                                  (lm type
-                                      (subtypep type (quote simple-array)))
-                                  array-types))
-                            (quote simple-array)
-                            (quote array))
-                       ,element-type)
-                      ,@array-like-syms ,out-sym))
+                     ,@(loop :for sym :in array-like-syms
+                             :for array-like :in array-likes
+                             :collect `(type ,(cl-form-types:nth-form-type array-like env 0 t t)
+                                             ,sym))
+                     (type ,(cl-form-types:nth-form-type out-arg env 0 t t) ,out-sym))
                     ,main-code
                     ,out-sym))))))))
 

@@ -37,8 +37,8 @@
             (x out)          
           (with-pointers-to-vectors-data ((ptr-x svx)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-x (* 4 (cl-array-offset x)))
-            (cffi:incf-pointer ptr-o (* 4 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-x (the-size (* 4 (cl-array-offset x))))
+            (cffi:incf-pointer ptr-o (the-size (* 4 (cl-array-offset out))))
             (funcall single-float-c-name
                      (array-total-size out)
                      ptr-x 1
@@ -70,8 +70,8 @@
             (x out)          
           (with-pointers-to-vectors-data ((ptr-x svx)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-x (* 4 (cl-array-offset x)))
-            (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-x (the-size (* 4 (cl-array-offset x))))
+            (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
             (funcall single-float-c-name
                      (array-total-size out)
                      ptr-x 1
@@ -105,8 +105,8 @@
             (y out)          
           (with-pointers-to-vectors-data ((ptr-y svy)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-y (* 4 (cl-array-offset y)))
-            (cffi:incf-pointer ptr-o (* 4 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-y (the-size (* 4 (cl-array-offset y))))
+            (cffi:incf-pointer ptr-o (the-size (* 4 (cl-array-offset out))))
             (funcall single-float-c-name
                      (array-total-size out)
                      ptr-x 0
@@ -138,8 +138,8 @@
             (y out)          
           (with-pointers-to-vectors-data ((ptr-y svy)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-y (* 4 (cl-array-offset y)))
-            (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-y (the-size (* 4 (cl-array-offset y))))
+            (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
             (funcall single-float-c-name
                      (array-total-size out)
                      ptr-x 0
@@ -175,9 +175,9 @@
         (with-pointers-to-vectors-data ((ptr-x svx)
                                         (ptr-y svy)
                                         (ptr-o svo))
-          (cffi:incf-pointer ptr-x (* 4 (cl-array-offset x)))
-          (cffi:incf-pointer ptr-y (* 4 (cl-array-offset y)))
-          (cffi:incf-pointer ptr-o (* 4 (cl-array-offset out)))
+          (cffi:incf-pointer ptr-x (the-size (* 4 (cl-array-offset x))))
+          (cffi:incf-pointer ptr-y (the-size (* 4 (cl-array-offset y))))
+          (cffi:incf-pointer ptr-o (the-size (* 4 (cl-array-offset out))))
           (funcall single-float-c-name
                    (array-total-size out)
                    ptr-x 1
@@ -212,9 +212,9 @@
         (with-pointers-to-vectors-data ((ptr-x svx)
                                         (ptr-y svy)
                                         (ptr-o svo))
-          (cffi:incf-pointer ptr-x (* 4 (cl-array-offset x)))
-          (cffi:incf-pointer ptr-y (* 4 (cl-array-offset y)))
-          (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+          (cffi:incf-pointer ptr-x (the-size (* 4 (cl-array-offset x))))
+          (cffi:incf-pointer ptr-y (the-size (* 4 (cl-array-offset y))))
+          (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
           (funcall single-float-c-name
                    (array-total-size out)
                    ptr-x 1
@@ -247,8 +247,8 @@
             (x out)          
           (with-pointers-to-vectors-data ((ptr-x svx)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-x (* 8 (cl-array-offset x)))
-            (cffi:incf-pointer ptr-o (* 8 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-x (the-size (* 8 (cl-array-offset x))))
+            (cffi:incf-pointer ptr-o (the-size (* 8 (cl-array-offset out))))
             (funcall double-float-c-name
                      (array-total-size out)
                      ptr-x 1
@@ -280,8 +280,8 @@
             (x out)          
           (with-pointers-to-vectors-data ((ptr-x svx)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-x (* 8 (cl-array-offset x)))
-            (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-x (the-size (* 8 (cl-array-offset x))))
+            (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
             (funcall double-float-c-name
                      (array-total-size out)
                      ptr-x 1
@@ -315,8 +315,8 @@
             (y out)          
           (with-pointers-to-vectors-data ((ptr-y svy)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-y (* 8 (cl-array-offset y)))
-            (cffi:incf-pointer ptr-o (* 8 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-y (the-size (* 8 (cl-array-offset y))))
+            (cffi:incf-pointer ptr-o (the-size (* 8 (cl-array-offset out))))
             (funcall double-float-c-name
                      (array-total-size out)
                      ptr-x 0
@@ -348,8 +348,8 @@
             (y out)          
           (with-pointers-to-vectors-data ((ptr-y svy)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-y (* 8 (cl-array-offset y)))
-            (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-y (the-size (* 8 (cl-array-offset y))))
+            (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
             (funcall double-float-c-name
                      (array-total-size out)
                      ptr-x 0
@@ -385,9 +385,9 @@
         (with-pointers-to-vectors-data ((ptr-x svx)
                                         (ptr-y svy)
                                         (ptr-o svo))
-          (cffi:incf-pointer ptr-x (* 8 (cl-array-offset x)))
-          (cffi:incf-pointer ptr-y (* 8 (cl-array-offset y)))
-          (cffi:incf-pointer ptr-o (* 8 (cl-array-offset out)))
+          (cffi:incf-pointer ptr-x (the-size (* 8 (cl-array-offset x))))
+          (cffi:incf-pointer ptr-y (the-size (* 8 (cl-array-offset y))))
+          (cffi:incf-pointer ptr-o (the-size (* 8 (cl-array-offset out))))
           (funcall double-float-c-name
                    (array-total-size out)
                    ptr-x 1
@@ -422,9 +422,9 @@
         (with-pointers-to-vectors-data ((ptr-x svx)
                                         (ptr-y svy)
                                         (ptr-o svo))
-          (cffi:incf-pointer ptr-x (* 8 (cl-array-offset x)))
-          (cffi:incf-pointer ptr-y (* 8 (cl-array-offset y)))
-          (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+          (cffi:incf-pointer ptr-x (the-size (* 8 (cl-array-offset x))))
+          (cffi:incf-pointer ptr-y (the-size (* 8 (cl-array-offset y))))
+          (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
           (funcall double-float-c-name
                    (array-total-size out)
                    ptr-x 1

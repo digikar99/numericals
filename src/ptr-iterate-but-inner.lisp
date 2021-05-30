@@ -23,8 +23,8 @@
                (,@(mapcar (lm ptr var `(,ptr (array-storage ,var)))
                           pointers array-vars))
              ,@(mapcar (lm ptr var elt-size `(cffi:incf-pointer ,ptr
-                                                 (* ,elt-size
-                                                    (cl-array-offset ,var))))
+                                                 (the-size (* ,elt-size
+                                                              (cl-array-offset ,var)))))
                        pointers array-vars elt-sizes)
              (let (,@(mapcar (lm strides var `(,strides (strides-for-broadcast
                                                          (array-dimensions ,var)
@@ -58,7 +58,8 @@
                                                          (the-int-index
                                                           (* ,elt-size
                                                              (the-int-index
-                                                              (- (* ,n-var ,s)))))))
+                                                              (- (the-int-index
+                                                                  (* ,n-var ,s))))))))
                                                 pointers ss elt-sizes))))))
                  (nest-loop ,broadcast-dimensions
                             ,@strides)))))))))

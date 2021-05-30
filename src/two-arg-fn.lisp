@@ -82,8 +82,8 @@
             (x out)          
           (with-pointers-to-vectors-data ((ptr-x svx)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-x (* 4 (cl-array-offset x)))
-            (cffi:incf-pointer ptr-o (* 4 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-x (the-size (* 4 (cl-array-offset x))))
+            (cffi:incf-pointer ptr-o (the-size (* 4 (cl-array-offset out))))
             (funcall single-float-c-name
                      (array-total-size out)
                      ptr-x 1
@@ -115,8 +115,8 @@
             (x out)          
           (with-pointers-to-vectors-data ((ptr-x svx)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-x (* 4 (cl-array-offset x)))
-            (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-x (the-size (* 4 (cl-array-offset x))))
+            (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
             (funcall single-float-c-name
                      (array-total-size out)
                      ptr-x 1
@@ -150,8 +150,8 @@
             (y out)          
           (with-pointers-to-vectors-data ((ptr-y svy)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-y (* 4 (cl-array-offset y)))
-            (cffi:incf-pointer ptr-o (* 4 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-y (the-size (* 4 (cl-array-offset y))))
+            (cffi:incf-pointer ptr-o (the-size (* 4 (cl-array-offset out))))
             (funcall single-float-c-name
                      (array-total-size out)
                      ptr-x 0
@@ -183,8 +183,8 @@
             (y out)          
           (with-pointers-to-vectors-data ((ptr-y svy)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-y (* 4 (cl-array-offset y)))
-            (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-y (the-size (* 4 (cl-array-offset y))))
+            (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
             (funcall single-float-c-name
                      (array-total-size out)
                      ptr-x 0
@@ -213,17 +213,15 @@
                      :array-likes (list x y))
              (let ((out (nu:zeros broadcast-dimensions :type 'single-float)))
                (declare (type (array single-float) out))
-               (with-thresholded-multithreading (array-total-size (the array out))
-                   (x y out)
-                 (ptr-iterate-but-inner broadcast-dimensions n
-                   ((ptr-x 4 ix x)
-                    (ptr-y 4 iy y)
-                    (ptr-o 4 io out))
-                   (funcall single-float-c-name
-                            n
-                            ptr-x ix
-                            ptr-y iy
-                            ptr-o io)))
+               (ptr-iterate-but-inner broadcast-dimensions n
+                 ((ptr-x 4 ix x)
+                  (ptr-y 4 iy y)
+                  (ptr-o 4 io out))
+                 (funcall single-float-c-name
+                          n
+                          ptr-x ix
+                          ptr-y iy
+                          ptr-o io))
                out))))))
 
 (defpolymorph two-arg-fn
@@ -245,17 +243,15 @@
                      'incompatible-broadcast-dimensions
                      :dimensions (list dim-x dim-y dim-o)
                      :array-likes (list x y out))
-             (with-thresholded-multithreading (array-total-size out)
-                 (x y out)
-               (ptr-iterate-but-inner broadcast-dimensions n
-                 ((ptr-x 4 ix x)
-                  (ptr-y 4 iy y)
-                  (ptr-o 4 io out))
-                 (funcall single-float-c-name
-                          n
-                          ptr-x ix
-                          ptr-y iy
-                          ptr-o io)))
+             (ptr-iterate-but-inner broadcast-dimensions n
+               ((ptr-x 4 ix x)
+                (ptr-y 4 iy y)
+                (ptr-o 4 io out))
+               (funcall single-float-c-name
+                        n
+                        ptr-x ix
+                        ptr-y iy
+                        ptr-o io))
              out)))))
 
 (defpolymorph two-arg-fn
@@ -277,17 +273,15 @@
                      :array-likes (list x y))
              (let ((out (nu:zeros broadcast-dimensions :type '(unsigned-byte 8))))
                (declare (type (array (unsigned-byte 8)) out))
-               (with-thresholded-multithreading (array-total-size (the array out))
-                   (x y out)
-                 (ptr-iterate-but-inner broadcast-dimensions n
-                   ((ptr-x 4 ix x)
-                    (ptr-y 4 iy y)
-                    (ptr-o 1 io out))
-                   (funcall single-float-c-name
-                            n
-                            ptr-x ix
-                            ptr-y iy
-                            ptr-o io)))
+               (ptr-iterate-but-inner broadcast-dimensions n
+                 ((ptr-x 4 ix x)
+                  (ptr-y 4 iy y)
+                  (ptr-o 1 io out))
+                 (funcall single-float-c-name
+                          n
+                          ptr-x ix
+                          ptr-y iy
+                          ptr-o io))
                out))))))
 
 (defpolymorph two-arg-fn
@@ -309,17 +303,15 @@
                      'incompatible-broadcast-dimensions
                      :dimensions (list dim-x dim-y dim-o)
                      :array-likes (list x y out))
-             (with-thresholded-multithreading (array-total-size out)
-                 (x y out)
-               (ptr-iterate-but-inner broadcast-dimensions n
-                 ((ptr-x 4 ix x)
-                  (ptr-y 4 iy y)
-                  (ptr-o 1 io out))
-                 (funcall single-float-c-name
-                          n
-                          ptr-x ix
-                          ptr-y iy
-                          ptr-o io)))
+             (ptr-iterate-but-inner broadcast-dimensions n
+               ((ptr-x 4 ix x)
+                (ptr-y 4 iy y)
+                (ptr-o 1 io out))
+               (funcall single-float-c-name
+                        n
+                        ptr-x ix
+                        ptr-y iy
+                        ptr-o io))
              out)))))
 
 
@@ -350,8 +342,8 @@
             (x out)          
           (with-pointers-to-vectors-data ((ptr-x svx)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-x (* 8 (cl-array-offset x)))
-            (cffi:incf-pointer ptr-o (* 8 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-x (the-size (* 8 (cl-array-offset x))))
+            (cffi:incf-pointer ptr-o (the-size (* 8 (cl-array-offset out))))
             (funcall double-float-c-name
                      (array-total-size out)
                      ptr-x 1
@@ -383,8 +375,8 @@
             (x out)          
           (with-pointers-to-vectors-data ((ptr-x svx)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-x (* 8 (cl-array-offset x)))
-            (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-x (the-size (* 8 (cl-array-offset x))))
+            (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
             (funcall double-float-c-name
                      (array-total-size out)
                      ptr-x 1
@@ -418,8 +410,8 @@
             (y out)          
           (with-pointers-to-vectors-data ((ptr-y svy)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-y (* 8 (cl-array-offset y)))
-            (cffi:incf-pointer ptr-o (* 8 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-y (the-size (* 8 (cl-array-offset y))))
+            (cffi:incf-pointer ptr-o (the-size (* 8 (cl-array-offset out))))
             (funcall double-float-c-name
                      (array-total-size out)
                      ptr-x 0
@@ -451,8 +443,8 @@
             (y out)          
           (with-pointers-to-vectors-data ((ptr-y svy)
                                           (ptr-o svo))
-            (cffi:incf-pointer ptr-y (* 8 (cl-array-offset y)))
-            (cffi:incf-pointer ptr-o (* 1 (cl-array-offset out)))
+            (cffi:incf-pointer ptr-y (the-size (* 8 (cl-array-offset y))))
+            (cffi:incf-pointer ptr-o (the-size (* 1 (cl-array-offset out))))
             (funcall double-float-c-name
                      (array-total-size out)
                      ptr-x 0
@@ -481,17 +473,15 @@
                      :array-likes (list x y))
              (let ((out (nu:zeros broadcast-dimensions :type 'double-float)))
                (declare (type (array double-float) out))
-               (with-thresholded-multithreading (array-total-size (the array out))
-                   (x y out)
-                 (ptr-iterate-but-inner broadcast-dimensions n
-                   ((ptr-x 8 ix x)
-                    (ptr-y 8 iy y)
-                    (ptr-o 8 io out))
-                   (funcall double-float-c-name
-                            n
-                            ptr-x ix
-                            ptr-y iy
-                            ptr-o io)))
+               (ptr-iterate-but-inner broadcast-dimensions n
+                 ((ptr-x 8 ix x)
+                  (ptr-y 8 iy y)
+                  (ptr-o 8 io out))
+                 (funcall double-float-c-name
+                          n
+                          ptr-x ix
+                          ptr-y iy
+                          ptr-o io))
                out))))))
 
 (defpolymorph two-arg-fn
@@ -513,17 +503,15 @@
                      'incompatible-broadcast-dimensions
                      :dimensions (list dim-x dim-y dim-o)
                      :array-likes (list x y out))
-             (with-thresholded-multithreading (array-total-size out)
-                 (x y out)
-               (ptr-iterate-but-inner broadcast-dimensions n
-                 ((ptr-x 8 ix x)
-                  (ptr-y 8 iy y)
-                  (ptr-o 8 io out))
-                 (funcall double-float-c-name
-                          n
-                          ptr-x ix
-                          ptr-y iy
-                          ptr-o io)))
+             (ptr-iterate-but-inner broadcast-dimensions n
+               ((ptr-x 8 ix x)
+                (ptr-y 8 iy y)
+                (ptr-o 8 io out))
+               (funcall double-float-c-name
+                        n
+                        ptr-x ix
+                        ptr-y iy
+                        ptr-o io))
              out)))))
 
 (defpolymorph two-arg-fn
@@ -545,17 +533,15 @@
                      :array-likes (list x y))
              (let ((out (nu:zeros broadcast-dimensions :type '(unsigned-byte 8))))
                (declare (type (array (unsigned-byte 8)) out))
-               (with-thresholded-multithreading (array-total-size (the array out))
-                   (x y out)
-                 (ptr-iterate-but-inner broadcast-dimensions n
-                   ((ptr-x 8 ix x)
-                    (ptr-y 8 iy y)
-                    (ptr-o 1 io out))
-                   (funcall double-float-c-name
-                            n
-                            ptr-x ix
-                            ptr-y iy
-                            ptr-o io)))
+               (ptr-iterate-but-inner broadcast-dimensions n
+                 ((ptr-x 8 ix x)
+                  (ptr-y 8 iy y)
+                  (ptr-o 1 io out))
+                 (funcall double-float-c-name
+                          n
+                          ptr-x ix
+                          ptr-y iy
+                          ptr-o io))
                out))))))
 
 (defpolymorph two-arg-fn
@@ -577,17 +563,15 @@
                      'incompatible-broadcast-dimensions
                      :dimensions (list dim-x dim-y dim-o)
                      :array-likes (list x y out))
-             (with-thresholded-multithreading (array-total-size out)
-                 (x y out)
-               (ptr-iterate-but-inner broadcast-dimensions n
-                 ((ptr-x 8 ix x)
-                  (ptr-y 8 iy y)
-                  (ptr-o 1 io out))
-                 (funcall double-float-c-name
-                          n
-                          ptr-x ix
-                          ptr-y iy
-                          ptr-o io)))
+             (ptr-iterate-but-inner broadcast-dimensions n
+               ((ptr-x 8 ix x)
+                (ptr-y 8 iy y)
+                (ptr-o 1 io out))
+               (funcall double-float-c-name
+                        n
+                        ptr-x ix
+                        ptr-y iy
+                        ptr-o io))
              out)))))
 
 
