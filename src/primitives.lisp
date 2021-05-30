@@ -144,46 +144,7 @@ Examples:
   (declare (type cl:array array))
   (nu:rand (array-dimensions array) :type (array-element-type array)))
 
-
-
-(defun cast (to-type object)
-  (etypecase object
-    (sequence (map 'list (curry #'cast to-type) object))
-    (array (nu:astype object to-type))
-    (t (case to-type
-         (fixnum (nth-value 0 (floor object)))
-         (t (coerce object to-type))))))
-
-(define-compiler-macro cast (&whole whole to-type object &environment env)
-  (if (= 3 (policy-quality 'speed env))
-      (if (or (numberp object)
-              (and (symbolp object) (subtypep (variable-type object env) 'number))
-              (and (listp object)
-                   (let ((return-type (elt (function-type (car object)) 2)))
-                     (cond ((symbolp return-type)
-                            (subtypep return-type 'number))
-                           ((eq (first return-type) 'values)
-                            (subtypep (second return-type) 'number))
-                           (t (format t "; note: Return type ~S of function ~S not understood"
-                                      return-type (car object)))))))
-          (if (eq to-type 'fixnum)
-              `(floor ,object)
-              `(coerce ,object ,to-type))
-          whole)
-      whole))
-
-;;; Possibly do this using SIMD
-;;; TODO: Rewrite
-(defun nu:astype (array type)
-  (let* ((storage-vector (1d-storage-array array))
-         (return-array (make-array (array-dimensions array)
-                                   :element-type type
-                                   :initial-element (array-initial-element type)))
-         (ra-storage-vector (1d-storage-array return-array)))
-    (loop for i fixnum from 0 below (length storage-vector)
-          do (setf (cl:aref ra-storage-vector i)
-                   (cast type (cl:aref storage-vector i)))
-          finally (return return-array))))
+(define-polymorphic-function nu:astype (array type) :overwrite t)
 
 (defun nu:shape (array-like &optional (axis nil axis-p))
   ;; This is a potentially domain specific functionality; since
@@ -242,127 +203,127 @@ Examples:
     (array
      (nu:astype array-like type))))
 
-(defmacro nu:with-inline (&body body)
-  `(let ()
-     (declare (inline ,@(iter (for symbol in-package :numericals external-only t)
-                              (when (and (fboundp symbol)
-                                         (not (macro-function symbol)))
-                                (collect symbol)))))
-     ,@body))
+;; (defmacro nu:with-inline (&body body)
+;;   `(let ()
+;;      (declare (inline ,@(iter (for symbol in-package :numericals external-only t)
+;;                               (when (and (fboundp symbol)
+;;                                          (not (macro-function symbol)))
+;;                                 (collect symbol)))))
+;;      ,@body))
 
-(defmacro nu:def-array
-    (var dimensions &rest args
-     &key (type default-element-type) initial-element initial-contents
-       adjustable fill-pointer displaced-to displaced-index-offset
-       (proclaim-type t) doc)
-  ;; TODO: use array as function
-  (declare (ignorable initial-element initial-contents adjustable fill-pointer
-                      displaced-to displaced-index-offset))
-  (remf args :type)
-  (remf args :proclaim-type)
-  (remf args :doc)
-  (when (typep type 'nu:numericals-array-element-type)
-    (setq type (list 'quote type)))
-  (once-only (dimensions type)
-    `(progn
-       ,(when proclaim-type `(proclaim (list 'type
-                                             (list ',(if displaced-to 'array 'simple-array)
-                                                   ,type
-                                                   ,dimensions)
-                                             ',var)))
-       (defparameter ,var (make-array ,dimensions :element-type ,type
-                                      ,@args))
-       ,(when doc `(setf (documentation ',var 'variable) ,doc))))  )
+;; (defmacro nu:def-array
+;;     (var dimensions &rest args
+;;      &key (type default-element-type) initial-element initial-contents
+;;        adjustable fill-pointer displaced-to displaced-index-offset
+;;        (proclaim-type t) doc)
+;;   ;; TODO: use array as function
+;;   (declare (ignorable initial-element initial-contents adjustable fill-pointer
+;;                       displaced-to displaced-index-offset))
+;;   (remf args :type)
+;;   (remf args :proclaim-type)
+;;   (remf args :doc)
+;;   (when (typep type 'nu:numericals-array-element-type)
+;;     (setq type (list 'quote type)))
+;;   (once-only (dimensions type)
+;;     `(progn
+;;        ,(when proclaim-type `(proclaim (list 'type
+;;                                              (list ',(if displaced-to 'array 'simple-array)
+;;                                                    ,type
+;;                                                    ,dimensions)
+;;                                              ',var)))
+;;        (defparameter ,var (make-array ,dimensions :element-type ,type
+;;                                       ,@args))
+;;        ,(when doc `(setf (documentation ',var 'variable) ,doc))))  )
 
-(defmacro nu:with-array ((var dimensions &rest args
-                              &key (type default-element-type type-p) initial-element initial-contents
-                              adjustable fill-pointer displaced-to displaced-index-offset
-                              (declare-type t)) &body body &environment env)
-  ;; Compile time value of DEFAULT-ELEMENT-TYPE is used!!
-  (declare (ignorable initial-element initial-contents adjustable fill-pointer
-                      displaced-to displaced-index-offset))
-  (remf args :type)
-  (remf args :declare-type)
+;; (defmacro nu:with-array ((var dimensions &rest args
+;;                               &key (type default-element-type type-p) initial-element initial-contents
+;;                               adjustable fill-pointer displaced-to displaced-index-offset
+;;                               (declare-type t)) &body body &environment env)
+;;   ;; Compile time value of DEFAULT-ELEMENT-TYPE is used!!
+;;   (declare (ignorable initial-element initial-contents adjustable fill-pointer
+;;                       displaced-to displaced-index-offset))
+;;   (remf args :type)
+;;   (remf args :declare-type)
 
-  ;; Parse type
-  (setq type (cond ((not type-p) type)
-                   ((constantp type env)
-                    (constant-form-value type env))
-                   ((eq type 'default-element-type) default-element-type)
-                   (t (error 'maybe-form-not-constant-error :form type))))
+;;   ;; Parse type
+;;   (setq type (cond ((not type-p) type)
+;;                    ((constantp type env)
+;;                     (constant-form-value type env))
+;;                    ((eq type 'default-element-type) default-element-type)
+;;                    (t (error 'maybe-form-not-constant-error :form type))))
   
-  ;; Parse dimensions
-  (when (constantp dimensions env)
-    (setq dimensions (constant-form-value dimensions env)))
+;;   ;; Parse dimensions
+;;   (when (constantp dimensions env)
+;;     (setq dimensions (constant-form-value dimensions env)))
   
-  `(let ((,var (make-array (list ,@dimensions) :element-type ',type
-                           ,@args)))
-     ,(when declare-type
-        `(declare (type (,(if displaced-to 'array 'simple-array)
-                          ,type
-                          ,dimensions)
-                        ,var)))
-     ,@body))
+;;   `(let ((,var (make-array (list ,@dimensions) :element-type ',type
+;;                            ,@args)))
+;;      ,(when declare-type
+;;         `(declare (type (,(if displaced-to 'array 'simple-array)
+;;                           ,type
+;;                           ,dimensions)
+;;                         ,var)))
+;;      ,@body))
 
-(defmacro nu:with-arrays* (bindings &body body)
-  (if (cdr bindings)
-      `(nu:with-array ,(car bindings)
-         ,(macroexpand-1 `(nu:with-arrays* ,(cdr bindings) ,@body)))
-      `(nu:with-array ,(car bindings) ,@body)))
+;; (defmacro nu:with-arrays* (bindings &body body)
+;;   (if (cdr bindings)
+;;       `(nu:with-array ,(car bindings)
+;;          ,(macroexpand-1 `(nu:with-arrays* ,(cdr bindings) ,@body)))
+;;       `(nu:with-array ,(car bindings) ,@body)))
 
-;; TODO: constantp with symbol-macros is implementation dependent
-;; SBCL says symbol-macros are constant, CCL says no;
-;; Smoothen out this behaviour
-(defun-c ensure-get-constant-value (form env)
-  (if (constantp form env)
-      (constant-form-value form env)
-      (error 'maybe-form-not-constant :form form)))
+;; ;; TODO: constantp with symbol-macros is implementation dependent
+;; ;; SBCL says symbol-macros are constant, CCL says no;
+;; ;; Smoothen out this behaviour
+;; (defun-c ensure-get-constant-value (form env)
+;;   (if (constantp form env)
+;;       (constant-form-value form env)
+;;       (error 'maybe-form-not-constant :form form)))
 
-(define-condition maybe-form-not-constant-error (error)
-  ((form :reader form :initform (error "FORM not supplied") :initarg :form))
-  (:report (lambda (condition stream)
-             (format stream
-                     "~&The following form could not be determined to be a constant~%~%~D~%"
-                     (form condition)))))
+;; (define-condition maybe-form-not-constant-error (error)
+;;   ((form :reader form :initform (error "FORM not supplied") :initarg :form))
+;;   (:report (lambda (condition stream)
+;;              (format stream
+;;                      "~&The following form could not be determined to be a constant~%~%~D~%"
+;;                      (form condition)))))
 
-;; A failed implementation of nu:with-constant that wanted to consider
-;; dynamic variables.
+;; ;; A failed implementation of nu:with-constant that wanted to consider
+;; ;; dynamic variables.
+
+;; ;; (defmacro nu:with-constant ((var value) &body body &environment env)
+;; ;;   (unless (constantp value env)
+;; ;;     (error 'maybe-form-not-constant-error :form value))
+;; ;;   (if (eq :special (variable-information var))
+;; ;;       (if (eq var 'default-element-type)
+;; ;;           (let ((*type* (ensure-get-constant-value value env)))
+;; ;;             (print `(let ((*type* ',(ensure-get-constant-value value env)))
+;; ;;                       ,@(mapcar (rcurry #'macroexpand env) body))))
+;; ;;           (error "This case has not been considered!"))
+;; ;;       `(symbol-macrolet ((,var ,value))
+;; ;;          ,@body)))
+
+;; ;; (defmacro nu:with-constants (bindings &body body)
+;; ;;   (if (cdr bindings)
+;; ;;       `(nu:with-constant ,(car bindings)
+;; ;;          (nu:with-constants ,(cdr bindings) ,@body))
+;; ;;       `(nu:with-constant ,(car bindings) ,@body)))
+
+;; ;; (nu:with-constants ((*type* 'double-float)
+;; ;;                     (shape '(10 10)))
+;; ;;   (nu:with-array (f shape) f))
 
 ;; (defmacro nu:with-constant ((var value) &body body &environment env)
 ;;   (unless (constantp value env)
 ;;     (error 'maybe-form-not-constant-error :form value))
 ;;   (if (eq :special (variable-information var))
-;;       (if (eq var 'default-element-type)
-;;           (let ((*type* (ensure-get-constant-value value env)))
-;;             (print `(let ((*type* ',(ensure-get-constant-value value env)))
-;;                       ,@(mapcar (rcurry #'macroexpand env) body))))
-;;           (error "This case has not been considered!"))
+;;       (error "~D should ne not be special" var)
 ;;       `(symbol-macrolet ((,var ,value))
 ;;          ,@body)))
 
-;; (defmacro nu:with-constants (bindings &body body)
-;;   (if (cdr bindings)
-;;       `(nu:with-constant ,(car bindings)
-;;          (nu:with-constants ,(cdr bindings) ,@body))
-;;       `(nu:with-constant ,(car bindings) ,@body)))
-
-;; (nu:with-constants ((*type* 'double-float)
-;;                     (shape '(10 10)))
-;;   (nu:with-array (f shape) f))
-
-(defmacro nu:with-constant ((var value) &body body &environment env)
-  (unless (constantp value env)
-    (error 'maybe-form-not-constant-error :form value))
-  (if (eq :special (variable-information var))
-      (error "~D should ne not be special" var)
-      `(symbol-macrolet ((,var ,value))
-         ,@body)))
-
-(defmacro nu:with-constants (bindings &body body &environment env)
-  `(symbol-macrolet ,(loop :for (var value) :in bindings
-                        :do (unless (constantp value env)
-                              (error 'maybe-form-not-constant-error :form value))
-                          (when (specialp var)
-                            (error "~D should not be special" var))
-                        :finally (return bindings))
-     ,@body))
+;; (defmacro nu:with-constants (bindings &body body &environment env)
+;;   `(symbol-macrolet ,(loop :for (var value) :in bindings
+;;                         :do (unless (constantp value env)
+;;                               (error 'maybe-form-not-constant-error :form value))
+;;                           (when (specialp var)
+;;                             (error "~D should not be special" var))
+;;                         :finally (return bindings))
+;;      ,@body))

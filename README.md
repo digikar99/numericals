@@ -30,9 +30,15 @@ These functions should be within a factor of two of numpy/torch for "common case
 
 ## Planned
 
+In no order of priority:
+
 - `transpose` with arbitrary axes
 - SIMD support for integer types
 - More operations from BLAS
+- Optimizing `astype`
+- Handle better configuration variable pertaining to whether compile time value of `default-element-type` should be used
+- Introduce a compile time configuration variable to enable/disable the use of lparallel
+- Introduce dense-numericals into this repository
 
 ## Project Predecessors
 

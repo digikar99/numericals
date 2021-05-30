@@ -3,6 +3,14 @@
 ;;; We are not implementing ASTYPE, because dispatching on the TYPE
 ;;; requires TYPE= checks; instead we will provide a TRIVIAL-COERCE:COERCE wrapper!
 
+(define-polymorphic-function nu:astype (array type) :overwrite t)
+(defpolymorph nu:astype ((array array) type) (values array &optional)
+  (trivial-coerce:coerce array `(array ,type)))
+(defpolymorph-compiler-macro nu:astype (array t) (&whole form array type &environment env)
+  (if (constantp type env)
+      `(trivial-coerce:coerce ,array '(array ,(constant-form-value type env)))
+      form))
+
 (define-polymorphic-function nu:copy (x &key out))
 
 ;;; Should we allow broadcasted copying?
@@ -119,3 +127,35 @@
 (trivial-coerce:define-coercion (a :from (array double-float) :to (simple-array single-float))
   (nu:copy a :out (the (simple-array single-float)
                        (nu:zeros (array-dimensions a) :type 'single-float))))
+
+
+;;; Possibly do this using SIMD
+;;; TODO: Rewrite
+(define-polymorphic-function nu:astype (array type) :overwrite t)
+(defpolymorph nu:astype ((array array) (type (not (eql t)))) array
+  (let* ((storage-vector    (array-storage array))
+         (return-array      (make-array (array-dimensions array)
+                                        :element-type type
+                                        :initial-element (coerce 0 type)))
+         (ra-storage-vector (array-storage return-array)))
+    (loop repeat (array-total-size array)
+          for i fixnum from (cl-array-offset array)
+          for j fixnum from 0
+          do (setf (cl:aref ra-storage-vector j)
+                   (trivial-coerce:coerce (the real (cl:aref storage-vector i))
+                                          type))
+          finally (return return-array))))
+
+;; (defun nu:astype (array type)
+;;   (let* ((storage-vector    (array-storage array))
+;;          (return-array      (make-array (array-dimensions array)
+;;                                         :element-type type
+;;                                         :initial-element (array-initial-element type)))
+;;          (ra-storage-vector (array-storage return-array)))
+;;     (loop repeat (array-total-size array)
+;;           for i fixnum from (cl-array-offset array)
+;;           for j fixnum from 0
+;;           do (setf (cl:aref ra-storage-vector j)
+;;                    (trivial-coerce:coerce (cl:aref storage-vector i) type))
+;;           finally (return return-array))))
+

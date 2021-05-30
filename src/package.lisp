@@ -16,7 +16,6 @@
    :with-constants
    :maybe-form-not-constant-error
    :def-array
-   :make-array
    :array-like-p
    :numericals-array-element-type
    :map-outer
@@ -32,7 +31,6 @@
    #:ones-like
    #:rand
    #:rand-like
-   :empty
    :shape
    :transpose
 
