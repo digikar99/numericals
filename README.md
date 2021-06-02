@@ -69,7 +69,6 @@ In no order of priority:
 - Optimizing `astype`
 - Handle better configuration variable pertaining to whether compile time value of `default-element-type` should be used
 - Introduce a compile time configuration variable to enable/disable the use of lparallel
-- Introduce dense-numericals into this repository
 - Reviving `weop` and `with-elementwise-operations` using [sb-simd](https://github.com/marcoheisig/sb-simd/) or [cl-simd](https://github.com/angavrilov/cl-simd) (or one of its forks!)
 - Automate installation of [bmas](https://github.com/digikar99/bmas), and avoid hardcoding paths in cl-bmas and cl-cblas
 
