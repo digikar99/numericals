@@ -46,7 +46,7 @@
 
 
 (defun n-arg-fn-compiler-macro (form &optional env)
-  (compiler-macro-notes:with-notes (form :optimization-note-condition
+  (compiler-macro-notes:with-notes (form env :optimization-note-condition
                                     optim-speed)
     ;; 0. Abort optimization if not asked to do so; to help debug better                  
     (unless optim-speed (return-from n-arg-fn-compiler-macro form))

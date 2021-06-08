@@ -50,7 +50,7 @@
 
 `(define-compiler-macro ,name (&whole form &rest args &environment env)
    (compiler-macro-notes:with-notes
-       (form :optimization-note-condition optim-speed)
+       (form env :optimization-note-condition optim-speed)
      ;; 0. Abort optimization if not asked to do so; to help debug better
      (unless optim-speed (return-from ,name form))
      (let* ((arg-types (loop :for arg :in args
