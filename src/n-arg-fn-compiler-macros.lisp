@@ -114,7 +114,7 @@
           (let* ((array-like-syms
                    (make-gensym-list (length array-likes) "array-like"))
                  (element-type
-                   (sandalphon.compiler-macro:array-type-element-type out-type))
+                   (ctype:carray-uaet (ctype:specifier-ctype out-type)))
                  (main-code
                    (cond
                      ((null array-like-syms)

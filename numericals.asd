@@ -6,7 +6,7 @@
                "cl-form-types"
                "array-operations"
                "compiler-macro-notes"
-               "compiler-macro"
+               "ctype"
                "bmas"
                "cblas"
                "fiveam"
