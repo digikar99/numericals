@@ -29,11 +29,11 @@
 (5am:def-test dn:copy ()
   (5am:is (array= (asarray '(1 2 3) :type 'single-float)
                   (dn:copy (asarray '(1 2 3) :type 'single-float)
-                           :out (zeros 3 :type 'double-float))))  
+                           :out (zeros 3 :type 'double-float))))
   (5am:is (array= (asarray '(1 2 3) :type 'double-float)
                   (dn:copy (asarray '(1 2 3) :type 'double-float)
                            :out (zeros 3 :type 'single-float))))
-  
+
   (let ((rand (aref (rand 1000 1000 :type 'single-float)
                     '(0 :step 2) '(0 :step 2))))
     (5am:is (array= rand
@@ -50,10 +50,12 @@
 
 
 (trivial-coerce:define-coercion (a :from (array single-float) :to (array double-float))
-  (dn:copy a :out (the (array double-float)
-                       (zeros (narray-dimensions a) :type 'double-float))))
+  (let ((out (zeros (narray-dimensions a) :type 'double-float)))
+    (dn:copy a :out (the (array double-float) out))
+    out))
 
 (trivial-coerce:define-coercion (a :from (array double-float) :to (array single-float))
-  (dn:copy a :out (the (array single-float)
-                       (zeros (narray-dimensions a) :type 'single-float))))
+  (let ((out (zeros (narray-dimensions a) :type 'single-float)))
+    (dn:copy a :out (the (array single-float) out))
+    out))
 

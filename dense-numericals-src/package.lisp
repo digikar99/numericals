@@ -2,8 +2,19 @@
 
 (defpackage :dense-numericals-lite
   (:documentation "Functionality in this package is available with pure lisp.")
-  (:use)
-  (:export))
+  (:use :dense-arrays-plus-lite)
+  (:export #:array
+           #:simple-array
+
+           #:aref
+           #:row-major-aref
+
+           #:array-dimension
+           #:array-dimensions
+
+           #:array-element-type
+           ;; TODO
+           ))
 
 (uiop:define-package :dense-numericals
   (:use)
@@ -11,7 +22,7 @@
   (:mix :dense-numericals-lite)
   (:import-from :trivial-coerce
                 #:coerce)
-  (:reexport :dense-numericals-lite)
+  (:reexport )
   (:export #:*multithreaded-threshold*
            #:+optimized-types+
            #:sin
