@@ -19,24 +19,44 @@
 (defun normalize-arguments/dmas (array-likes out)
   (if (every #'numberp array-likes)
       (values array-likes out)
-      (let ((arrays (loop :for array-like :on array-likes
-                            :do (setf (first array-like)
-                                      (ensure-appropriate-dense-array (first array-like)))
-                          :finally (return array-likes))))
+      (let* ((out-type
+               (if out
+                   (array-element-type out)
+                   (multiple-value-bind (out-type array-likes)
+                       (loop :for array-likes :on array-likes
+                             :if (arrayp (first array-likes))
+                               :do (return (values (array-element-type (first array-likes))
+                                                   (rest array-likes)))
+                             :finally (return (values default-element-type nil)))
+                     (loop :for array-like :in array-likes
+                           :if (arrayp array-like)
+                             :do (setq out-type
+                                       (type-max out-type
+                                                 (array-element-type array-like))))
+                     out-type)))
+             (arrays
+               (loop :for array-like :on array-likes
+                     :do (unless (and (arrayp (first array-like))
+                                      (type= out-type (array-element-type (first array-like))))
+                           (setf (first array-like)
+                                 ;; TODO: Use TRIVIAL-COERCE:COERCE and simd based backends
+                                 ;; FIXME: Signal a condition when the conversion is unsafe
+                                 ;; TODO: Enable different upgrade-rules
+                                 (asarray (first array-like) :type out-type)))
+                     :finally (return array-likes))))
         (multiple-value-bind (broadcast-compatible-p dimensions)
             (if out
                 (apply #'broadcast-compatible-p out arrays)
                 (apply #'broadcast-compatible-p arrays))
           (if broadcast-compatible-p
               (values (apply #'broadcast-arrays arrays)
-                      (or out (zeros dimensions)))
+                      (or out (zeros dimensions :type out-type)))
               (error 'incompatible-broadcast-dimensions
                      :array-likes array-likes
                      :dimensions (mapcar #'dimensions array-likes)))))))
 
 ;;; These functions cannot have (much) benefits of a compiler-macro
 ;;; until it becomes possible to tell the array dimensions at compile time.
-;;; TODO: Think about type normalization and upgradation and compiler-macro
 
 (macrolet ((def (name reduce-fn initial-value)
              `(defun ,name (&rest args)
