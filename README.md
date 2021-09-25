@@ -4,6 +4,10 @@
 
 The project intends to offer a numpy-like (not exactly numpy!) API and equivalent performance for high performance number crunching. This is enabled by the use of SIMD using libraries like [BMAS](https://github.com/digikar99/bmas) backed by [SLEEF](https://sleef.org/) as well as [BLAS](http://www.netlib.org/blas/). This is further coupled with multithreading using [lparallel](https://lparallel.org/).
 
+It provides mainly two ASDF systems: `numericals` for use with `cl:array` and `dense-numericals` for use with [dense-arrays:array](https://github.com/digikar99/dense-arrays), that is to say, wherever possible functionality in `numericals` attempts to output `cl:array`, while wherever possible, `dense-numericals` attempts to output `dense-arrays:array`.
+
+At the moment, primary work is happening under `dense-numericals`, so it has slightly greater functionality than `numericals`; raise an issue if you'd like to shift the focus to `numericals`.
+
 ## Functionality So Far
 
 Performant functionality so far includes:
@@ -25,11 +29,14 @@ Performant functionality so far includes:
     - `log exp expt`
     - `ffloor fceiling fround ftruncate abs`
     - `copy`
+ - Supported signed/unsigned integer functions so far: `+ - copy`
+ - Supported conversions:
+   - from signed/unsigned integers to single-float/double-float
+   - between single-float and double-float
 
 These functions should be within a factor of two of numpy/torch for "common cases". If they are not inspite of type declarations, feel free to report an [issue](https://github.com/digikar99/numericals/issues)!
 
 ## Usage and Features
-
 
 #### Native CL arrays
 
@@ -55,9 +62,9 @@ That said, the goal of `numericals` is not to *replace* python ecosystems, at le
 
 For the time being, preferably, [fetch from this dist of ultralisp](https://github.com/digikar99/polymorphic-functions#getting-it-from-ultralisp). Users may need to `bash make.sh` [bmas](https://github.com/digikar99/bmas) manually; this currently requires `gcc`, but the `make.sh` should be trivial enough to edit per the user's configurations. This step may be automated in the future.
 
-Once `(ql:quickload "numericals")` is successful; use inside your own package using `:mix` option of `uiop:define-package` (see above discussion), or [package-local-nicknames](https://common-lisp-libraries.readthedocs.io/#libraries).
+Once `(ql:quickload "numericals")` or `(ql:quickload "dense-numericals")` is successful; use inside your own package using `:mix` option of `uiop:define-package` (see above discussion), or [package-local-nicknames](https://common-lisp-libraries.readthedocs.io/#libraries).
 
-Run tests using `(asdf:test-system "numericals")`; these are scattered throughout the system.
+Run tests using `(asdf:test-system "numericals")` or `(asdf:test-system "dense-numericals")`; these are scattered throughout the system.
 
 ## Planned
 

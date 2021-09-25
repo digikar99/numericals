@@ -4,30 +4,6 @@
 
 (define-polymorphic-function dn:copy (x &key out))
 
-(defpolymorph dn:copy
-    ((x (array single-float))  &key
-     ((out (array single-float)) (zeros-like x)))
-    (array single-float)
-  (policy-cond:with-expectations (= safety 0)
-      ((assertion (equalp (narray-dimensions x)
-                          (narray-dimensions out))))
-    (ptr-iterate-but-inner n ((ptr-x 4 ix x)
-                              (ptr-o 4 iout out))
-      (cblas:scopy n ptr-x ix ptr-o iout)))
-  out)
-
-(defpolymorph dn:copy
-    ((x (array double-float))  &key
-     ((out (array double-float)) (zeros-like x)))
-    (array double-float)
-  (policy-cond:with-expectations (= safety 0)
-      ((assertion (equalp (narray-dimensions x)
-                          (narray-dimensions out))))
-    (ptr-iterate-but-inner n ((ptr-x 8 ix x)
-                              (ptr-o 8 iout out))
-      (cblas:dcopy n ptr-x ix ptr-o iout)))
-  out)
-
 ;; (let ((a (asarray '((1 2 3))))
 ;;             (b (asarray '((1) (2) (3))))
 ;;             (c (zeros 1 1)))

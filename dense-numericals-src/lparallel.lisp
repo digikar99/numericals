@@ -1,7 +1,15 @@
 (in-package :dense-numericals.impl)
 
-(defparameter dn:*multithreaded-threshold* 80000)
+(defparameter dn:*multithreaded-threshold* 80000
+  "The lower bound of the array size beyond which LPARALLEL is used for distributing
+operations across multiple threads.
+NOTE: It is not defined if this bound is inclusive or exclusive.")
 (declaim (type fixnum dn:*multithreaded-threshold*))
+
+
+;;; While it's tempting to check the compile time value of DN:*MULTITHREADED-THRESHOLD*
+;;; while inlining in an attempt to reduce code size, the actual size differences
+;;; in the codes are minimal; the size is largely determined by the PTR-ITERATE-BUT-INNER
 
 (defmacro with-thresholded-multithreading (threshold-measure (&rest vars) &body body)
   (let* ((simple-p (eq :simple (first vars)))
@@ -11,8 +19,7 @@
     `(block thresholded-multithreading
        (if (< (the size ,threshold-measure)
               dn:*multithreaded-threshold*)
-           (progn
-             ,@body)
+           (progn ,@body)
            ;; FIXME: Can the multiple BODY here be reduced?
            (progn
              (let* ((worker-count  (lparallel:kernel-worker-count)))
