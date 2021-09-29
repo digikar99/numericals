@@ -25,6 +25,7 @@
   (:reexport )
   (:export #:*multithreaded-threshold*
            #:+optimized-types+
+           #:*default-float-format*
            #:sin
            #:cos
            #:tan

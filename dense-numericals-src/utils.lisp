@@ -5,6 +5,10 @@
       array-like
       (asarray (ensure-list array-like) :type default-element-type)))
 
+(defvar dn:*default-float-format* 'single-float
+  "Used for converting non-float arrays to float arrays for floating-point
+operations like trigonometric functions.")
+(declaim (type (member single-float double-float) dn:*default-float-format*))
 
 (defmacro with-pointers-to-vectors-data (bindings &body body)
   (if bindings
