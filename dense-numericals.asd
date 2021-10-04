@@ -19,11 +19,12 @@
   ;; TODO: Use CFFI-GROVEL or something to manage shared library / c files
   :components ((:file "package")
                (:file "utils"                 :depends-on ("package"))
-               (:file "ptr-iterate-but-inner" :depends-on ("package" "utils"))
+               (:file "ptr-iterate-but-inner" :depends-on ("utils"))
                (:file "lparallel"             :depends-on ("ptr-iterate-but-inner"))
                (:file "test"                  :depends-on ("package"))
                (:file "translations"          :depends-on ("package"))
-               (:file "one-arg-fn"            :depends-on ("utils"
+               (:file "copy-coerce"           :depends-on ("utils"))
+               (:file "one-arg-fn"            :depends-on ("copy-coerce"
                                                            "translations"
                                                            "test"
                                                            "lparallel"
@@ -47,7 +48,6 @@
                (:file "concatenate"           :depends-on ("blas"))
                (:file "sum"                   :depends-on ("blas"
                                                            "two-arg-fn"))
-               (:file "coerce"                :depends-on ("one-arg-fn"))
                (:file "misc"                  :depends-on ("package")))
   :perform (test-op (o c)
              (declare (ignore o c))

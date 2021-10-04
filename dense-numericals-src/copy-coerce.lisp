@@ -1,10 +1,12 @@
 (in-package :dense-numericals.impl)
+
+(5am:def-suite array :in :dense-numericals)
 (5am:in-suite array)
 
 ;;; We are not implementing ASTYPE, because dispatching on the TYPE
 ;;; requires TYPE= checks; instead we will provide a TRIVIAL-COERCE:COERCE wrapper!
 
-(define-polymorphic-function dn:copy (x &key out))
+(define-polymorphic-function dn:copy (x &key out) :overwrite t)
 
 (defpolymorph dn:copy ((x (array single-float)) &key ((out (array double-float))))
     (array double-float)
@@ -113,15 +115,54 @@
   (def 4 (unsigned-byte 32) bmas:i32copy)
   (def 8 (unsigned-byte 64) bmas:i64copy))
 
-(trivial-coerce:define-coercion (a :from (array single-float) :to (array double-float))
-  (let ((out (zeros (narray-dimensions a) :type 'double-float)))
-    (dn:copy a :out (the (array double-float) out))
-    out))
+(defpolymorph (dn:copy) ((x (array t)) &key ((out (array single-float))))
+    (array single-float)
+  (do-arrays ((x-elt x)
+              (o-elt out))
+    (setf o-elt (trivial-coerce:coerce (the real x-elt) 'single-float)))
+  out)
 
-(trivial-coerce:define-coercion (a :from (array double-float) :to (array single-float))
-  (let ((out (zeros (narray-dimensions a) :type 'single-float)))
-    (dn:copy a :out (the (array single-float) out))
-    out))
+(defpolymorph dn:copy ((x (array t)) &key ((out (array double-float))))
+    (array double-float)
+  (do-arrays ((x-elt x)
+              (o-elt out))
+    (setf o-elt (trivial-coerce:coerce (the real x-elt) 'double-float)))
+  out)
+
+(defpolymorph dn:copy ((x (array t)) &key ((out (array t)) (zeros-like x)))
+    (array t)
+  (do-arrays ((x-elt x)
+              (o-elt out))
+    ;; TODO: Would it be possible to use SIMD to shallow-copy here?
+    (setf o-elt x-elt))
+  out)
+
+(macrolet ((def (from to)
+             `(trivial-coerce:define-coercion (a :from (array ,from) :to (simple-array ,to))
+                (let ((out (zeros (narray-dimensions a) :type ',to)))
+                  (dn:copy a :out (the (array ,to) out))
+                  out))))
+
+  (def single-float double-float)
+  (def double-float single-float)
+
+  (def (unsigned-byte 08) single-float)
+  (def (unsigned-byte 16) single-float)
+  (def (unsigned-byte 32) single-float)
+  (def (unsigned-byte 64) single-float)
+  (def (signed-byte 08) single-float)
+  (def (signed-byte 16) single-float)
+  (def (signed-byte 32) single-float)
+  (def (signed-byte 64) single-float)
+
+  (def (unsigned-byte 08) double-float)
+  (def (unsigned-byte 16) double-float)
+  (def (unsigned-byte 32) double-float)
+  (def (unsigned-byte 64) double-float)
+  (def (signed-byte 08) double-float)
+  (def (signed-byte 16) double-float)
+  (def (signed-byte 32) double-float)
+  (def (signed-byte 64) double-float))
 
 (5am:def-test dn:copy ()
   (5am:is (array= (asarray '(1 2 3) :type 'single-float)

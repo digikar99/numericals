@@ -1,6 +1,6 @@
 (in-package :dense-numericals.impl)
 
-(5am:def-suite* array :in :dense-numericals)
+(5am:in-suite array)
 
 ;; Basic Concept:
 ;; (c:dn-ssin (array-total-size x) (ptr x) 1 (ptr out) 1)
@@ -12,7 +12,7 @@
 (defpolymorph (one-arg-fn :inline t)
     ((name symbol) (x (array single-float)) &key ((out (array single-float))
                                                   (zeros-like x)))
-    (array single-float)  
+    (array single-float)
   (declare (ignorable name))
   (policy-cond:with-expectations (= safety 0)
       ((assertion (equalp (narray-dimensions x)
@@ -117,6 +117,14 @@
     (values array &optional)
   (declare (ignorable out))
   (one-arg-fn name (asarray x :type (array-element-type out)) :out out))
+
+;; non-float arrays
+(defpolymorph (one-arg-fn :inline t)
+    ((name symbol) (x (and array (not (array single-float)) (not (array double-float))))
+     &key ((out array) (zeros (array-dimensions x) :type dn:*default-float-format*)))
+    (values array &optional)
+  (dn:copy x :out out)
+  (one-arg-fn name out :out out))
 
 
 (macrolet ((def (name
