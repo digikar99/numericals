@@ -13,6 +13,15 @@
            #:array-dimensions
 
            #:array-element-type
+
+           #:asarray
+           #:zeros
+           #:ones
+           #:rand
+           #:zeros-like
+           #:ones-like
+           #:rand-like
+
            ;; TODO
            ))
 
@@ -22,7 +31,7 @@
   (:mix :dense-numericals-lite)
   (:import-from :trivial-coerce
                 #:coerce)
-  (:reexport )
+  (:reexport :dense-numericals-lite)
   (:export #:*multithreaded-threshold*
            #:+optimized-types+
            #:*default-float-format*
