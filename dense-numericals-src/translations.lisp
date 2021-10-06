@@ -44,13 +44,14 @@
      (dn:two-arg->= bmas:sge  bmas:dge  cl:>=)
      (dn:two-arg->  bmas:sgt  bmas:dgt  cl:>))))
 
+;; TODO: Replace C-NAME with C-FN
 (macrolet ((def (fn-name index)
              `(progn
                 (declaim (inline ,fn-name))
                 (defun ,fn-name (name)
                   (declare (optimize speed)
                            (type symbol name))
-                  (nth ,index (gethash name *translation-table*)))
+                  (fdefinition (nth ,index (gethash name *translation-table*))))
                 (define-compiler-macro ,fn-name (&whole form name &environment env)
                   (let ((form-type (cl-form-types:form-type name env)))
                     ;; TODO: Use CTYPE to normalize types?

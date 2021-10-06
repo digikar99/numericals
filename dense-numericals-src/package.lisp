@@ -111,6 +111,7 @@
                 #:int-index
                 #:the-int-index
                 #:broadcast-arrays
+                #:%broadcast-compatible-p
                 #:broadcast-compatible-p
                 #:default-element-type)
   (:import-from :dense-arrays-plus-lite

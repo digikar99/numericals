@@ -5,53 +5,42 @@
 ;; Basic Concept:
 ;; (c:dn-ssin (array-total-size x) (ptr x) 1 (ptr out) 1)
 
+;; FIXME: No multithreading for broadcasting; see numericals/src/one-arg-fn.lisp
+
+;;; Yes, this does lead to a lot of code-bloat while inlining, but inlining is only
+;;; primarily useful for very small arrays, and in those cases, the performance difference
+;;; is of the order of an magnitude.
+
 ;;; TODO: Use ARRAY or STATIC-ARRAY
 
 (define-polymorphic-function one-arg-fn (name x &key out) :overwrite t)
 
 (defpolymorph (one-arg-fn :inline t)
-    ((name symbol) (x (array single-float)) &key ((out (array single-float))
-                                                  (zeros-like x)))
+    ((name symbol) (x (array single-float)) &key ((out (array single-float)) (zeros-like x)))
     (array single-float)
   (declare (ignorable name))
-  (policy-cond:with-expectations (= safety 0)
-      ((assertion (equalp (narray-dimensions x)
-                          (narray-dimensions out))
-                  (x out)
-                  "Expected X and OUT to have same dimensions but they are~%  ~S  ~S"
-                  (narray-dimensions x)
-                  (narray-dimensions out)))
-    (let ((single-float-c-name (single-float-c-name name)))
-      (with-thresholded-multithreading (array-total-size out)
-          (x out)
-        (ptr-iterate-but-inner n ((ptr-x   4 ix   x)
-                                  (ptr-out 4 iout out))
-          (funcall single-float-c-name n ptr-x ix ptr-out iout)))))
-  out)
-
-(defpolymorph (one-arg-fn :inline t)
-    ((name symbol) (x (simple-array single-float)) &key ((out (simple-array single-float))
-                                                         (zeros-like x)))
-    (simple-array single-float)
-  (declare (ignorable name))
-  (policy-cond:with-expectations (= safety 0)
-      ((assertion (equalp (narray-dimensions x)
-                          (narray-dimensions out))
-                  (x out)
-                  "Expected X and OUT to have same dimensions but they are~%  ~S  ~S"
-                  (narray-dimensions x)
-                  (narray-dimensions out)))
-    (let ((single-float-c-name (single-float-c-name name)))
-      (with-thresholded-multithreading (array-total-size out)
-          (:simple x out)
-        (with-pointers-to-vectors-data ((ptr-x (array-storage x))
-                                        (ptr-o (array-storage out)))
-          (cffi:incf-pointer ptr-x (* 4 (array-total-offset x)))
-          (cffi:incf-pointer ptr-o (* 4 (array-total-offset out)))
-          (funcall single-float-c-name
-                   (array-total-size out)
-                   ptr-x 1
-                   ptr-o 1)))))
+  (let ((dim-x (narray-dimensions x))
+        (dim-o (narray-dimensions out))
+        (single-float-c-name (single-float-c-name name)))
+    (if (equalp dim-x dim-o)
+        (with-thresholded-multithreading (array-total-size out)
+            (x out)
+          (ptr-iterate-but-inner dim-x n
+            ((ptr-x   4 ix   x)
+             (ptr-out 4 iout out))
+            (funcall single-float-c-name n ptr-x ix ptr-out iout)))
+        (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+            (%broadcast-compatible-p dim-x dim-o)
+          (assert broadcast-compatible-p (x out)
+                  'incompatible-broadcast-dimensions
+                  :dimensions (list dim-x dim-o)
+                  :array-likes (list x out))
+          (ptr-iterate-but-inner broadcast-dimensions n
+            ((ptr-x 4 ix x)
+             (ptr-o 4 io out))
+            (funcall single-float-c-name n
+                     ptr-x ix
+                     ptr-o io)))))
   out)
 
 (defpolymorph (one-arg-fn :inline t)
@@ -59,46 +48,29 @@
                                                   (zeros-like x)))
     (array double-float)
   (declare (ignorable name))
-  (policy-cond:with-expectations (= safety 0)
-      ((assertion (equalp (narray-dimensions x)
-                          (narray-dimensions out))
-                  (x out)
-                  "Expected X and OUT to have same dimensions but they are~%  ~S  ~S"
-                  (narray-dimensions x)
-                  (narray-dimensions out)))
-    (let ((double-float-c-name (double-float-c-name name)))
-      (with-thresholded-multithreading (array-total-size out)
-          (x out)
-        (ptr-iterate-but-inner n ((ptr-x   8 ix   x)
-                                  (ptr-out 8 iout out))
-          (funcall double-float-c-name n ptr-x ix ptr-out iout)))))
+  (let ((dim-x (narray-dimensions x))
+        (dim-o (narray-dimensions out))
+        (double-float-c-name (double-float-c-name name)))
+    (if (equalp dim-x dim-o)
+        (with-thresholded-multithreading (array-total-size out)
+            (x out)
+          (ptr-iterate-but-inner dim-x n
+            ((ptr-x   8 ix   x)
+             (ptr-out 8 iout out))
+            (funcall double-float-c-name n ptr-x ix ptr-out iout)))
+        (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+            (%broadcast-compatible-p dim-x dim-o)
+          (assert broadcast-compatible-p (x out)
+                  'incompatible-broadcast-dimensions
+                  :dimensions (list dim-x dim-o)
+                  :array-likes (list x out))
+          (ptr-iterate-but-inner broadcast-dimensions n
+            ((ptr-x 8 ix x)
+             (ptr-o 8 io out))
+            (funcall double-float-c-name n
+                     ptr-x ix
+                     ptr-o io)))))
   out)
-
-(defpolymorph (one-arg-fn :inline t)
-    ((name symbol) (x (simple-array double-float)) &key ((out (simple-array double-float))
-                                                         (zeros-like x)))
-    (simple-array double-float)
-  (declare (ignorable name))
-  (policy-cond:with-expectations (= safety 0)
-      ((assertion (equalp (narray-dimensions x)
-                          (narray-dimensions out))
-                  (x out)
-                  "Expected X and OUT to have same dimensions but they are~%  ~S  ~S"
-                  (narray-dimensions x)
-                  (narray-dimensions out)))
-    (let ((double-float-c-name (double-float-c-name name)))
-      (with-thresholded-multithreading (array-total-size out)
-          (:simple x out)
-        (with-pointers-to-vectors-data ((ptr-x (array-storage x))
-                                        (ptr-o (array-storage out)))
-          (cffi:incf-pointer ptr-x (* 8 (array-total-offset x)))
-          (cffi:incf-pointer ptr-o (* 8 (array-total-offset out)))
-          (funcall double-float-c-name
-                   (array-total-size out)
-                   ptr-x 1
-                   ptr-o 1)))))
-  out)
-
 
 ;; pure number
 (defpolymorph (one-arg-fn :inline t) ((name symbol) (x number) &key ((out null)))

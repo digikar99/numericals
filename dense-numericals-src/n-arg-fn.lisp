@@ -3,17 +3,6 @@
 (define-constant dn:+optimized-types+
     '(single-float double-float)
   :test #'equal)
-
-;; FIXME: This should be in DENSE-ARRAYS itself?
-(define-condition incompatible-broadcast-dimensions (error)
-  ((dimensions :initarg :dimensions :reader condition-dimensions)
-   (array-likes :initarg :array-likes :reader condition-array-likes))
-  (:report (lambda (c s)
-             (pprint-logical-block (s nil)
-               (format s "The following array-likes with dimensions~{~%  ~S~}~%cannot be broadcast together:~%" (condition-dimensions c))
-               (pprint-logical-block (s nil :per-line-prefix "  ")
-                 (format s "~S" (condition-array-likes c)))))))
-
 ;; TODO: Add compiler-macros for this
 
 (defun normalize-arguments/dmas (array-likes out)

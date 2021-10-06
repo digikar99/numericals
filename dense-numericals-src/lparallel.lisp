@@ -15,7 +15,8 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
   (let* ((simple-p (eq :simple (first vars)))
          (vars     (if simple-p
                        (rest vars)
-                       vars)))
+                       vars))
+         (out      (lastcar vars)))
     `(block thresholded-multithreading
        (if (< (the size ,threshold-measure)
               dn:*multithreaded-threshold*)
@@ -26,13 +27,14 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
                (declare (type dense-arrays::size worker-count))
                (multiple-value-bind (long-enough-axis axis/work-size)
                    ,(if simple-p
-                        `(values 0 (array-total-size (the array out)))
+                        `(values 0 (array-total-size (the array ,out)))
                         `(loop :for i :of-type size :from 0
-                               :for d :of-type size :in (narray-dimensions out)
+                               :for d :of-type size :in (narray-dimensions ,out)
                                :if (>= d worker-count)
                                  :do (return (values i d))
-                               :finally (return-from thresholded-multithreading
-                                          (progn ,@body))))
+                               :finally
+                                  (return-from thresholded-multithreading
+                                    (progn ,@body))))
                  (declare (type size long-enough-axis axis/work-size))
                  (let ((max-work-size (ceiling axis/work-size worker-count)))
                    (declare (type size max-work-size))

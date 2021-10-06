@@ -17,6 +17,16 @@ operations like trigonometric functions.")
            (with-pointers-to-vectors-data ,(rest bindings) ,@body)))
       `(progn ,@body)))
 
+;; FIXME: This should be in DENSE-ARRAYS itself?
+(define-condition incompatible-broadcast-dimensions (error)
+  ((dimensions :initarg :dimensions :reader condition-dimensions)
+   (array-likes :initarg :array-likes :reader condition-array-likes))
+  (:report (lambda (c s)
+             (pprint-logical-block (s nil)
+               (format s "The following array-likes with dimensions~{~%  ~S~}~%cannot be broadcast together:~%" (condition-dimensions c))
+               (pprint-logical-block (s nil :per-line-prefix "  ")
+                 (format s "~S" (condition-array-likes c)))))))
+
 (defun type-max (type-1 type-2)
   (cond ((subtypep type-1 type-2)
          type-2)
