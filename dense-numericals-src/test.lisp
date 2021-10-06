@@ -7,7 +7,6 @@
      (double-float-error
       &optional (double-float-min 0.0d0) (double-float-max 1.0d0)))
 
-  ;; TODO: Add broadcasting tests
   (flet ((verification-form (type error min max)
            `(progn
               (flet ((float-close-p (x y)
@@ -71,6 +70,15 @@
                                          (,name rand :out rand)
                                          :test #'float-close-p))
                                "Non-simple multithreaded")
+                  (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
+                                      (rand (aref (rand '(100 100) :type ',type
+                                                                   :min ,min :max ,max)
+                                                  '(10 :step 2)
+                                                  '(10 :step 2))))
+                                 (array= (broadcast-array (macro-map-array nil ',name rand) '(10 45 45))
+                                         (,name rand :out (zeros '(10 45 45) :type ',type))
+                                         :test #'float-close-p))
+                               "Non-simple multithreaded broadcast")
                   (5am:is-true (let* ((array (rand '(2 3) :type ',type
                                                           :min ,min :max ,max))
                                       (orig  (list (aref array 0 0)
@@ -94,7 +102,7 @@
 
 
 (defmacro define-numericals-two-arg-test
-    (name array-type
+    (name array-type broadcast-p
      (single-float-error
       &optional (single-float-min 0.0f0) (single-float-max 1.0f0)
         (single-float-return-type nil))
@@ -165,12 +173,26 @@
                                          (,name rand1 rand2 :out return-array)
                                          :test #'close-p))
                                "Non-simple arrays 2")
+                  (5am:is-true (let* ((rand1 (aref (rand '(10 100) :type ',type
+                                                                   :min ,min :max ,max)
+                                                   nil
+                                                   '(10 :step -2)))
+                                      (rand2 (aref (rand '(10 200) :type ',type
+                                                                   :min ,min :max ,max)
+                                                   nil
+                                                   '(20 :step -4)))
+                                      (return-array (zeros (array-dimensions rand1)
+                                                           :type ',return-type)))
+                                 (array= (macro-map-array return-array ',name rand1 rand2)
+                                         (,name rand1 rand2 :out return-array)
+                                         :test #'close-p))
+                               "Non-simple arrays 3")
                   (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
                                       (rand1 (aref (rand '(100 100) :type ',type
-                                                                     :min ,min :max ,max)
+                                                                    :min ,min :max ,max)
                                                    '(10 :step 2)))
                                       (rand2 (aref (rand '(200 100) :type ',type
-                                                                     :min ,min :max ,max)
+                                                                    :min ,min :max ,max)
                                                    '(20 :step 4)))
                                       (return-array (aref (zeros '(100 100)
                                                                  :type ',return-type)
@@ -179,19 +201,26 @@
                                          (,name rand1 rand2 :out return-array)
                                          :test #'close-p))
                                "Non-simple multithreaded")
-                  (5am:is-true (let* ((rand1 (aref (rand '(10 100) :type ',type
-                                                                    :min ,min :max ,max)
-                                                   nil
-                                                   '(10 :step -2)))
-                                      (rand2 (aref (rand '(10 200) :type ',type
-                                                                    :min ,min :max ,max)
-                                                   nil
-                                                   '(20 :step -4)))
-                                      (return-array (zeros (array-dimensions rand1)
-                                                           :type ',return-type)))
-                                 (array= (macro-map-array return-array ',name rand1 rand2)
-                                         (,name rand1 rand2 :out return-array)
-                                         :test #'close-p)))
+                  ,(when broadcast-p
+                     `(5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
+                                          (rand1 (aref (rand '(100 10) :type ',type
+                                                                       :min ,min :max ,max)
+                                                       '(10 :step 2)))
+                                          (rand2 (aref (rand '(10 200 10) :type ',type
+                                                                          :min ,min :max ,max)
+                                                       nil
+                                                       '(20 :step 4)))
+                                          (return-array (aref (zeros '(2 10 100 100)
+                                                                     :type ',return-type)
+                                                              nil
+                                                              nil
+                                                              '(10 :step 2))))
+                                     (array= (broadcast-array (macro-map-array return-array
+                                                                               ',name rand1 rand2)
+                                                              '(2 10 45 100))
+                                             (,name rand1 rand2 :out return-array)
+                                             :test #'close-p))
+                                   "Non-simple multithreaded broadcast"))
                   (5am:is-true (let* ((array (rand '(2 3) :type ',type
                                                           :min ,min :max ,max))
                                       (return-array (zeros '(2 3) :type ',return-type))

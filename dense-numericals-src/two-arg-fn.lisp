@@ -91,6 +91,7 @@
       (setq x (broadcast-array x broadcast-dimensions))
       (setq y (broadcast-array y broadcast-dimensions))
       (setq out (or out (zeros broadcast-dimensions :type 'single-float)))))
+  ;; Why didn't we use multithreading here?
   (policy-cond:with-expectations (= safety 0)
       ((assertion (equalp (narray-dimensions x)
                           (narray-dimensions y))))
@@ -267,7 +268,7 @@
   (two-arg-fn 'dn:expt base power))
 (defpolymorph dn:expt (base power &key ((out (not null)))) t
   (two-arg-fn 'dn:expt base power :out out))
-(define-numericals-two-arg-test dn:expt array
+(define-numericals-two-arg-test dn:expt array t
     (2f-7  0.0f0 10.0f0 single-float)
     (1d-15 0.0d0 10.0d0 double-float))
 
@@ -284,6 +285,6 @@
   (two-arg-fn 'dn::atan2 x y))
 (defpolymorph dn::atan2 (x y &key ((out (not null)))) t
   (two-arg-fn 'dn::atan2 x y :out out))
-(define-numericals-two-arg-test dn::atan2 array
+(define-numericals-two-arg-test dn::atan2 array t
     (2f-7  0.0f0 10.0f0 single-float)
     (1d-15 0.0d0 10.0d0 double-float))

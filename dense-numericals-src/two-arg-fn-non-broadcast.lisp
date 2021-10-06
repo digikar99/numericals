@@ -476,7 +476,7 @@
                   (two-arg-fn/non-broadcast ',name x y))
                 (defpolymorph ,name (x y &key ((out (not null)))) t
                   (two-arg-fn/non-broadcast ',name x y :out out))
-                (define-numericals-two-arg-test ,name array
+                (define-numericals-two-arg-test ,name array nil
                     (,single-float-error ,sf-min ,sf-max ,single-float-return-type)
                     (,double-float-error ,df-min ,df-max ,double-float-return-type)))))
 
