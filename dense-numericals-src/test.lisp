@@ -7,6 +7,7 @@
      (double-float-error
       &optional (double-float-min 0.0d0) (double-float-max 1.0d0)))
 
+  ;; TODO: Add broadcasting tests
   (flet ((verification-form (type error min max)
            `(progn
               (flet ((float-close-p (x y)
@@ -19,27 +20,27 @@
                                (print (list x y))
                                nil)))))
                 (let ((dn:*multithreaded-threshold* 10000000))
-                  (5am:is-true (let ((rand (rand 1000 :type ',type :min ,min :max ,max)))
+                  (5am:is-true (let ((rand (rand 200 :type ',type :min ,min :max ,max)))
                                  (array= (macro-map-array nil ',name rand)
                                          (,name rand)
                                          :test #'float-close-p))
                                "Simplest case")
-                  (5am:is-true (let* ((dn:*multithreaded-threshold* 10000)
+                  (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
                                       (rand (rand 2 dn:*multithreaded-threshold*
                                                   :type ',type :min ,min :max ,max)))
                                  (array= (macro-map-array nil ',name rand)
                                          (,name rand)
                                          :test #'float-close-p))
                                "Simple multithreaded inners")
-                  (5am:is-true (let* ((dn:*multithreaded-threshold* 10000)
+                  (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
                                       (rand (rand dn:*multithreaded-threshold* 2
                                                   :type ',type :min ,min :max ,max)))
                                  (array= (macro-map-array nil ',name rand)
                                          (,name rand)
                                          :test #'float-close-p))
                                "Simple multithreaded outers")
-                  (5am:is-true (let* ((rand (aref (rand '(100 100) :type ',type
-                                                                   :min ,min :max ,max)
+                  (5am:is-true (let* ((rand (aref (rand '(100 10) :type ',type
+                                                                  :min ,min :max ,max)
                                                   '(10 :step 2))))
                                  (array= (macro-map-array nil ',name rand)
                                          (,name rand :out rand)
@@ -53,8 +54,8 @@
                                          (,name rand :out rand)
                                          :test #'float-close-p))
                                "Non-simple arrays 2")
-                  (5am:is-true (let ((rand (aref (rand '(100 100) :type ',type
-                                                                  :min ,min :max ,max)
+                  (5am:is-true (let ((rand (aref (rand '(10 100) :type ',type
+                                                                 :min ,min :max ,max)
                                                  nil
                                                  '(10 :step -2))))
                                  (array= (macro-map-array nil ',name rand)
@@ -62,8 +63,8 @@
                                          :test #'float-close-p))
                                "Non-simple arrays 3")
                   (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
-                                      (rand (aref (rand '(1000 100) :type ',type
-                                                                    :min ,min :max ,max)
+                                      (rand (aref (rand '(100 100) :type ',type
+                                                                   :min ,min :max ,max)
                                                   '(10 :step 2)
                                                   '(10 :step 2))))
                                  (array= (macro-map-array nil ',name rand)
@@ -108,15 +109,15 @@
                            (< (/ (abs (- x y)) (abs x))
                               ,error))))
                 (let ((dn:*multithreaded-threshold* 1000000000))
-                  (5am:is-true (let* ((rand1 (rand 1000 :type ',type :min ,min :max ,max))
-                                      (rand2 (rand 1000 :type ',type :min ,min :max ,max))
+                  (5am:is-true (let* ((rand1 (rand 200 :type ',type :min ,min :max ,max))
+                                      (rand2 (rand 200 :type ',type :min ,min :max ,max))
                                       (return-array (zeros (array-dimensions rand1)
                                                            :type ',return-type)))
                                  (array= (macro-map-array return-array ',name rand1 rand2)
                                          (,name rand1 rand2)
                                          :test #'close-p))
                                "Simplest case")
-                  (5am:is-true (let* ((dn:*multithreaded-threshold* 10000)
+                  (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
                                       (rand1 (rand 2 dn:*multithreaded-threshold*
                                                    :type ',type :min ,min :max ,max))
                                       (rand2 (rand 2 dn:*multithreaded-threshold*
@@ -127,7 +128,7 @@
                                          (,name rand1 rand2)
                                          :test #'close-p))
                                "Simple Multithreaded insides")
-                  (5am:is-true (let* ((dn:*multithreaded-threshold* 10000)
+                  (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
                                       (rand1 (rand dn:*multithreaded-threshold* 2
                                                    :type ',type :min ,min :max ,max))
                                       (rand2 (rand dn:*multithreaded-threshold* 2
@@ -138,10 +139,10 @@
                                          (,name rand1 rand2)
                                          :test #'close-p))
                                "Simple Multithreaded outsides")
-                  (5am:is-true (let* ((rand1 (aref (rand '(100 100) :type ',type
+                  (5am:is-true (let* ((rand1 (aref (rand '(100 10) :type ',type
                                                                     :min ,min :max ,max)
                                                    '(10 :step 2)))
-                                      (rand2 (aref (rand '(200 100) :type ',type
+                                      (rand2 (aref (rand '(200 10) :type ',type
                                                                     :min ,min :max ,max)
                                                    '(20 :step 4)))
                                       (return-array (zeros (array-dimensions rand1)
@@ -165,24 +166,24 @@
                                          :test #'close-p))
                                "Non-simple arrays 2")
                   (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
-                                      (rand1 (aref (rand '(1000 100) :type ',type
+                                      (rand1 (aref (rand '(100 100) :type ',type
                                                                      :min ,min :max ,max)
                                                    '(10 :step 2)))
-                                      (rand2 (aref (rand '(2000 100) :type ',type
+                                      (rand2 (aref (rand '(200 100) :type ',type
                                                                      :min ,min :max ,max)
                                                    '(20 :step 4)))
-                                      (return-array (aref (zeros '(1000 100)
+                                      (return-array (aref (zeros '(100 100)
                                                                  :type ',return-type)
                                                           '(10 :step 2))))
                                  (array= (macro-map-array return-array ',name rand1 rand2)
                                          (,name rand1 rand2 :out return-array)
                                          :test #'close-p))
                                "Non-simple multithreaded")
-                  (5am:is-true (let* ((rand1 (aref (rand '(100 100) :type ',type
+                  (5am:is-true (let* ((rand1 (aref (rand '(10 100) :type ',type
                                                                     :min ,min :max ,max)
                                                    nil
                                                    '(10 :step -2)))
-                                      (rand2 (aref (rand '(100 200) :type ',type
+                                      (rand2 (aref (rand '(10 200) :type ',type
                                                                     :min ,min :max ,max)
                                                    nil
                                                    '(20 :step -4)))
@@ -219,14 +220,14 @@
   (flet ((verification-form (type min max return-type)
            `(progn
               (let ((dn:*multithreaded-threshold* 1000000000))
-                (5am:is-true (let* ((rand1 (rand 1000 :type ',type :min ,min :max ,max))
-                                    (rand2 (rand 1000 :type ',type :min ,min :max ,max))
+                (5am:is-true (let* ((rand1 (rand 100 :type ',type :min ,min :max ,max))
+                                    (rand2 (rand 100 :type ',type :min ,min :max ,max))
                                     (return-array (zeros (array-dimensions rand1)
                                                          :type ',return-type)))
                                (array= (macro-map-array return-array ',name rand1 rand2)
                                        (,name rand1 rand2)))
                              "Simplest case")
-                (5am:is-true (let* ((dn:*multithreaded-threshold* 10000)
+                (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
                                     (rand1 (rand 2 dn:*multithreaded-threshold*
                                                  :type ',type :min ,min :max ,max))
                                     (rand2 (rand 2 dn:*multithreaded-threshold*
@@ -236,7 +237,7 @@
                                (array= (macro-map-array return-array ',name rand1 rand2)
                                        (,name rand1 rand2)))
                              "Simple Multithreaded insides")
-                (5am:is-true (let* ((dn:*multithreaded-threshold* 10000)
+                (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
                                     (rand1 (rand dn:*multithreaded-threshold* 2
                                                  :type ',type :min ,min :max ,max))
                                     (rand2 (rand dn:*multithreaded-threshold* 2
@@ -246,10 +247,10 @@
                                (array= (macro-map-array return-array ',name rand1 rand2)
                                        (,name rand1 rand2)))
                              "Simple Multithreaded outsides")
-                (5am:is-true (let* ((rand1 (aref (rand '(100 100) :type ',type
+                (5am:is-true (let* ((rand1 (aref (rand '(100 10) :type ',type
                                                                   :min ,min :max ,max)
                                                  '(10 :step 2)))
-                                    (rand2 (aref (rand '(200 100) :type ',type
+                                    (rand2 (aref (rand '(200 10) :type ',type
                                                                   :min ,min :max ,max)
                                                  '(20 :step 4)))
                                     (return-array (zeros (array-dimensions rand1)
@@ -271,23 +272,23 @@
                                        (,name rand1 rand2 :out return-array)
                                        :test #'=)))
                 (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
-                                    (rand1 (aref (rand '(1000 100) :type ',type
+                                    (rand1 (aref (rand '(100 100) :type ',type
                                                                    :min ,min :max ,max)
                                                  '(10 :step 2)))
-                                    (rand2 (aref (rand '(2000 100) :type ',type
+                                    (rand2 (aref (rand '(200 100) :type ',type
                                                                    :min ,min :max ,max)
                                                  '(20 :step 4)))
-                                    (return-array (aref (zeros '(1000 100)
+                                    (return-array (aref (zeros '(100 100)
                                                                :type ',return-type)
                                                         '(10 :step 2))))
                                (array= (macro-map-array return-array ',name rand1 rand2)
                                        (,name rand1 rand2 :out return-array)))
                              "Non-simple multithreaded")
-                (5am:is-true (let* ((rand1 (aref (rand '(100 100) :type ',type
+                (5am:is-true (let* ((rand1 (aref (rand '(10 100) :type ',type
                                                                   :min ,min :max ,max)
                                                  nil
                                                  '(10 :step -2)))
-                                    (rand2 (aref (rand '(100 200) :type ',type
+                                    (rand2 (aref (rand '(10 200) :type ',type
                                                                   :min ,min :max ,max)
                                                  nil
                                                  '(20 :step -4)))
