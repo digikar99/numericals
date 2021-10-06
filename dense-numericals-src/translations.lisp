@@ -51,7 +51,7 @@
                 (defun ,fn-name (name)
                   (declare (optimize speed)
                            (type symbol name))
-                  (fdefinition (nth ,index (gethash name *translation-table*))))
+                  (nth ,index (gethash name *translation-table*)))
                 (define-compiler-macro ,fn-name (&whole form name &environment env)
                   (let ((form-type (cl-form-types:form-type name env)))
                     ;; TODO: Use CTYPE to normalize types?

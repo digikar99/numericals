@@ -22,54 +22,41 @@
   (let ((dim-x (narray-dimensions x))
         (dim-o (narray-dimensions out))
         (single-float-c-name (single-float-c-name name)))
-    (if (equalp dim-x dim-o)
-        (with-thresholded-multithreading (array-total-size out)
-            (x out)
-          (ptr-iterate-but-inner dim-x n
-            ((ptr-x   4 ix   x)
-             (ptr-out 4 iout out))
-            (funcall single-float-c-name n ptr-x ix ptr-out iout)))
-        (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-            (%broadcast-compatible-p dim-x dim-o)
-          (assert broadcast-compatible-p (x out)
-                  'incompatible-broadcast-dimensions
-                  :dimensions (list dim-x dim-o)
-                  :array-likes (list x out))
-          (ptr-iterate-but-inner broadcast-dimensions n
-            ((ptr-x 4 ix x)
-             (ptr-o 4 io out))
-            (funcall single-float-c-name n
-                     ptr-x ix
-                     ptr-o io)))))
+    (unless (equalp dim-x dim-o)
+      (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+          (broadcast-compatible-p x out)
+        (assert broadcast-compatible-p (x out)
+                'incompatible-broadcast-dimensions
+                :dimensions (mapcar #'narray-dimensions (list x out))
+                :array-likes (list x out))
+        (setq x (broadcast-array x broadcast-dimensions))))
+    (with-thresholded-multithreading (array-total-size out)
+        (x out)
+      (ptr-iterate-but-inner n ((ptr-x   4 ix   x)
+                                (ptr-out 4 iout out))
+        (funcall single-float-c-name n ptr-x ix ptr-out iout))))
   out)
 
 (defpolymorph (one-arg-fn :inline t)
-    ((name symbol) (x (array double-float)) &key ((out (array double-float))
-                                                  (zeros-like x)))
+    ((name symbol) (x (array double-float)) &key ((out (array double-float)) (zeros-like x)))
     (array double-float)
   (declare (ignorable name))
   (let ((dim-x (narray-dimensions x))
         (dim-o (narray-dimensions out))
         (double-float-c-name (double-float-c-name name)))
-    (if (equalp dim-x dim-o)
-        (with-thresholded-multithreading (array-total-size out)
-            (x out)
-          (ptr-iterate-but-inner dim-x n
-            ((ptr-x   8 ix   x)
-             (ptr-out 8 iout out))
-            (funcall double-float-c-name n ptr-x ix ptr-out iout)))
-        (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-            (%broadcast-compatible-p dim-x dim-o)
-          (assert broadcast-compatible-p (x out)
-                  'incompatible-broadcast-dimensions
-                  :dimensions (list dim-x dim-o)
-                  :array-likes (list x out))
-          (ptr-iterate-but-inner broadcast-dimensions n
-            ((ptr-x 8 ix x)
-             (ptr-o 8 io out))
-            (funcall double-float-c-name n
-                     ptr-x ix
-                     ptr-o io)))))
+    (unless (equalp dim-x dim-o)
+      (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+          (broadcast-compatible-p x out)
+        (assert broadcast-compatible-p (x out)
+                'incompatible-broadcast-dimensions
+                :dimensions (mapcar #'narray-dimensions (list x out))
+                :array-likes (list x out))
+        (setq x (broadcast-array x broadcast-dimensions))))
+    (with-thresholded-multithreading (array-total-size out)
+        (x out)
+      (ptr-iterate-but-inner n ((ptr-x   8 ix   x)
+                                (ptr-out 8 iout out))
+        (funcall double-float-c-name n ptr-x ix ptr-out iout))))
   out)
 
 ;; pure number

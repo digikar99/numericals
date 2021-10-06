@@ -9,7 +9,7 @@
         :do (incf sum o)
         :finally (return sum)))
 
-(defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings . expression))
+(defmacro ptr-iterate-but-inner (n-var &body (bindings . expression))
   "Each bindings is of the form (PTR-VAR ELT-SIZE INNER-STRIDE-VAR ARRAY-EXPR)."
 
   ;; Differences wrt numericals.internals::ptr-iterate-but-inner include the handling of
@@ -26,15 +26,9 @@
           (dimensions   (gensym "DIMENSIONS"))
           (ss           inner-strides) ; we use the same to avoid reassignment in nest-loop
           (os           (make-gensym-list num-arrays "OS"))
-          (strides      (make-gensym-list num-arrays "STRIDES"))
-          (broadcast-dimensions (gensym "BROADCAST-DIMENSIONS")))
+          (strides      (make-gensym-list num-arrays "STRIDES")))
 
-      `(let* ((,broadcast-dimensions ,broadcast-dimensions-expr)
-              ,@(mapcar (lm var expr `(,var (let ((,var ,expr))
-                                              (if (equalp ,broadcast-dimensions
-                                                          (narray-dimensions ,var))
-                                                  ,var
-                                                  (broadcast-array ,var ,broadcast-dimensions)))))
+      `(let* (,@(mapcar (lm var expr `(,var ,expr))
                         array-vars array-exprs))
          (declare (type dense-arrays::dense-array ,@array-vars))
          (with-pointers-to-vectors-data
@@ -94,5 +88,5 @@
                                                                 (the-int-index
                                                                  (* ,n-var ,s)))))))))
                                               pointers os ss elt-sizes))))))
-               (nest-loop ,broadcast-dimensions
+               (nest-loop (narray-dimensions ,(first array-vars))
                           ,@strides ,@offsets))))))))
