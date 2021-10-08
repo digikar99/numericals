@@ -35,6 +35,7 @@
   (:export #:*multithreaded-threshold*
            #:+optimized-types+
            #:*default-float-format*
+           #:*inline-with-multithreading*
            #:sin
            #:cos
            #:tan
@@ -79,6 +80,24 @@
            #:/
            #:one-arg-/
            #:two-arg-/
+
+           #:logand
+           #:two-arg-logand
+           #:logior
+           #:two-arg-logior
+           #:logxor
+           #:two-arg-logxor
+
+           #:lognot
+           #:logandc1
+           #:logandc2
+           #:lognand
+           #:lognor
+           #:logorc1
+           #:logorc2
+           ;; #:logtest
+           ;; #:logbitp
+           ;; #:logcount
 
            #:<
            #:two-arg-<

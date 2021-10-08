@@ -37,6 +37,12 @@
      (dn:two-arg-* bmas:smul bmas:dmul cl:*)
      (dn:two-arg-/ bmas:sdiv bmas:ddiv cl:/)
 
+     (dn:two-arg-logand nil nil cl:logand bmas:i8and bmas:i8and bmas:i8and bmas:i8and)
+     (dn:two-arg-logior nil nil cl:logior bmas:i8or  bmas:i8or  bmas:i8or  bmas:i8or)
+     (dn:two-arg-logxor nil nil cl:logxor bmas:i8xor bmas:i8xor bmas:i8xor bmas:i8xor)
+     (dn:lognot         nil nil cl:lognot bmas:i8not bmas:i8not bmas:i8not bmas:i8not)
+     (dn:logandc1 nil nil cl:logandc1 bmas:i8andnot bmas:i8andnot bmas:i8andnot bmas:i8andnot)
+
      (dn:two-arg-<  bmas:slt  bmas:dlt  cl:<)
      (dn:two-arg-<= bmas:sle  bmas:dle  cl:<=)
      (dn:two-arg-=  bmas:seq  bmas:deq  cl:=)

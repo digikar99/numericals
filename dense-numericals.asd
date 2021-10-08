@@ -38,6 +38,11 @@
                                                               "translations"
                                                               "test"
                                                               "ptr-iterate-but-inner"))
+               (:file "bitwise"               :depends-on ("copy-coerce"
+                                                           "translations"
+                                                           "test"
+                                                           "lparallel"
+                                                           "ptr-iterate-but-inner"))
                (:file "n-arg-fn"              :depends-on ("one-arg-fn"
                                                            "two-arg-fn-non-broadcast"))
                (:file "n-arg-fn-compiler-macros" :depends-on ("n-arg-fn"
