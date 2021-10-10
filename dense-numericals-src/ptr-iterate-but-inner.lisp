@@ -9,8 +9,11 @@
         :do (incf sum o)
         :finally (return sum)))
 
-(defmacro ptr-iterate-but-inner (n-var &body (bindings . expression))
-  "Each bindings is of the form (PTR-VAR ELT-SIZE INNER-STRIDE-VAR ARRAY-EXPR)."
+(defmacro ptr-iterate-but-inner (n-var &body (bindings . expression) &environment env)
+  "Each bindings is of the form (PTR-VAR ELT-SIZE INNER-STRIDE-VAR ARRAY-EXPR).
+The loop is necessary because different axes can have different strides and
+offsets. Equivalently, the loop (and the use of this macro) is unnecessary if
+the arrays were SIMPLE with same strides and offsets."
 
   ;; Differences wrt numericals.internals::ptr-iterate-but-inner include the handling of
   ;; multi-dimensional offsets
@@ -30,7 +33,8 @@
 
       `(let* (,@(mapcar (lm var expr `(,var ,expr))
                         array-vars array-exprs))
-         (declare (type dense-arrays::dense-array ,@array-vars))
+         (declare ,@(mapcar (lm var expr `(type ,(cl-form-types:nth-form-type expr env 0) ,var))
+                            array-vars array-exprs))
          (with-pointers-to-vectors-data
              (,@(mapcar (lm ptr var `(,ptr (array-storage ,var)))
                         pointers array-vars))

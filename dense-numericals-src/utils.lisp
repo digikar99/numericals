@@ -11,6 +11,7 @@ operations like trigonometric functions.")
 (declaim (type (member single-float double-float) dn:*default-float-format*))
 
 (defmacro with-pointers-to-vectors-data (bindings &body body)
+  "Each entry of BINDINGS is of the form (POINTER-VAR VECTOR)."
   (if bindings
       `(cffi:with-pointer-to-vector-data ,(first bindings)
          (locally (declare (type cffi-sys:foreign-pointer ,(caar bindings)))

@@ -69,7 +69,7 @@
 (defpolymorph (one-arg-fn :inline t) ((name symbol) (x list) &key ((out null)))
     (values array &optional)
   (declare (ignorable out))
-  (let ((array (asarray x)))
+  (let ((array (asarray x :type dn:*default-float-format*)))
     (one-arg-fn name array :out array)))
 
 (defpolymorph (one-arg-fn :inline t) ((name symbol) (x list) &key ((out array)))
@@ -78,9 +78,9 @@
   (one-arg-fn name (asarray x :type (array-element-type out)) :out out))
 
 ;; non-float arrays
-(defpolymorph (one-arg-fn :inline t)
-    ((name symbol) (x (and array (not (array single-float)) (not (array double-float))))
-     &key ((out array) (zeros (array-dimensions x) :type dn:*default-float-format*)))
+(defpolymorph (one-arg-fn :inline nil) ; this is recursive
+    ((name symbol) (x array) &key ((out (or (array single-float) (array double-float)))
+                                   (zeros (array-dimensions x) :type dn:*default-float-format*)))
     (values array &optional)
   (dn:copy x :out out)
   (one-arg-fn name out :out out))
