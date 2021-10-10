@@ -43,12 +43,18 @@
      (dn:lognot         nil nil cl:lognot bmas:i8not bmas:i8not bmas:i8not bmas:i8not)
      (dn:logandc1 nil nil cl:logandc1 bmas:i8andnot bmas:i8andnot bmas:i8andnot bmas:i8andnot)
 
-     (dn:two-arg-<  bmas:slt  bmas:dlt  cl:<)
-     (dn:two-arg-<= bmas:sle  bmas:dle  cl:<=)
-     (dn:two-arg-=  bmas:seq  bmas:deq  cl:=)
-     (dn:two-arg-/= bmas:sneq bmas:dneq cl:/=)
-     (dn:two-arg->= bmas:sge  bmas:dge  cl:>=)
-     (dn:two-arg->  bmas:sgt  bmas:dgt  cl:>))))
+     (dn:two-arg-<  bmas:slt  bmas:dlt  cl:<  bmas:i64lt  bmas:i32lt  bmas:i16lt  bmas:i8lt
+                                              bmas:u64lt  bmas:u32lt  bmas:u16lt  bmas:u8lt)
+     (dn:two-arg-<= bmas:sle  bmas:dle  cl:<= bmas:i64le  bmas:i32le  bmas:i16le  bmas:i8le
+                                              bmas:u64le  bmas:u32le  bmas:u16le  bmas:u8le)
+     (dn:two-arg-=  bmas:seq  bmas:deq  cl:=  bmas:i64eq  bmas:i32eq  bmas:i16eq  bmas:i8eq
+                                              bmas:u64eq  bmas:u32eq  bmas:u16eq  bmas:u8eq)
+     (dn:two-arg-/= bmas:sneq bmas:dneq cl:/= bmas:i64neq bmas:i32neq bmas:i16neq bmas:i8neq
+                                              bmas:u64neq bmas:u32neq bmas:u16neq bmas:u8neq)
+     (dn:two-arg->= bmas:sge  bmas:dge  cl:>= bmas:i64ge  bmas:i32ge  bmas:i16ge  bmas:i8ge
+                                              bmas:u64ge  bmas:u32ge  bmas:u16ge  bmas:u8ge)
+     (dn:two-arg->  bmas:sgt  bmas:dgt  cl:>  bmas:i64gt  bmas:i32gt  bmas:i16gt  bmas:i8gt
+                                              bmas:u64gt  bmas:u32gt  bmas:u16gt  bmas:u8gt))))
 
 ;; TODO: Replace C-NAME with C-FN
 (macrolet ((def (fn-name index)
@@ -71,8 +77,14 @@
   (def single-float-c-name 0)
   (def double-float-c-name 1)
   (def cl-name 2)
+
   (def int64-c-name 3)
   (def int32-c-name 4)
   (def int16-c-name 5)
-  (def int8-c-name  6))
+  (def int8-c-name  6)
+
+  (def uint64-c-name 7)
+  (def uint32-c-name 8)
+  (def uint16-c-name 9)
+  (def uint8-c-name  10))
 

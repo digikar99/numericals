@@ -350,7 +350,7 @@
                  ptr-o 1))))
   out)
 
-;;; integer operations
+;;; Integer non-comparison operations
 
 (macrolet ((def (bits bytes fn-retriever)
              `(progn
@@ -440,32 +440,103 @@
   (def 16 2 int16-c-name)
   (def 08 1 int8-c-name))
 
-(defpolymorph two-arg-fn/non-broadcast
-    ((name non-comparison-operator) (x (array (unsigned-byte 8)))
-     (y (array (unsigned-byte 8))) &key
-     ((out (array (unsigned-byte 8)))
-      (zeros (narray-dimensions x) :type '(unsigned-byte 8))))
-    (array (unsigned-byte 8))
-  (declare (ignorable name))
-  (policy-cond:with-expectations (= safety 0)
-      ((assertion (equalp (narray-dimensions x) (narray-dimensions y))))
-    (let ((int8-c-name (int8-c-name name)))
-      (ptr-iterate-but-inner n
-        ((ptr-x 1 ix x) (ptr-y 1 iy y) (ptr-o 1 io out))
-        ;; (print (list ix ptr-x (cffi:mem-ref ptr-x :uint8)))
-        ;; (print (list iy ptr-y (cffi:mem-ref ptr-y :uint8)))
-        ;; (print (list io ptr-o (cffi:mem-ref ptr-o :uint8)))
-        (funcall int8-c-name n ptr-x ix ptr-y iy ptr-o io))))
-  out)
+;;; Integer comparison operations
 
+(macrolet ((def (bits bytes signed-fn-retriever unsigned-fn-retriever)
+             ;; {simple, non-simple} x {signed, unsigned}
+             `(progn
+                (defpolymorph two-arg-fn/non-broadcast
+                    ((name comparison-operator)
+                     (x (array (signed-byte ,bits))) (y (array (signed-byte ,bits)))
+                     &key ((out (array (unsigned-byte 8)))
+                           (zeros (narray-dimensions x) :type '(unsigned-byte 8))))
+                    (array (unsigned-byte 8))
+                  (declare (ignorable name))
+                  (policy-cond:with-expectations (= safety 0)
+                      ((assertion (equalp (narray-dimensions x)
+                                          (narray-dimensions y))))
+                    (let ((,signed-fn-retriever (,signed-fn-retriever name)))
+                      (ptr-iterate-but-inner n ((ptr-x ,bytes ix x)
+                                                (ptr-y ,bytes iy y)
+                                                (ptr-o 1 io out))
+                        (funcall ,signed-fn-retriever
+                                 n
+                                 ptr-x ix
+                                 ptr-y iy
+                                 ptr-o io))))
+                  out)
+                (defpolymorph two-arg-fn/non-broadcast
+                    ((name comparison-operator)
+                     (x (array (unsigned-byte ,bits))) (y (array (unsigned-byte ,bits)))
+                     &key ((out (array (unsigned-byte 8)))
+                           (zeros (narray-dimensions x) :type '(unsigned-byte 8))))
+                    (array (unsigned-byte 8))
+                  (declare (ignorable name))
+                  (policy-cond:with-expectations (= safety 0)
+                      ((assertion (equalp (narray-dimensions x)
+                                          (narray-dimensions y))))
+                    (let ((,unsigned-fn-retriever (,unsigned-fn-retriever name)))
+                      (ptr-iterate-but-inner n ((ptr-x ,bytes ix x)
+                                                (ptr-y ,bytes iy y)
+                                                (ptr-o 1 io out))
+                        (funcall ,unsigned-fn-retriever
+                                 n
+                                 ptr-x ix
+                                 ptr-y iy
+                                 ptr-o io))))
+                  out)
+                (defpolymorph two-arg-fn/non-broadcast
+                    ((name comparison-operator) (x (simple-array (signed-byte ,bits)))
+                     (y (simple-array (signed-byte ,bits)))
+                     &key ((out (simple-array (unsigned-byte 8)))
+                           (zeros (narray-dimensions x) :type '(unsigned-byte 8))))
+                    (simple-array (unsigned-byte 8))
+                  (declare (ignorable name))
+                  (policy-cond:with-expectations (= safety 0)
+                      ((assertion (equalp (narray-dimensions x)
+                                          (narray-dimensions y))))
+                    (let ((,signed-fn-retriever (,signed-fn-retriever name)))
+                      (with-pointers-to-vectors-data ((ptr-x (array-storage x))
+                                                      (ptr-y (array-storage y))
+                                                      (ptr-o (array-storage out)))
+                        (funcall ,signed-fn-retriever
+                                 (array-total-size (the array out))
+                                 ptr-x 1
+                                 ptr-y 1
+                                 ptr-o 1))))
+                  out)
+                (defpolymorph two-arg-fn/non-broadcast
+                    ((name comparison-operator) (x (simple-array (unsigned-byte ,bits)))
+                     (y (simple-array (unsigned-byte ,bits)))
+                     &key ((out (simple-array (unsigned-byte 8)))
+                           (zeros (narray-dimensions x) :type '(unsigned-byte 8))))
+                    (simple-array (unsigned-byte 8))
+                  (declare (ignorable name))
+                  (policy-cond:with-expectations (= safety 0)
+                      ((assertion (equalp (narray-dimensions x)
+                                          (narray-dimensions y))))
+                    (let ((,unsigned-fn-retriever (,unsigned-fn-retriever name)))
+                      (with-pointers-to-vectors-data ((ptr-x (array-storage x))
+                                                      (ptr-y (array-storage y))
+                                                      (ptr-o (array-storage out)))
+                        (funcall ,unsigned-fn-retriever
+                                 (array-total-size (the array out))
+                                 ptr-x 1
+                                 ptr-y 1
+                                 ptr-o 1))))
+                  out))))
+
+  (def 64 8 int64-c-name uint64-c-name)
+  (def 32 4 int32-c-name uint32-c-name)
+  (def 16 2 int16-c-name uint16-c-name)
+  (def 08 1 int8-c-name  uint8-c-name))
 
 ;;; Actual definitions
-
 
 (macrolet ((def (name
                  (single-float-return-type single-float-error
                   &optional (sf-min 0.0f0) (sf-max 1.0f0))
-                 (double-float-return-type double-float-error 
+                 (double-float-return-type double-float-error
                   &optional (df-min 0.0d0) (df-max 1.0d0)))
              (eval `(define-polymorphic-function ,name (x y &key out)
                       :overwrite t))
@@ -494,3 +565,10 @@
 
 (define-numericals-two-arg-test/integers dn:two-arg-+ array)
 (define-numericals-two-arg-test/integers dn:two-arg-- array)
+
+(define-numericals-two-arg-test/integers dn:two-arg-<  array (unsigned-byte 8))
+(define-numericals-two-arg-test/integers dn:two-arg-<= array (unsigned-byte 8))
+(define-numericals-two-arg-test/integers dn:two-arg-=  array (unsigned-byte 8))
+(define-numericals-two-arg-test/integers dn:two-arg-/= array (unsigned-byte 8))
+(define-numericals-two-arg-test/integers dn:two-arg->  array (unsigned-byte 8))
+(define-numericals-two-arg-test/integers dn:two-arg->= array (unsigned-byte 8))
