@@ -12,16 +12,18 @@
                (if out
                    (array-element-type out)
                    (multiple-value-bind (out-type array-likes)
-                       (loop :for array-likes :on array-likes
-                             :if (arrayp (first array-likes))
-                               :do (return (values (array-element-type (first array-likes))
-                                                   (rest array-likes)))
-                             :finally (return (values default-element-type nil)))
+                       ;; Set up an initial guess for OUT-TYPE
+                       (values (if (arrayp (first array-likes))
+                                   (array-element-type (first array-likes))
+                                   (element-type (first array-likes)))
+                               (rest array-likes))
+                     ;; Refine the initial guess
                      (loop :for array-like :in array-likes
-                           :if (arrayp array-like)
-                             :do (setq out-type
-                                       (type-max out-type
-                                                 (array-element-type array-like))))
+                           :do (setq out-type
+                                     (type-max out-type
+                                               (if (arrayp array-like)
+                                                   (array-element-type array-like)
+                                                   (element-type array-like)))))
                      out-type)))
              (arrays
                (loop :for array-like :on array-likes
@@ -81,17 +83,40 @@
 (defun normalize-arguments/cmp (array-likes out)
   (if (every #'numberp array-likes)
       (values array-likes out)
-      (let ((arrays (loop :for array-like :on array-likes
-                            :do (setf (first array-like)
-                                      (ensure-appropriate-dense-array (first array-like)))
-                          :finally (return array-likes))))
+      (let* ((common-type
+               (multiple-value-bind (common-type array-likes)
+                   ;; Set up an initial guess for COMMON-TYPE
+                   (values (if (arrayp (first array-likes))
+                               (array-element-type (first array-likes))
+                               (element-type (first array-likes)))
+                           (rest array-likes))
+                 ;; Refine the initial guess
+                 (loop :for array-like :in array-likes
+                       :do (setq common-type
+                                 (type-max common-type
+                                           (if (arrayp array-like)
+                                               (array-element-type array-like)
+                                               (element-type array-like)))))
+                 common-type))
+             (arrays
+               (loop :for array-like :on array-likes
+                     :do (unless (and (arrayp (first array-like))
+                                      (type= common-type (array-element-type (first array-like))))
+                           (setf (first array-like)
+                                 ;; TODO: Use TRIVIAL-COERCE:COERCE and simd based backends
+                                 ;; FIXME: Signal a condition when the conversion is unsafe
+                                 ;; TODO: Enable different upgrade-rules
+                                 (asarray (first array-like) :type common-type)))
+                     :finally (return array-likes))))
         (multiple-value-bind (broadcast-compatible-p dimensions)
             (if out
                 (apply #'broadcast-compatible-p out arrays)
                 (apply #'broadcast-compatible-p arrays))
           (if broadcast-compatible-p
               (values (apply #'broadcast-arrays arrays)
-                      (or out (zeros dimensions :type '(unsigned-byte 8))))
+                      (if out
+                          (dn:copy 1 :out out)
+                          (ones dimensions :type '(unsigned-byte 8))))
               (error 'incompatible-broadcast-dimensions
                      :array-likes array-likes
                      :dimensions (mapcar #'dimensions array-likes)))))))
@@ -101,10 +126,30 @@
                 ;; TODO: Incorporate WHERE (?)
                 (multiple-value-bind (array-likes out)
                     (normalize-arguments/cmp array-likes out)
-                  (reduce (lambda (old-out new-value)
-                            (,reduce-fn old-out new-value :out out))
-                          (rest array-likes)
-                          :initial-value (first array-likes))))))
+                  (print array-likes)
+                  (cond ((null array-likes)
+                         (error "Need at least one argument"))
+                        (out
+                         (cond ((null (cdr array-likes))
+                                out)
+                               ((null (cddr array-likes))
+                                (,reduce-fn (first array-likes)
+                                            (second array-likes)
+                                            :out out))
+                               (t
+                                (,reduce-fn (first array-likes)
+                                            (second array-likes)
+                                            :out out)
+                                (let ((tmp (zeros-like out)))
+                                  (loop :for first :in (cdr array-likes)
+                                        :for second :in (cddr array-likes)
+                                        :do (,reduce-fn first second :out tmp)
+                                            (dn:two-arg-logand out tmp :out out)))))
+                         out)
+                        (t
+                         (if (apply #',(cl-name reduce-fn) array-likes)
+                             1
+                             0)))))))
   (def dn:<  dn:two-arg-<)
   (def dn:<= dn:two-arg-<=)
   (def dn:=  dn:two-arg-=)

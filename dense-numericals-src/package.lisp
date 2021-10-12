@@ -22,6 +22,10 @@
            #:ones-like
            #:rand-like
 
+           #:*dense-array-class*
+           #:*array-element-type*
+           #:*array-element-type-alist*
+
            ;; TODO
            ))
 
@@ -36,6 +40,7 @@
            #:+optimized-types+
            #:*default-float-format*
            #:*inline-with-multithreading*
+
            #:sin
            #:cos
            #:tan
@@ -136,7 +141,8 @@
   (:import-from :dense-arrays-plus-lite
                 #:split-at-keywords
                 #:define-splice-list-fn
-                #:dimensions))
+                #:dimensions
+                #:element-type))
 
 (defpackage :dense-numericals.linalg
   (:export #:axpy))
