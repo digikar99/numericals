@@ -66,7 +66,7 @@
            #:concat
            #:matmul
            #:two-arg-matmul
-           #:dot
+           #:vdot
            #:sum
            #:shape
 
