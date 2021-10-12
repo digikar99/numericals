@@ -16,7 +16,8 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
 ;;; while inlining in an attempt to reduce code size, the actual size differences
 ;;; in the codes are minimal; the size is largely determined by the PTR-ITERATE-BUT-INNER
 
-(defmacro with-thresholded-multithreading (threshold-measure (&rest vars) &body body)
+(defmacro with-thresholded-multithreading (threshold-measure (&rest vars)
+                                           &body body &environment env)
   (let* ((simple-p (eq :simple (first vars)))
          (vars     (if simple-p
                        (rest vars)
@@ -28,6 +29,8 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
         `(progn ,@body)
         `(block thresholded-multithreading
            (flet ((,body-sym ,vars
+                    (declare ,@(mapcar (lm var `(type ,(cl-form-types:nth-form-type var env 0) ,var))
+                                       vars))
                     ,@body))
              (if (< (the size ,threshold-measure)
                     dn:*multithreaded-threshold*)

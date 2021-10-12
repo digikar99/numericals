@@ -243,6 +243,7 @@
        ,(verification-form 'double-float double-float-error
                            double-float-min double-float-max double-float-return-type))))
 
+
 (defmacro define-numericals-two-arg-test/integers
     (name array-type &optional (return-type nil))
 
@@ -277,10 +278,10 @@
                                        (,name rand1 rand2)))
                              "Simple Multithreaded outsides")
                 (5am:is-true (let* ((rand1 (aref (rand '(100 10) :type ',type
-                                                                  :min ,min :max ,max)
+                                                                 :min ,min :max ,max)
                                                  '(10 :step 2)))
                                     (rand2 (aref (rand '(200 10) :type ',type
-                                                                  :min ,min :max ,max)
+                                                                 :min ,min :max ,max)
                                                  '(20 :step 4)))
                                     (return-array (zeros (array-dimensions rand1)
                                                          :type ',return-type)))
@@ -302,10 +303,10 @@
                                        :test #'=)))
                 (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
                                     (rand1 (aref (rand '(100 100) :type ',type
-                                                                   :min ,min :max ,max)
+                                                                  :min ,min :max ,max)
                                                  '(10 :step 2)))
                                     (rand2 (aref (rand '(200 100) :type ',type
-                                                                   :min ,min :max ,max)
+                                                                  :min ,min :max ,max)
                                                  '(20 :step 4)))
                                     (return-array (aref (zeros '(100 100)
                                                                :type ',return-type)
@@ -314,11 +315,11 @@
                                        (,name rand1 rand2 :out return-array)))
                              "Non-simple multithreaded")
                 (5am:is-true (let* ((rand1 (aref (rand '(10 100) :type ',type
-                                                                  :min ,min :max ,max)
+                                                                 :min ,min :max ,max)
                                                  nil
                                                  '(10 :step -2)))
                                     (rand2 (aref (rand '(10 200) :type ',type
-                                                                  :min ,min :max ,max)
+                                                                 :min ,min :max ,max)
                                                  nil
                                                  '(20 :step -4)))
                                     (return-array (zeros (array-dimensions rand1)
@@ -340,22 +341,22 @@
                                              (aref array 1 2)))))))))
 
     (let ((suite-name (intern (concatenate 'string
-                                            (symbol-name name)
-                                            "/INTEGERS")
+                                           (symbol-name name)
+                                           "/INTEGERS")
                               (symbol-package name))))
       `(progn
          (5am:def-suite ,suite-name :in ,array-type)
          (5am:def-test ,(intern (concatenate 'string
                                              (symbol-name suite-name)
-                                            "/U64")
+                                             "/U64")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
-             ,(verification-form '(unsigned-byte 64)
-                                 0 (expt 2 63)
-                                 (or return-type '(unsigned-byte 64))))
+           ,(verification-form '(unsigned-byte 64)
+                               0 (expt 2 63)
+                               (or return-type '(unsigned-byte 64))))
          (5am:def-test ,(intern (concatenate 'string
                                              (symbol-name suite-name)
-                                            "/U32")
+                                             "/U32")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
            ,(verification-form '(unsigned-byte 32)
@@ -363,7 +364,7 @@
                                (or return-type '(unsigned-byte 32))))
          (5am:def-test ,(intern (concatenate 'string
                                              (symbol-name suite-name)
-                                            "/U16")
+                                             "/U16")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
            ,(verification-form '(unsigned-byte 16)
@@ -371,7 +372,7 @@
                                (or return-type '(unsigned-byte 16))))
          (5am:def-test ,(intern (concatenate 'string
                                              (symbol-name suite-name)
-                                            "/U08")
+                                             "/U08")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
            ,(verification-form '(unsigned-byte 8)
@@ -380,7 +381,7 @@
 
          (5am:def-test ,(intern (concatenate 'string
                                              (symbol-name suite-name)
-                                            "/S64")
+                                             "/S64")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
            ,(verification-form '(signed-byte 64)
@@ -388,7 +389,7 @@
                                (or return-type '(signed-byte 64))))
          (5am:def-test ,(intern (concatenate 'string
                                              (symbol-name suite-name)
-                                            "/S32")
+                                             "/S32")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
            ,(verification-form '(signed-byte 32)
@@ -397,7 +398,7 @@
          (5am:def-test ,(intern (concatenate 'string
 
                                              (symbol-name suite-name)
-                                            "/S16")
+                                             "/S16")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
            ,(verification-form '(signed-byte 16)
@@ -405,7 +406,7 @@
                                (or return-type '(signed-byte 16))))
          (5am:def-test ,(intern (concatenate 'string
                                              (symbol-name suite-name)
-                                            "/S08")
+                                             "/S08")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
            ,(verification-form '(signed-byte 8)
