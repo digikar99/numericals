@@ -103,11 +103,9 @@
       (setq x (broadcast-array x broadcast-dimensions))
       (setq y (broadcast-array y broadcast-dimensions))
       (setq out (or out (zeros broadcast-dimensions :type '(unsigned-byte 8))))))
-  ;; Why didn't we use multithreading here?
-  (policy-cond:with-expectations (= safety 0)
-      ((assertion (equalp (narray-dimensions x)
-                          (narray-dimensions y))))
-    (let ((int8-c-name (int8-c-name name)))
+  (let ((int8-c-name (int8-c-name name)))
+    (with-thresholded-multithreading (array-total-size out)
+        (x y out)
       (ptr-iterate-but-inner n ((ptr-x 1 ix x)
                                 (ptr-y 1 iy y)
                                 (ptr-o 1 io out))
@@ -129,9 +127,12 @@
                      (narray-dimensions y))
              (equalp (narray-dimensions out)
                      (narray-dimensions y)))
-        (progn
-          (with-thresholded-multithreading (array-total-size (the array out))
-              (:simple x y out)
+        (let ((x x)
+              (y y)
+              (out out))
+          (declare (type (array (unsigned-byte 8))))
+          (with-thresholded-multithreading (array-total-size out)
+              (x y out)
             (with-pointers-to-vectors-data ((ptr-x (array-storage x))
                                             (ptr-y (array-storage y))
                                             (ptr-o (array-storage out)))
@@ -141,9 +142,8 @@
               (funcall int8-c-name
                        (array-total-size (the array out))
                        ptr-x 1
-                       ptr-x 1
-                       ptr-o 1)))
-          out)
+                       ptr-y 1
+                       ptr-o 1))))
         (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
             (broadcast-compatible-p x y)
           (assert broadcast-compatible-p (x y)
@@ -163,8 +163,8 @@
                          n
                          ptr-x ix
                          ptr-y iy
-                         ptr-o io)))
-            out)))))
+                         ptr-o io))))))
+    out))
 
 
 (macrolet ((def (name)
@@ -181,6 +181,65 @@
   (def dn:two-arg-logior)
   (def dn:two-arg-logxor)
 
-  (def dn:logandc1))
+  (def dn:logandc2))
 
-(defpolymorph dn:logandc2 (x y &key out) t (dn:logandc1 y x :out out))
+(defpolymorph dn:logandc1 (x y &key out) t (dn:logandc2 y x :out out))
+
+(defpolymorph dn:lognot ((x number) &key ((out null))) (values number &optional)
+  (declare (ignore out))
+  (trivial-coerce:coerce (the integer (funcall (cl-name 'dn:lognot) x))
+                         '(unsigned-byte 8)))
+(defpolymorph dn:lognot ((x list) &key ((out (array (unsigned-byte 8)))))
+    (array (unsigned-byte 8))
+  (dn:lognot (asarray x :type '(unsigned-byte 8)) :out out)
+  out)
+(defpolymorph (dn:lognot :inline t) ((x list) &key ((out null)))
+    (array (unsigned-byte 8))
+  (declare (ignore out))
+  (let ((array (asarray x :type '(unsigned-byte 8))))
+    (dn:lognot array :out array)
+    array))
+(defpolymorph dn:lognot ((x (array (unsigned-byte 8))) &key ((out (array (unsigned-byte 8)))
+                                                             (zeros-like x)))
+    (array (unsigned-byte 8))
+  (unless (equalp (narray-dimensions x)
+                  (narray-dimensions out))
+    (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+        (%broadcast-compatible-p (narray-dimensions x)
+                                 (narray-dimensions out))
+      (assert broadcast-compatible-p (x out)
+              'incompatible-broadcast-dimensions
+              :dimensions (mapcar #'narray-dimensions (list x out))
+              :array-likes (list x out))
+      (setq x (broadcast-array x broadcast-dimensions))))
+  (with-thresholded-multithreading (array-total-size out)
+      (x out)
+    (ptr-iterate-but-inner n ((ptr-x   1 ix   x)
+                              (ptr-out 1 iout out))
+      (funcall (int8-c-name 'dn:lognot) n ptr-x ix ptr-out iout)))
+  out)
+
+(defpolymorph dn:lognand (x y &key out) t
+  (let ((and-out (dn:two-arg-logand y x :out out)))
+    (if (arrayp and-out)
+        (dn:lognot and-out :out (the (array (unsigned-byte 8)) and-out))
+        (dn:lognot (the number and-out)))))
+
+(defpolymorph dn:lognor (x y &key out) t
+  (let ((or-out (dn:two-arg-logior y x :out out)))
+    (if (arrayp or-out)
+        (dn:lognot or-out :out (the (array (unsigned-byte 8)) or-out))
+        (dn:lognot (the number or-out)))))
+
+(defpolymorph dn:logorc1 (x y &key out) t
+  (let ((c-out (dn:lognot x :out out)))
+    (if (arrayp c-out)
+        (dn:two-arg-logior (the (array (unsigned-byte 8)) c-out) y :out out)
+        (dn:two-arg-logior (the number c-out) y))))
+
+(defpolymorph dn:logorc1 (x y &key out) t
+  (let ((c-out (dn:lognot y :out out)))
+    (if (arrayp c-out)
+        (dn:two-arg-logior (the (array (unsigned-byte 8)) c-out) x :out out)
+        (dn:two-arg-logior (the number c-out) x))))
+
