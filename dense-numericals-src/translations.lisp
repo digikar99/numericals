@@ -21,7 +21,7 @@
      (dn:atanh bmas:satanh bmas:datanh cl:atanh)
 
      (dn:exp bmas:sexp bmas:dexp cl:exp)
-     (dn:abs bmas:sfabs bmas:dfabs cl:abs)
+     (dn:abs bmas:sfabs bmas:dfabs cl:abs bmas:i64abs bmas:i32abs bmas:i16abs bmas:i8abs)
 
      (dn:log       bmas:slog   bmas:dlog   cl:log)
      (dn:fround    bmas:sround bmas:dround cl:fround)
