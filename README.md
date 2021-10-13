@@ -6,33 +6,56 @@ The project intends to offer a numpy-like (not exactly numpy!) API and equivalen
 
 It provides mainly two ASDF systems: `numericals` for use with `cl:array` and `dense-numericals` for use with [dense-arrays:array](https://github.com/digikar99/dense-arrays), that is to say, wherever possible functionality in `numericals` attempts to output `cl:array`, while wherever possible, `dense-numericals` attempts to output `dense-arrays:array`.
 
-At the moment, primary work is happening under `dense-numericals`, so it has slightly greater functionality than `numericals`; raise an issue if you'd like to shift the focus to `numericals`.
+At the moment, work is primarily happening under `dense-numericals`, so it has slightly greater functionality than `numericals`; raise an issue if you'd like to shift the focus to `numericals`.
 
 ## Functionality So Far
 
-Performant functionality so far includes:
+Below:
 
-- Utilities
-  - ones
-  - zeros
-  - rand
-  - ones-like
-  - zeros-like
-  - rand-like
-  - asarray
-- Actual Math
-  - Supported single-float/double-float functions so far (see [src/package.lisp](src/package.lisp)):
-    - DMAS: `+ - * /`
-    - Comparisons: `< <= = /= >= >`
-    - Trigonometric: `sin cos tan asin acos atan`
-    - Hyperbolic `sinh cosh tanh asinh acosh atanh`
-    - `log exp expt`
-    - `ffloor fceiling fround ftruncate abs`
-    - `copy`
- - Supported signed/unsigned integer functions so far: `+ - copy`
- - Supported conversions:
-   - from signed/unsigned integers to single-float/double-float
-   - between single-float and double-float
+- `-` indicates unimplemented
+- `+` indicates implemented and possibly unoptimized
+- `+++` indicates implemented and optimized
+- "all integer types" include: (signed-byte 08/16/32/64) and (unsigned-byte 08/16/32/64); fixnum is specified explicitly
+- fixnum for multiplication (or just about any operation for that matter!) will work correctly only while the results fit within machine word on SBCL; in fact, on SBCL `(type= 'fixnum '(signed-byte 63))`
+
+Feature parity of `numericals` vs `dense-neumericals`:
+
+| Feature                                                               | numericals | dense-numericals |
+|-----------------------------------------------------------------------|:----------:|:----------------:|
+| <u>**Basic Utilities**</u>                                            |            |                  |
+| ones                                                                  | +++        | +                |
+| zeros                                                                 | +++        | +                |
+| rand                                                                  | +          | +                |
+| ones-like                                                             | +++        | +                |
+| zeros-like                                                            | +++        | +                |
+| rand-like                                                             | +          | +                |
+| asarray                                                               | +          | +                |
+| copy (all to same or floats)                                          | -          | +++              |
+| <u>**Basic Operations**</u>                                           |            |                  |
+| `/` (single-float / double-float)                                     | +++        | +                |
+| `+ - * /` (single-float / double-float)                               | +++        | +                |
+| `+ - *` (all integer types / fixnum)                                  | -          | +                |
+| `< <= = /= >= >` (single-float / double-float)                        | +++        | +                |
+| `< <= = /= >= >` (all integer types / fixnum)                         | -          | +                |
+| `(log) not and ior xor nand andc1 andc2` (unsigned-byte 8)            | -          | +                |
+| <u>**Transcendental Functions**</u> (single-float / double-float)     |            |                  |
+| ` sin   cos   tan `                                                   | +++        | +++              |
+| `asin  acos  atan `                                                   | +++        | +++              |
+| ` sinh  cosh  tanh`                                                   | +++        | +++              |
+| `asinh acosh atanh`                                                   | +++        | +++              |
+| `log exp expt`                                                        | +++        | +++              |
+| <u>**More Operations**</u>                                            |            |                  |
+| `ffloor fceiling fround ftruncate` (single-float / double-float)      | +++        | +++              |
+| `abs` (all signed integer types)                                      | -          | +++              |
+| `vdot sum` (single-float / double-float / all integer types / fixnum) | -          | +++              |
+| `max min` (single-float / double-float / all integer types / fixnum)  | -          | +++              |
+
+
+
+Supported conversions:
+
+- from signed/unsigned integers to single-float/double-float
+- between single-float and double-float
 
 These functions should be within a factor of two of numpy/torch for "common cases". If they are not inspite of type declarations, feel free to report an [issue](https://github.com/digikar99/numericals/issues)!
 
@@ -45,7 +68,7 @@ As of this writing,
 - The only libraries that offer broadcasted operations on arrays are this and [numcl](https://github.com/numcl/numcl)
 - `numcl` does not yet have a focus on high performance - though, it [should be possible to implement the current einsum based backend using BLAS and BMAS](https://github.com/numcl/numcl/issues/57); instead the focus there is on functionality; by contrast, the focus here is on performance first, and functionality second. Users do not have to choose. `:mix` option of `uiop:define-package` can be useful for mixing the two libraries as per user preferences
 - Other minor differences wrt numcl include:
-  - Both `(ones 2 3 :type 'single-float)` and `(ones '(2 3) :type 'single-float)` are legal in numericals; while only the latter is legal in numcl
+  - Both `(ones 2 3 :type 'single-float)` and `(ones '(2 3) :type 'single-float)` are legal in numericals; while only the latter is legal in numcl/numpy
   - `numericals` provides a `*array-element-type-alist*` equivalent to `swank:*readtable-alist*` to provide a package local way of specifying the default element-type for arrays. This can be further overriden by binding `*array-element-type*`. This does impose performance penalties however.
   - `numcl` relies on JIT backed by [specialized-function](https://github.com/numcl/specialized-function), while `numericals` relies on AOT backed by [polymorphic-functions](https://github.com/digikar99/polymorphic-functions/) and [cl-form-types](https://github.com/alex-gutev/cl-form-types). Again, these are not either-or, high level user functions can (in theory) utilize specialized-function, while the innards can use static-dispatch either by polymorphic-functions or [static-dispatch](https://github.com/alex-gutev/static-dispatch) or [fast-generic-functions](https://github.com/marcoheisig/fast-generic-functions/).
 - In addition to these two, another performant library operating on CL arrays includes [lla](https://github.com/tpapp/lla). Again, `uiop:define-package` with `:mix` can be used suitably.
@@ -66,16 +89,26 @@ Once `(ql:quickload "numericals")` or `(ql:quickload "dense-numericals")` is suc
 
 Run tests using `(asdf:test-system "numericals")` or `(asdf:test-system "dense-numericals")`; these are scattered throughout the system.
 
+Configurable parameters include (see docstrings for their description):
+
+- `*multithreaded-threshold*`
+- `*default-float-format*`
+- `*inline-with-multithreading*`
+- `*array-element-type*` and `*array-element-type-alist*`
+- `*broadcast-automatically*`
+
+## Why separate `numericals` and `dense-numericals` packages?
+
+Not doing so would mean an additional configuration option. That implies an usage overhead on the part of the user, besides employing a decision factor into the return type of the functions. Separate packages, functions, symbols simply by-passes this issue. If a user is interfacing with the lisp ecosystem at large, they can choose `numericals` without a second thought.
+
 ## Planned
 
 In no order of priority:
 
 - `transpose` with arbitrary axes
-- SIMD support for integer types
 - More operations from BLAS
 - Optimizing `astype`
 - Handle better configuration variable pertaining to whether compile time value of `default-element-type` should be used
-- Introduce a compile time configuration variable to enable/disable the use of lparallel
 - Reviving `weop` and `with-elementwise-operations` using [sb-simd](https://github.com/marcoheisig/sb-simd/) or [cl-simd](https://github.com/angavrilov/cl-simd) (or one of its forks!)
 - Automate installation of [bmas](https://github.com/digikar99/bmas), and avoid hardcoding paths in cl-bmas and cl-cblas
 

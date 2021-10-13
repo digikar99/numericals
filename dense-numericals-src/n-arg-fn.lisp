@@ -24,7 +24,7 @@
                                                (if (arrayp array-like)
                                                    (array-element-type array-like)
                                                    (element-type array-like)))))
-                     out-type)))
+                     (max-type out-type default-element-type))))
              (arrays
                (loop :for array-like :on array-likes
                      :do (unless (and (arrayp (first array-like))
@@ -57,11 +57,14 @@
                   (multiple-value-bind (array-likes out)
                       (normalize-arguments/dmas array-likes out)
                     (if out
-                        (progn
+                        (let ((initial-value (broadcast-array
+                                              (asarray ',(list initial-value)
+                                                       :type (array-element-type out))
+                                              (array-dimensions out))))
                           (cond ((null array-likes)
-                                 (,reduce-fn ,initial-value out :out out))
+                                 (,reduce-fn initial-value out :out out))
                                 ((null (cdr array-likes))
-                                 (,reduce-fn ,initial-value (first array-likes) :out out))
+                                 (,reduce-fn initial-value (first array-likes) :out out))
                                 (t
                                  (,reduce-fn (first array-likes)
                                              (second array-likes)

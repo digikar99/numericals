@@ -24,12 +24,17 @@
                (:file "test"                  :depends-on ("package"))
                (:file "translations"          :depends-on ("package"))
                (:file "copy-coerce"           :depends-on ("utils"))
-               (:file "one-arg-fn"            :depends-on ("copy-coerce"
+               (:file "one-arg-fn-float"      :depends-on ("copy-coerce"
                                                            "translations"
                                                            "test"
                                                            "lparallel"
                                                            "ptr-iterate-but-inner"))
-               (:file "two-arg-fn"            :depends-on ("utils"
+               (:file "one-arg-fn-all"        :depends-on ("copy-coerce"
+                                                           "translations"
+                                                           "test"
+                                                           "lparallel"
+                                                           "ptr-iterate-but-inner"))
+               (:file "two-arg-fn-float"      :depends-on ("utils"
                                                            "test"
                                                            "lparallel"
                                                            "translations"
@@ -43,7 +48,7 @@
                                                            "test"
                                                            "lparallel"
                                                            "ptr-iterate-but-inner"))
-               (:file "n-arg-fn"              :depends-on ("one-arg-fn"
+               (:file "n-arg-fn"              :depends-on ("one-arg-fn-float"
                                                            "bitwise"
                                                            "two-arg-fn-non-broadcast"))
                (:file "n-arg-fn-compiler-macros" :depends-on ("n-arg-fn"

@@ -176,20 +176,19 @@
                 (defpolymorph ,name (x y &key ((out (not null)))) t
                   (two-arg-fn/bitwise ',name x y :out out)))))
 
-  ;; TODO: lognot
   (def dn:two-arg-logand)
   (def dn:two-arg-logior)
   (def dn:two-arg-logxor)
 
-  (def dn:logandc2))
+  (def dn:logandc1))
 
-(defpolymorph dn:logandc1 (x y &key out) t (dn:logandc2 y x :out out))
+(defpolymorph dn:logandc2 (x y &key out) t (dn:logandc2 y x :out out))
 
 (defpolymorph dn:lognot ((x number) &key ((out null))) (values number &optional)
   (declare (ignore out))
   (trivial-coerce:coerce (the integer (funcall (cl-name 'dn:lognot) x))
                          '(unsigned-byte 8)))
-(defpolymorph dn:lognot ((x list) &key ((out (array (unsigned-byte 8)))))
+(defpolymorph (dn:lognot :inline t) ((x list) &key ((out (array (unsigned-byte 8)))))
     (array (unsigned-byte 8))
   (dn:lognot (asarray x :type '(unsigned-byte 8)) :out out)
   out)

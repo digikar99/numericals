@@ -12,6 +12,7 @@
 (defpolymorph (one-arg-reduce-fn :inline t) ((name symbol) (initial-value-name symbol)
                                              (x list) &key axes ((out null)))
     t
+  (declare (ignore out))
   (one-arg-reduce-fn name initial-value-name (print (asarray x)) :axes axes))
 
 (macrolet ((def (type c-fn-retriever type-size)
@@ -36,7 +37,7 @@
                         acc
                         (trivial-coerce:coerce acc ',type))))
                 (defpolymorph one-arg-reduce-fn ((name symbol)
-                                                 initial-value-name
+                                                 (initial-value-name symbol)
                                                  (x (array ,type 1))
                                                  &key ((axes (eql 0))) ((out null)))
                     (values ,type &optional)

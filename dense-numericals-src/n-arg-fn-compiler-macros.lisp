@@ -1,5 +1,6 @@
 (in-package :dense-numericals.impl)
 
+;; TODO: Add macros for comparison and bitwise operations
 
 (define-condition out-unknown-at-compile-time
     (compiler-macro-notes:optimization-failure-note)

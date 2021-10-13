@@ -16,9 +16,10 @@
                          (if close-p
                              t
                              (progn
-                               (print (list x y))
+                               ;; (print (list x y))
                                nil)))))
-                (let ((dn:*multithreaded-threshold* 10000000))
+                (let ((dn:*multithreaded-threshold* 10000000)
+                      (dn:*broadcast-automatically* t))
                   (5am:is-true (let ((rand (rand 200 :type ',type :min ,min :max ,max)))
                                  (array= (macro-map-array nil ',name rand)
                                          (,name rand)
@@ -75,7 +76,8 @@
                                                                    :min ,min :max ,max)
                                                   '(10 :step 2)
                                                   '(10 :step 2))))
-                                 (array= (broadcast-array (macro-map-array nil ',name rand) '(10 45 45))
+                                 (array= (broadcast-array (macro-map-array nil ',name rand)
+                                                          '(10 45 45))
                                          (,name rand :out (zeros '(10 45 45) :type ',type))
                                          :test #'float-close-p))
                                "Non-simple multithreaded broadcast")
@@ -100,6 +102,174 @@
        ,(verification-form 'double-float double-float-error
                            double-float-min double-float-max))))
 
+(defmacro define-numericals-one-arg-test/integers
+    (name array-type &optional (return-type nil))
+
+  (flet ((verification-form (type min max return-type)
+           `(progn
+              (let ((dn:*multithreaded-threshold* 1000000000)
+                    (dn:*broadcast-automatically* t))
+                (5am:is-true (let* ((rand (rand 100 :type ',type :min ,min :max ,max))
+                                    (return-array (zeros (array-dimensions rand)
+                                                         :type ',return-type)))
+                               (array= (macro-map-array return-array ',name rand)
+                                       (,name rand)))
+                             "Simplest case")
+                (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
+                                    (rand (rand 2 dn:*multithreaded-threshold*
+                                                :type ',type :min ,min :max ,max))
+                                    (return-array (zeros (array-dimensions rand)
+                                                         :type ',return-type)))
+                               (array= (macro-map-array return-array ',name rand)
+                                       (,name rand)))
+                             "Simple Multithreaded insides")
+                (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
+                                    (rand (rand dn:*multithreaded-threshold* 2
+                                                :type ',type :min ,min :max ,max))
+                                    (return-array (zeros (array-dimensions rand)
+                                                         :type ',return-type)))
+                               (array= (macro-map-array return-array ',name rand)
+                                       (,name rand)))
+                             "Simple Multithreaded outsides")
+                (5am:is-true (let* ((rand (aref (rand '(100 10) :type ',type
+                                                                :min ,min :max ,max)
+                                                '(10 :step 2)))
+                                    (return-array (zeros (array-dimensions rand)
+                                                         :type ',return-type)))
+                               (array= (macro-map-array return-array ',name rand)
+                                       (,name rand :out return-array)))
+                             "Non-simple arrays 1")
+                (5am:is-true (let* ((rand (aref (rand '(100 100) :type ',type
+                                                                 :min ,min :max ,max)
+                                                '(10 :step 2)
+                                                '(10 :step 2)))
+                                    (return-array (zeros (array-dimensions rand)
+                                                         :type ',return-type)))
+                               (array= (macro-map-array return-array ',name rand)
+                                       (,name rand :out return-array)
+                                       :test #'=)))
+                (5am:is-true (let* ((dn:*multithreaded-threshold* 1000)
+                                    (rand (aref (rand '(100 100) :type ',type
+                                                                 :min ,min :max ,max)
+                                                '(10 :step 2)))
+                                    (return-array (aref (zeros '(100 100)
+                                                               :type ',return-type)
+                                                        '(10 :step 2))))
+                               (array= (macro-map-array return-array ',name rand)
+                                       (,name rand :out return-array)))
+                             "Non-simple multithreaded")
+                (5am:is-true (let* ((rand (aref (rand '(10 100) :type ',type
+                                                                :min ,min :max ,max)
+                                                nil
+                                                '(10 :step -2)))
+                                    (return-array (zeros (array-dimensions rand)
+                                                         :type ',return-type)))
+                               (array= (macro-map-array return-array ',name rand)
+                                       (,name rand :out return-array))))
+                (5am:is-true (let* ((array (rand '(2 3) :type ',type
+                                                        :min ,min :max ,max))
+                                    (orig  (list (aref array 0 0)
+                                                 (aref array 0 2)
+                                                 (aref array 1 0)
+                                                 (aref array 1 2))))
+                               ;; This tests that it is potentially only
+                               ;; the VIEW elements that have changed and the
+                               ;; "other" elements have remained the same
+                               (,name (aref array nil 1)
+                                      :out (aref array nil 1))
+                               (equalp orig
+                                       (list (aref array 0 0)
+                                             (aref array 0 2)
+                                             (aref array 1 0)
+                                             (aref array 1 2)))
+                               "Inplace only"))))))
+
+    (let ((suite-name (intern (concatenate 'string
+                                           (symbol-name name)
+                                           "/INTEGERS")
+                              (symbol-package name))))
+      `(progn
+         (5am:def-suite ,suite-name :in ,array-type)
+         (5am:def-test ,(intern (concatenate 'string
+                                             (symbol-name suite-name)
+                                             "/U64")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(verification-form '(unsigned-byte 64)
+                               0 (expt 2 63)
+                               (or return-type '(unsigned-byte 64))))
+         (5am:def-test ,(intern (concatenate 'string
+                                             (symbol-name suite-name)
+                                             "/U32")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(verification-form '(unsigned-byte 32)
+                               0 (expt 2 31)
+                               (or return-type '(unsigned-byte 32))))
+         (5am:def-test ,(intern (concatenate 'string
+                                             (symbol-name suite-name)
+                                             "/U16")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(verification-form '(unsigned-byte 16)
+                               0 (expt 2 15)
+                               (or return-type '(unsigned-byte 16))))
+         (5am:def-test ,(intern (concatenate 'string
+                                             (symbol-name suite-name)
+                                             "/U08")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(verification-form '(unsigned-byte 8)
+                               0 (expt 2 7)
+                               (or return-type '(unsigned-byte 8))))
+
+         (5am:def-test ,(intern (concatenate 'string
+                                             (symbol-name suite-name)
+                                             "/S64")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(verification-form '(signed-byte 64)
+                               (- (expt 2 62)) (1- (expt 2 62))
+                               (or return-type '(signed-byte 64))))
+         (5am:def-test ,(intern (concatenate 'string
+                                             (symbol-name suite-name)
+                                             "/S32")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(verification-form '(signed-byte 32)
+                               (- (expt 2 30)) (1- (expt 2 30))
+                               (or return-type '(signed-byte 32))))
+         (5am:def-test ,(intern (concatenate 'string
+
+                                             (symbol-name suite-name)
+                                             "/S16")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(verification-form '(signed-byte 16)
+                               (- (expt 2 14)) (1- (expt 2 14))
+                               (or return-type '(signed-byte 16))))
+         (5am:def-test ,(intern (concatenate 'string
+                                             (symbol-name suite-name)
+                                             "/S08")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(verification-form '(signed-byte 8)
+                               (- (expt 2 6)) (1- (expt 2 6))
+                               (or return-type '(signed-byte 8))))
+         (5am:def-test ,(intern (concatenate 'string
+                                             (symbol-name suite-name)
+                                             "/FIXNUM")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(if (eq name 'dn:two-arg-*)
+                (verification-form 'fixnum
+                                   (- (expt 2 30)) (1- (expt 2 30))
+                                   (or return-type 'fixnum))
+                (verification-form 'fixnum
+                                   most-negative-fixnum
+                                   most-positive-fixnum
+                                   (or return-type 'fixnum))))))))
+
 
 (defmacro define-numericals-two-arg-test
     (name array-type broadcast-p
@@ -116,7 +286,8 @@
                        (or (= x y)
                            (< (/ (abs (- x y)) (abs x))
                               ,error))))
-                (let ((dn:*multithreaded-threshold* 1000000000))
+                (let ((dn:*multithreaded-threshold* 1000000000)
+                      (dn:*broadcast-automatically* t))
                   (5am:is-true (let* ((rand1 (rand 200 :type ',type :min ,min :max ,max))
                                       (rand2 (rand 200 :type ',type :min ,min :max ,max))
                                       (return-array (zeros (array-dimensions rand1)
@@ -148,10 +319,10 @@
                                          :test #'close-p))
                                "Simple Multithreaded outsides")
                   (5am:is-true (let* ((rand1 (aref (rand '(100 10) :type ',type
-                                                                    :min ,min :max ,max)
+                                                                   :min ,min :max ,max)
                                                    '(10 :step 2)))
                                       (rand2 (aref (rand '(200 10) :type ',type
-                                                                    :min ,min :max ,max)
+                                                                   :min ,min :max ,max)
                                                    '(20 :step 4)))
                                       (return-array (zeros (array-dimensions rand1)
                                                            :type ',return-type)))
@@ -210,14 +381,14 @@
                                                                           :min ,min :max ,max)
                                                        nil
                                                        '(20 :step 4)))
-                                          (return-array (aref (zeros '(2 10 100 100)
+                                          (return-array (aref (zeros '(2 10 100 10)
                                                                      :type ',return-type)
                                                               nil
                                                               nil
                                                               '(10 :step 2))))
                                      (array= (broadcast-array (macro-map-array return-array
                                                                                ',name rand1 rand2)
-                                                              '(2 10 45 100))
+                                                              '(2 10 45 10))
                                              (,name rand1 rand2 :out return-array)
                                              :test #'close-p))
                                    "Non-simple multithreaded broadcast"))
@@ -249,7 +420,8 @@
 
   (flet ((verification-form (type min max return-type)
            `(progn
-              (let ((dn:*multithreaded-threshold* 1000000000))
+              (let ((dn:*multithreaded-threshold* 1000000000)
+                    (dn:*broadcast-automatically* t))
                 (5am:is-true (let* ((rand1 (rand 100 :type ',type :min ,min :max ,max))
                                     (rand2 (rand 100 :type ',type :min ,min :max ,max))
                                     (return-array (zeros (array-dimensions rand1)

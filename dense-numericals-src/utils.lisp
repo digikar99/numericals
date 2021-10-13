@@ -10,6 +10,11 @@
 operations like trigonometric functions.")
 (declaim (type (member single-float double-float) dn:*default-float-format*))
 
+(defvar dn:*broadcast-automatically* t
+  "If non-NIL, operations automatically perform broadcasting as necessary.
+If NIL, broadcasting is expected to be performed by the user. Such strictness
+can be helpful to locate bugs.")
+
 (defmacro with-pointers-to-vectors-data (bindings &body body)
   "Each entry of BINDINGS is of the form (POINTER-VAR VECTOR)."
   (if bindings

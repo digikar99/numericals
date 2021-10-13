@@ -40,6 +40,7 @@
            #:+optimized-types+
            #:*default-float-format*
            #:*inline-with-multithreading*
+           #:*broadcast-automatically*
 
            #:sin
            #:cos
@@ -82,10 +83,10 @@
            #:*
            #:two-arg-*
            #:-
-           #:one-arg--
+           ;; #:one-arg--
            #:two-arg--
            #:/
-           #:one-arg-/
+           ;; #:one-arg-/
            #:two-arg-/
 
            #:logand

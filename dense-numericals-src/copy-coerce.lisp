@@ -6,7 +6,7 @@
 ;;; We are not implementing ASTYPE, because dispatching on the TYPE
 ;;; requires TYPE= checks; instead we will provide a TRIVIAL-COERCE:COERCE wrapper!
 
-(define-polymorphic-function dn:copy (x &key out) :overwrite t)
+(define-polymorphic-function dn:copy (x &key out broadcast) :overwrite t)
 
 ;;; We cannot write this as a one-arg-fn function with multiple arguments, because
 ;;; such a function would then take in arrays with incompatible element-types as
@@ -14,10 +14,13 @@
 ;;; takes place; allowing arbitrary element-types would mean bypassing type-safety.
 (defmacro define-one-arg-broadcast-polymorph (name c-name (x-size x-type) (o-size o-type))
   `(progn
-     (defpolymorph ,name ((x (array ,x-type)) &key ((out (array ,o-type))))
+     (defpolymorph ,name ((x (array ,x-type))
+                          &key ((out (array ,o-type)))
+                          (broadcast dn:*broadcast-automatically*))
          (array ,o-type)
-       (unless (equalp (narray-dimensions x)
-                       (narray-dimensions out))
+       (when (and broadcast
+                  (not (equalp (narray-dimensions x)
+                               (narray-dimensions out))))
          (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
              (broadcast-compatible-p x out)
            (assert broadcast-compatible-p (x out)
@@ -25,15 +28,22 @@
                    :dimensions (mapcar #'narray-dimensions (list x out))
                    :array-likes (list x out))
            (setq x (broadcast-array x broadcast-dimensions))))
-       (with-thresholded-multithreading (array-total-size out)
-           (x out)
-         (ptr-iterate-but-inner n ((ptr-x   ,x-size ix   x)
-                                   (ptr-out ,o-size iout out))
-           (,c-name n ptr-x ix ptr-out iout)))
+       (policy-cond:with-expectations (= safety 0)
+           ((assertion (or broadcast
+                           (equalp (narray-dimensions x)
+                                   (narray-dimensions out)))))
+         (with-thresholded-multithreading (array-total-size out)
+             (x out)
+           (ptr-iterate-but-inner n ((ptr-x   ,x-size ix   x)
+                                     (ptr-out ,o-size iout out))
+             (,c-name n ptr-x ix ptr-out iout))))
        out)
      ,(when (type= x-type o-type)
-        `(defpolymorph ,name ((x real) &key ((out (array ,o-type))))
+        `(defpolymorph ,name ((x real)
+                              &key ((out (array ,o-type)))
+                              ((broadcast (not null)) dn:*broadcast-automatically*))
              (array ,o-type)
+           (declare (ignore broadcast))
            (cffi:with-foreign-pointer (tmp ,o-size)
              (setf (cffi:mem-ref tmp ,(eswitch (o-type :test #'type=)
                                         ('single-float :float)
@@ -92,35 +102,44 @@
   (def 8 (unsigned-byte 64) bmas:i64copy))
 
 ;; Doesn't make sense to broadcast OUT to dimensions of X?
-(defpolymorph (dn:copy) ((x (array t)) &key ((out (array single-float))))
+(defpolymorph (dn:copy) ((x (array t))
+                         &key ((out (array single-float)))
+                         (broadcast dn:*broadcast-automatically*))
     (array single-float)
   (do-arrays ((x-elt (the (array t)
-                          (if (equalp (narray-dimensions out)
-                                      (narray-dimensions x))
-                              x
-                              (broadcast-array x (array-dimensions out)))))
+                          (if (and broadcast
+                                   (not (equalp (narray-dimensions out)
+                                                (narray-dimensions x))))
+                              (broadcast-array x (array-dimensions out))
+                              x)))
               (o-elt out))
     (setf o-elt (trivial-coerce:coerce (the real x-elt) 'single-float)))
   out)
 
-(defpolymorph dn:copy ((x (array t)) &key ((out (array double-float))))
+(defpolymorph dn:copy ((x (array t))
+                       &key ((out (array double-float)))
+                       (broadcast dn:*broadcast-automatically*))
     (array double-float)
   (do-arrays ((x-elt (the (array t)
-                          (if (equalp (narray-dimensions out)
-                                      (narray-dimensions x))
-                              x
-                              (broadcast-array x (array-dimensions out)))))
+                          (if (and broadcast
+                                   (not (equalp (narray-dimensions out)
+                                                (narray-dimensions x))))                              
+                              (broadcast-array x (array-dimensions out))
+                              x)))
               (o-elt out))
     (setf o-elt (trivial-coerce:coerce (the real x-elt) 'double-float)))
   out)
 
-(defpolymorph dn:copy ((x (array t)) &key ((out (array t)) (zeros-like x)))
+(defpolymorph dn:copy ((x (array t))
+                       &key ((out (array t)) (zeros-like x))
+                       (broadcast dn:*broadcast-automatically*))
     (array t)
   (do-arrays ((x-elt (the (array t)
-                          (if (equalp (narray-dimensions out)
-                                      (narray-dimensions x))
-                              x
-                              (broadcast-array x (array-dimensions out)))))
+                          (if (and broadcast
+                                   (not (equalp (narray-dimensions out)
+                                                (narray-dimensions x))))
+                              (broadcast-array x (array-dimensions out))
+                              x)))
               (o-elt out))
     ;; TODO: Would it be possible to use SIMD to shallow-copy here?
     (setf o-elt x-elt))
