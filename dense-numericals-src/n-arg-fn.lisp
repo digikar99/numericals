@@ -20,7 +20,7 @@
                      ;; Refine the initial guess
                      (loop :for array-like :in array-likes
                            :do (setq out-type
-                                     (type-max out-type
+                                     (max-type out-type
                                                (if (arrayp array-like)
                                                    (array-element-type array-like)
                                                    (element-type array-like)))))
@@ -93,7 +93,7 @@
                  ;; Refine the initial guess
                  (loop :for array-like :in array-likes
                        :do (setq common-type
-                                 (type-max common-type
+                                 (max-type common-type
                                            (if (arrayp array-like)
                                                (array-element-type array-like)
                                                (element-type array-like)))))
@@ -156,3 +156,71 @@
   (def dn:/= dn:two-arg-/=)
   (def dn:>  dn:two-arg->)
   (def dn:>= dn:two-arg->=))
+
+
+(defun normalize-arguments/bitwise (array-likes out)
+  (if (every #'numberp array-likes)
+      (values array-likes out)
+      (let* ((common-type
+               (multiple-value-bind (common-type array-likes)
+                   ;; Set up an initial guess for COMMON-TYPE
+                   (values (if (arrayp (first array-likes))
+                               (array-element-type (first array-likes))
+                               (element-type (first array-likes)))
+                           (rest array-likes))
+                 ;; Refine the initial guess
+                 (loop :for array-like :in array-likes
+                       :do (setq common-type
+                                 (max-type common-type
+                                           (if (arrayp array-like)
+                                               (array-element-type array-like)
+                                               (element-type array-like)))))
+                 common-type))
+             (arrays
+               (loop :for array-like :on array-likes
+                     :do (unless (and (arrayp (first array-like))
+                                      (type= common-type (array-element-type (first array-like))))
+                           (setf (first array-like)
+                                 ;; TODO: Use TRIVIAL-COERCE:COERCE and simd based backends
+                                 ;; FIXME: Signal a condition when the conversion is unsafe
+                                 ;; TODO: Enable different upgrade-rules
+                                 (asarray (first array-like) :type common-type)))
+                     :finally (return array-likes))))
+        (multiple-value-bind (broadcast-compatible-p dimensions)
+            (if out
+                (apply #'broadcast-compatible-p out arrays)
+                (apply #'broadcast-compatible-p arrays))
+          (if broadcast-compatible-p
+              (values (apply #'broadcast-arrays arrays)
+                      (if out
+                          (dn:copy 1 :out out)
+                          (ones dimensions :type '(unsigned-byte 8))))
+              (error 'incompatible-broadcast-dimensions
+                     :array-likes array-likes
+                     :dimensions (mapcar #'dimensions array-likes)))))))
+
+(macrolet ((def (name reduce-fn initial-value)
+             `(defun ,name (&rest args)
+                (destructuring-bind (array-likes &key out)
+                    (split-at-keywords args)
+                  ;; TODO: Incorporate WHERE (?)
+                  (multiple-value-bind (array-likes out)
+                      (normalize-arguments/bitwise array-likes out)
+                    (if out
+                        (progn
+                          (cond ((null array-likes)
+                                 (,reduce-fn ,initial-value out :out out))
+                                ((null (cdr array-likes))
+                                 (,reduce-fn ,initial-value (first array-likes) :out out))
+                                (t
+                                 (,reduce-fn (first array-likes)
+                                             (second array-likes)
+                                             :out out)
+                                 (loop :for array-like :in (cddr array-likes)
+                                       :do (,reduce-fn out array-like :out out))))
+                          out)
+                        (apply #',(cl-name reduce-fn) (rest array-likes))))))))
+
+  (def dn:logand dn:two-arg-logand -1)
+  (def dn:logior dn:two-arg-logior 0)
+  (def dn:logxor dn:two-arg-logxor 0))

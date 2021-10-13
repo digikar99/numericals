@@ -44,6 +44,7 @@
                                                            "lparallel"
                                                            "ptr-iterate-but-inner"))
                (:file "n-arg-fn"              :depends-on ("one-arg-fn"
+                                                           "bitwise"
                                                            "two-arg-fn-non-broadcast"))
                (:file "n-arg-fn-compiler-macros" :depends-on ("n-arg-fn"
                                                               "two-arg-fn-non-broadcast"))
@@ -51,8 +52,7 @@
                (:file "blas"                  :depends-on ("package"
                                                            "ptr-iterate-but-inner"))
                (:file "concatenate"           :depends-on ("blas"))
-               (:file "sum"                   :depends-on ("blas"
-                                                           "two-arg-fn"))
+               (:file "one-arg-reduce-fn"     :depends-on ("translations"))
                (:file "misc"                  :depends-on ("package")))
   :perform (test-op (o c)
              (declare (ignore o c))

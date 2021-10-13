@@ -411,4 +411,17 @@
              (:suite ,suite-name)
            ,(verification-form '(signed-byte 8)
                                (- (expt 2 6)) (1- (expt 2 6))
-                               (or return-type '(signed-byte 8))))))))
+                               (or return-type '(signed-byte 8))))
+         (5am:def-test ,(intern (concatenate 'string
+                                             (symbol-name suite-name)
+                                             "/FIXNUM")
+                                (symbol-package suite-name))
+             (:suite ,suite-name)
+           ,(if (eq name 'dn:two-arg-*)
+                (verification-form 'fixnum
+                                   (- (expt 2 30)) (1- (expt 2 30))
+                                   (or return-type 'fixnum))
+                (verification-form 'fixnum
+                                   most-negative-fixnum
+                                   most-positive-fixnum
+                                   (or return-type 'fixnum))))))))

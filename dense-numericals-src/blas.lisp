@@ -117,7 +117,9 @@
   (def (unsigned-byte 64) bmas:i64dot 8)
   (def (unsigned-byte 32) bmas:i32dot 4)
   (def (unsigned-byte 16) bmas:i16dot 2)
-  (def (unsigned-byte 08) bmas:i8dot  1))
+  (def (unsigned-byte 08) bmas:i8dot  1)
+
+  (def fixnum fixnum-dot 8))
 
 (5am:def-test dn:vdot ()
   (flet ((float-close-p (x y)
@@ -138,7 +140,9 @@
                                           (unsigned-byte 64)
                                           (unsigned-byte 32)
                                           (unsigned-byte 16)
-                                          (unsigned-byte 08))
+                                          (unsigned-byte 08)
+
+                                          fixnum)
           :do
              (5am:is (= 14 (dn:vdot (asarray '(1 2 3))
                                     (asarray '(1 2 3)))))
@@ -154,27 +158,17 @@
                                                     (y rand-2))
                                           (incf sum (* x y)))
                                         sum))))
-             (let ((rand-1 (aref (dn:rand 100 1000
-                                          :max (if (listp *array-element-type*)
-                                                   (if (eq 'signed-byte
-                                                           (first *array-element-type*))
-                                                       (1- (expt 2 (1- (second *array-element-type*))))
-                                                       (expt 2 (1- (second *array-element-type*))))
-                                                   1)
-                                          :min (if (listp *array-element-type*)
-                                                   (if (eq 'signed-byte
-                                                           (first *array-element-type*))
-                                                       (- (expt 2 (1- (second *array-element-type*))))
-                                                       0)
-                                                   0))
+             (let ((rand-1 (aref (dn:rand 100 1000 :max 100)
                                  '(10 :step 2)
                                  '(100 :step 20)))
-                   (rand-2 (aref (dn:rand 200 2000)
+                   (rand-2 (aref (dn:rand 200 2000 :max 2)
                                  '(88 :step -2)
                                  '(200 :step 40))))
                (5am:is (float-close-p (dn:vdot rand-1 rand-2)
-                                      (let ((sum 0))
-                                        (do-arrays ((x rand-1)
-                                                    (y rand-2))
-                                          (incf sum (* x y)))
-                                        sum)))))))
+                                      (trivial-coerce:coerce
+                                       (let ((sum 0))
+                                         (do-arrays ((x rand-1)
+                                                     (y rand-2))
+                                           (incf sum (* x y)))
+                                         sum)
+                                       *array-element-type*)))))))

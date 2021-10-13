@@ -71,6 +71,8 @@
            #:concat
            #:matmul
            #:two-arg-matmul
+           #:max
+           #:min
            #:vdot
            #:sum
            #:shape
@@ -139,6 +141,7 @@
                 #:broadcast-compatible-p
                 #:default-element-type)
   (:import-from :dense-arrays-plus-lite
+                #:max-type
                 #:split-at-keywords
                 #:define-splice-list-fn
                 #:dimensions
