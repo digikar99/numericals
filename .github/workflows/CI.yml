@@ -1,0 +1,106 @@
+on: [push, pull_request]
+
+jobs:
+
+  test:
+
+    name: ${{ matrix.lisp }}
+
+    strategy:
+      matrix:
+        lisp: [sbcl]
+    runs-on: ubuntu-20.04
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Update $PATH
+      run: |
+        echo $PATH
+        echo "PATH=$HOME/bin:$PATH" >> $GITHUB_ENV
+    - name: Check $PATH
+      run: echo $PATH
+
+    - name: Download implementation
+      env:
+        LISP: ${{ matrix.lisp }}
+      run: |
+        pwd
+        ls -l
+        bash <(curl -s https://raw.githubusercontent.com/digikar99/lisp-travis-lite/master/run.sh)
+
+    - name: Download blas
+      run: |
+        sudo apt install libopenblas-base
+        dpkg -L libopenblas-base
+
+    - name: Install repositories
+      run: |
+        cd ~/quicklisp/local-projects/
+        git clone --depth 1 https://github.com/s-expressionists/ctype/
+        git clone --depth 1 https://github.com/digikar99/compiler-macro-notes/
+        git clone --depth 1 https://github.com/digikar99/polymorphic-functions/
+        git clone --depth 1 https://github.com/digikar99/trivial-types/
+        git clone --depth 1 https://github.com/digikar99/trivial-coerce/
+
+        git clone --depth 1 https://github.com/digikar99/abstract-arrays/
+        git clone --depth 1 https://github.com/digikar99/dense-arrays/
+
+        git clone --depth 1 https://github.com/digikar99/cl-bmas/
+        git clone --depth 1 https://github.com/digikar99/cl-cblas/
+
+        mkdir -p ~/quicklisp/dists/digikar99
+        ls -l ~/quicklisp/dists
+
+    - name: Compile Tests
+      run: |
+        cl --eval '(progn
+                     (defun ql-dist::dist-name-pathname (name)
+                       "Return the pathname that would be used for an installed dist with
+                        the given NAME."
+                      (ql-dist::qmerge
+                       (make-pathname :directory (list* :relative "dists"
+                                                        (uiop:split-string name :separator "/")))))
+                     (defun digikar99-dist-enumeration-function ()
+                       "The default function used for producing a list of dist objects."
+                       (loop for file
+                           in (directory (ql-dist::qmerge "dists/digikar99/*/distinfo.txt"))
+                         collect (ql-dist::make-dist-from-file file)))
+                     (push (quote digikar99-dist-enumeration-function)
+                           ql::*dist-enumeration-functions*)
+                     (ql-dist:install-dist
+                      "http://dist.ultralisp.org/digikar99/specialized-array-dispatch.txt"
+                      :prompt nil)
+                     (push :travis *features*)
+                     (push "~/" ql:*local-project-directories*)
+                     (print ql:*local-project-directories*)
+                     (print (ql:where-is-system "dense-numericals"))
+                     (ql:quickload "dense-numericals")
+                     (uiop:quit 0))'
+
+    # Testing it on the second load confirms that functionalities do not
+    # solely eval-when compile-toplevel, and that they persist across multiple loads.
+    - name: Run Tests
+      run: |
+        cl --eval '(progn
+                     (defun ql-dist::dist-name-pathname (name)
+                       "Return the pathname that would be used for an installed dist with
+                        the given NAME."
+                      (ql-dist::qmerge
+                       (make-pathname :directory (list* :relative "dists"
+                                                        (uiop:split-string name :separator "/")))))
+                     (defun digikar99-dist-enumeration-function ()
+                       "The default function used for producing a list of dist objects."
+                       (loop for file
+                           in (directory (ql-dist::qmerge "dists/digikar99/*/distinfo.txt"))
+                         collect (ql-dist::make-dist-from-file file)))
+                     (push (quote digikar99-dist-enumeration-function)
+                           ql::*dist-enumeration-functions*)
+                     (push "~/" ql:*local-project-directories*)
+                     (push :travis *features*)
+                     (ql:quickload "dense-numericals")
+                     (eval (read-from-string "(SETQ LPARALLEL:*KERNEL* (LPARALLEL:MAKE-KERNEL 2))"))
+                     (asdf:test-system :dense-numericals)
+                     (uiop:quit 0))'
+

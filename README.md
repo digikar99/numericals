@@ -33,8 +33,8 @@ Feature parity of `numericals` vs `dense-neumericals`:
 | copy (all to same or floats)                                          | -          | +++              |
 | <u>**Basic Operations**</u>                                           |            |                  |
 | `/` (single-float / double-float)                                     | +++        | +                |
-| `+ - * /` (single-float / double-float)                               | +++        | +                |
-| `+ - *` (all integer types / fixnum)                                  | -          | +                |
+| `+ - * /` (single-float / double-float)                               | +++        | +++              |
+| `+ - *` (all integer types / fixnum)                                  | -          | +++              |
 | `< <= = /= >= >` (single-float / double-float)                        | +++        | +                |
 | `< <= = /= >= >` (all integer types / fixnum)                         | -          | +                |
 | `(log) not and ior xor nand andc1 andc2` (unsigned-byte 8)            | -          | +                |
@@ -46,7 +46,7 @@ Feature parity of `numericals` vs `dense-neumericals`:
 | `log exp expt`                                                        | +++        | +++              |
 | <u>**More Operations**</u>                                            |            |                  |
 | `ffloor fceiling fround ftruncate` (single-float / double-float)      | +++        | +++              |
-| `abs` (all signed integer types)                                      | -          | +++              |
+| `abs` (single-float / double-float / all integer types / fixnum)      | -          | +++              |
 | `vdot sum` (single-float / double-float / all integer types / fixnum) | -          | +++              |
 | `max min` (single-float / double-float / all integer types / fixnum)  | -          | +++              |
 
