@@ -99,7 +99,7 @@ jobs:
                            ql::*dist-enumeration-functions*)
                      (push "~/" ql:*local-project-directories*)
                      (push :travis *features*)
-                     (ql:quickload "dense-numericals")
+                     (time (ql:quickload "dense-numericals"))
                      (eval (read-from-string "(SETQ LPARALLEL:*KERNEL* (LPARALLEL:MAKE-KERNEL 2))"))
                      (asdf:test-system :dense-numericals)
                      (uiop:quit 0))'

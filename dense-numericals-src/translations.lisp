@@ -3,9 +3,12 @@
 ;;; This table does not contain all the instructions. Excluded instructions include:
 ;;; - DN:COPY
 
-(define-constant +fixnum-shift-pointer+
-  #.(cffi:foreign-alloc :long :initial-element 1)
-  :test #'cffi:pointer-eq)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar +fixnum-shift-pointer+ (progn
+                                   (when (boundp '+fixnum-shift-pointer+)
+                                     ;; Should we be doing this?
+                                     (cffi:foreign-free +fixnum-shift-pointer+))
+                                   (cffi:foreign-alloc :long :initial-element 1))))
 
 (declaim (inline fixnum-mul))
 (defun fixnum-mul (n x incx y incy out inc-out)

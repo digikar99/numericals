@@ -63,6 +63,7 @@
              (declare (ignore o c))
              ;; Or should we use STATIC?
              (eval (read-from-string "(LET* ((5AM:*ON-ERROR* :DEBUG)
+                                             (5AM:*ON-FAILURE* :DEBUG)
                                              (DENSE-ARRAYS:*DENSE-ARRAY-CLASS*
                                                'DENSE-ARRAYS:STANDARD-DENSE-ARRAY))
                                         (5AM:RUN! 'DENSE-NUMERICALS.IMPL::ARRAY))"))))
