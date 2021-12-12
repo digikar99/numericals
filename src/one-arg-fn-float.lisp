@@ -60,7 +60,7 @@ If the output array is not supplied, its element-type is given by *DEFAULT-FLOAT
     (let ((svx (array-storage x))
           (svo (array-storage out)))
       (declare (type (cl:simple-array single-float 1) svx svo))
-      (numericals.internals::with-thresholded-multithreading
+      (with-thresholded-multithreading/cl
           (array-total-size svo)
           (svx svo)
         (with-pointers-to-vectors-data ((ptr-x svx)
@@ -115,7 +115,7 @@ If the output array is not supplied, its element-type is given by *DEFAULT-FLOAT
           (svx (array-storage x))
           (svo (array-storage out)))
       (declare (type (cl:simple-array double-float 1) svx svo))
-      (numericals.internals::with-thresholded-multithreading
+      (with-thresholded-multithreading/cl
           (array-total-size out)
           (svx svo)
         (with-pointers-to-vectors-data ((ptr-x svx)

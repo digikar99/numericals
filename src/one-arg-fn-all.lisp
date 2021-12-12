@@ -55,7 +55,7 @@ the elements as closely as possible.")
                     (let ((svx (array-storage x))
                           (svo (array-storage out)))
                       (declare (type (cl:simple-array ,type 1) svx svo))
-                      (numericals.internals::with-thresholded-multithreading
+                      (with-thresholded-multithreading/cl
                           (cl:array-total-size svo)
                           (svx svo)
                         (with-pointers-to-vectors-data ((ptr-x svx)
