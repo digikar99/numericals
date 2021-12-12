@@ -4,11 +4,12 @@ jobs:
 
   test:
 
-    name: ${{ matrix.lisp }}
+    name: ${{ matrix.library }}
 
     strategy:
       matrix:
         lisp: [sbcl]
+        library: [numericals, dense-numericals]
     runs-on: ubuntu-20.04
 
     steps:
@@ -54,6 +55,8 @@ jobs:
         ls -l ~/quicklisp/dists
 
     - name: Compile Tests
+      env:
+        LIBRARY: ${{ matrix.library }}
       run: |
         cl --eval '(progn
                      (defun ql-dist::dist-name-pathname (name)
@@ -76,13 +79,14 @@ jobs:
                      (push "~/" ql:*local-project-directories*)
                      (print ql:*local-project-directories*)
                      (print (ql:where-is-system "dense-numericals"))
-                     (ql:quickload "numericals")
-                     (ql:quickload "dense-numericals")
+                     (ql:quickload "'$LIBRARY'")
                      (uiop:quit 0))'
 
     # Testing it on the second load confirms that functionalities do not
     # solely eval-when compile-toplevel, and that they persist across multiple loads.
     - name: Run Tests
+      env:
+        LIBRARY: ${{ matrix.library }}
       run: |
         cl --eval '(progn
                      (defun ql-dist::dist-name-pathname (name)
@@ -100,10 +104,8 @@ jobs:
                            ql::*dist-enumeration-functions*)
                      (push "~/" ql:*local-project-directories*)
                      (push :travis *features*)
-                     (time (ql:quickload "numericals"))
-                     (time (ql:quickload "dense-numericals"))
+                     (time (ql:quickload "'$LIBRARY'"))
                      (eval (read-from-string "(SETQ LPARALLEL:*KERNEL* (LPARALLEL:MAKE-KERNEL 2))"))
-                     (asdf:test-system :numericals)
-                     (asdf:test-system :dense-numericals)
+                     (asdf:test-system "'$LIBRARY'")
                      (uiop:quit 0))'
 
