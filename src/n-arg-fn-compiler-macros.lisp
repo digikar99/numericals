@@ -1,4 +1,8 @@
-(in-package :numericals.internals)
+(numericals.common:compiler-in-package numericals.common:*compiler-package*)
+
+(5am:in-suite nu::array)
+
+;; TODO: Add macros for comparison and bitwise operations
 
 (define-condition out-unknown-at-compile-time
     (compiler-macro-notes:optimization-failure-note)
@@ -40,131 +44,121 @@
     (compiler-macro-notes:optimization-failure-note)
   ((type :initarg :type :reader condition-type))
   (:report (lambda (c s)
-             (format s "DENSE-NUMERICALS is only optimized for arrays with element types~%  ~S~%and not: ~S"
-                     (introspect-environment:typexpand-1 'nu:numericals-array-element-type)
+             (format s "NUMERICALS is only optimized for arrays with element types~%  ~S~%and not: ~S"
+                     nu:+optimized-types+
                      (condition-type c)))))
 
 
-(defun n-arg-fn-compiler-macro (form &optional env)
-  (compiler-macro-notes:with-notes (form env :optimization-note-condition
-                                    optim-speed)
-    ;; 0. Abort optimization if not asked to do so; to help debug better                  
-    (unless optim-speed (return-from n-arg-fn-compiler-macro form))
-    (let* ((fn-name (if (eq 'funcall (first form))
-                        (second form)
-                        (first form)))
-           (args    (if (eq 'funcall (first form))
-                        (cddr form)
-                        (cdr form)))
-           (arg-types
-             (loop :for arg :in args
-                   :collect (cl-form-types:nth-form-type arg env 0 t t)))
-           
-           (cl-fn  (find-symbol (symbol-name fn-name) :cl))
-           (two-arg-fn (find-symbol (concatenate 'string "TWO-ARG-" (symbol-name fn-name))
-                                    :numericals))
-           (out-pos
-             (loop :for arg :in args
-                   :for arg-type :in arg-types
-                   :for i :from 0
-                   :if (subtypep arg-type '(eql :out))
-                     :do (return (1+ i))
-                   ;; 1. Optimization is insignificant if OUT is unsupplied
-                   :finally (cond
-                              ((every (lm type (subtypep type 'number))
-                                      arg-types)
-                               (return-from n-arg-fn-compiler-macro `(,cl-fn ,@args)))
-                              ((= 1 (length arg-types))
-                               (return-from n-arg-fn-compiler-macro
-                                 (cond ((member fn-name '(nu:+ nu:*))
-                                        (first args))
-                                       ((eq fn-name 'nu:-)
-                                        `(,two-arg-fn 0 ,@args))
-                                       ((member fn-name '(nu:/ nu:< nu:<= nu:= nu:/= nu:>= nu:>))
-                                        `(,two-arg-fn 1 ,@args))
-                                       (t (error "Unexpected!")))))
-                              ((= 2 (length arg-types))
-                               (return-from n-arg-fn-compiler-macro `(,two-arg-fn ,@args)))
-                              ;; If it's more than two, then we need to first allocate an OUT
-                              (t
-                               (signal 'out-unknown-at-compile-time :args
-                                       args))))))
-      
-      ;; At this point, we know that OUT exists, but the number of arguments can be arbitrary
-      ;; 2. We don't want to not detect bad cases                    
-      (unless (null (nthcdr (1+ out-pos) args))
-        (signal 'bad-position-for-out :args args))
-      (let ((out-arg (nth out-pos args))
-            (out-type (nth out-pos arg-types))
-            (array-likes (subseq args 0 (1- out-pos)))
-            (array-types (subseq arg-types 0 (1- out-pos))))
-        ;; 3. OUT is supplied and is at the right place, but the array-likes are
-        ;; either not arrays or not of types TYPE= to OUT                      
-        (unless (subtypep out-type 'array)
-          (signal 'arg-is-not-array :arg out-arg :arg-type out-type))
-        (mapc
-         (lambda (array-like array-type)
-           (unless (subtypep array-type 'array)
-             (signal 'arg-is-not-array :arg array-like :arg-type array-type))
-           (unless (type= array-type out-type)
-             (signal 'arg-out-type-mismatch :arg array-like :arg-type
-                     array-type :out out-arg :out-type out-type)))
-         array-likes array-types)
-        (with-gensyms (out-sym)
-          (let* ((array-like-syms
-                   (make-gensym-list (length array-likes) "array-like"))
-                 (element-type
-                   (ctype:carray-uaet (ctype:specifier-ctype out-type)))
-                 (main-code
-                   (cond
-                     ((null array-like-syms)
-                      `(,two-arg-fn
-                        (the ,element-type (coerce ,(case fn-name
-                                                      (nu:+ 0)
-                                                      (nu:* 1)
-                                                      (t (return-from
-                                                          n-arg-fn-compiler-macro
-                                                           form)))
-                                                   ',element-type))
-                        ,out-sym
-                        :out ,out-sym))
-                     ((null (rest array-like-syms))
-                      `(,two-arg-fn
-                        (the ,element-type (coerce ,0 ',element-type))
-                        ,(first array-like-syms) :out ,out-sym))
-                     (t
-                      `(progn
-                         (,two-arg-fn ,(first array-like-syms)
-                                      ,(second array-like-syms) :out ,out-sym)
-                         ,@(mapcar
-                            (lm sym `(,two-arg-fn ,out-sym ,sym :out ,out-sym))
-                            (cddr array-like-syms)))))))
-            (unless (typep element-type 'nu:numericals-array-element-type)
-              (signal 'array-type-is-unoptimized :type element-type))
-            `(the ,out-type
-                  (let* (,@(mapcar (lm sym array-like `(,sym ,array-like))
-                                   array-like-syms array-likes)
-                         (,out-sym ,out-arg))
-                    (declare
-                     ,@(loop :for sym :in array-like-syms
-                             :for array-like :in array-likes
-                             :collect `(type ,(cl-form-types:nth-form-type array-like env 0 t t)
-                                             ,sym))
-                     (type ,(cl-form-types:nth-form-type out-arg env 0 t t) ,out-sym))
-                    ,main-code
-                    ,out-sym))))))))
+;;; TODO: Handle BROADCAST option
 
-(macrolet ((def (name)
-             `(setf (compiler-macro-function ',name)
-                    #'n-arg-fn-compiler-macro)))
-  (def nu:+)
-  (def nu:-)
-  (def nu:*)
-  (def nu:/)
+(macrolet ((def (name reduce-fn initial-value &optional returns-identity)
 
-  (def nu:<)
-  (def nu:<=)
-  (def nu:=)
-  (def nu:/=)
-  (def nu:>=)
-  (def nu:>))
+`(define-compiler-macro ,name (&whole form &rest args &environment env)
+   (compiler-macro-notes:with-notes
+       (form env :optimization-note-condition optim-speed)
+     ;; 0. Abort optimization if not asked to do so; to help debug better
+     (unless optim-speed (return-from ,name form))
+     (let* ((arg-types (loop :for arg :in args
+                             :collect (cl-form-types:nth-form-type arg env 0 t t)))
+            (out-pos (loop :for arg :in args
+                           :for arg-type :in arg-types
+                           :for i :from 0
+                           :if (subtypep arg-type '(eql :out))
+                             :do (return (1+ i))
+                                 ;; 1. Optimization is insignificant if OUT is unsupplied
+                           :finally
+                              (cond ((every (lm type (subtypep type 'number)) arg-types)
+                                     (return-from ,name `(,',(cl-name reduce-fn) ,@args)))
+                                    ,@(if returns-identity
+                                          `(((= 1 (length arg-types))
+                                             (return-from ,name (first args)))))
+                                    ((= 2 (length arg-types))
+                                     (return-from ,name `(,',reduce-fn ,@args)))
+                                    (t
+                                     (signal 'out-unknown-at-compile-time
+                                             :args args))))))
+       ;; 2. We don't want to not detect bad cases
+       (unless (null (nthcdr (1+ out-pos) args))
+         (signal 'bad-position-for-out :args args))
+       (let ((out-arg     (nth out-pos args))
+             (out-type    (nth out-pos arg-types))
+             (array-likes (subseq args 0 (1- out-pos)))
+             (array-types (subseq arg-types 0 (1- out-pos))))
+         ;; 3. OUT is supplied and is at the right place, but the array-likes are
+         ;; either not arrays or not of types TYPE= to OUT
+         (unless (subtypep out-type 'array)
+           (signal 'arg-is-not-array :arg out-arg :arg-type out-type))
+         (mapc (lambda (array-like array-type)
+                 (unless (subtypep array-type 'array)
+                   (signal 'arg-is-not-array :arg array-like :arg-type array-type))
+                 (unless (type= array-type out-type)
+                   (signal 'arg-out-type-mismatch
+                           :arg array-like
+                           :arg-type array-type
+                           :out out-arg
+                           :out-type out-type)))
+               array-likes
+               array-types)
+         ;; 4. Everything else is good; check for broadcast once, to avoid "wasting time" later
+         (with-gensyms (out-sym broadcast-compatible-p dimensions)
+           (let* ((array-like-syms (make-gensym-list (length array-likes) "ARRAY-LIKE"))
+                  (element-type    (array-type-element-type out-type))
+                  (main-code       (cond ((null array-like-syms)
+                                          `(,',reduce-fn (the ,element-type
+                                                              (coerce ,,initial-value ',element-type))
+                                                         ,out-sym
+                                                         :out ,out-sym))
+                                         ((null (rest array-like-syms))
+                                          `(,',reduce-fn (the ,element-type
+                                                              (coerce ,,initial-value ',element-type))
+                                                         ,(first array-like-syms)
+                                                         :out ,out-sym))
+                                         (t
+                                          `(progn
+                                             (,',reduce-fn ,(first array-like-syms)
+                                                           ,(second array-like-syms)
+                                                           :out ,out-sym)
+                                             ,@(mapcar (lm sym `(,',reduce-fn ,out-sym ,sym
+                                                                              :out ,out-sym))
+                                                       (cddr array-like-syms)))))))
+             (unless (member element-type nu:+optimized-types+
+                             :test (lambda (a b)
+                                     (and (trivial-types:type-specifier-p a)
+                                          (trivial-types:type-specifier-p b)
+                                          (not (eq a 'cl:*))
+                                          (not (eq b 'cl:*))
+                                          (type= a b))))
+               (signal 'array-type-is-unoptimized :type element-type))
+             ;; FIXME: Mysterious consing
+             `(the ,out-type
+                   (let* (,@(mapcar (lm sym array-like `(,sym ,array-like))
+                                    array-like-syms array-likes)
+                          (,out-sym ,out-arg)
+                          (,dimensions (narray-dimensions ,out-sym)))
+                     (declare (type (array ,element-type)
+                                    ,@array-like-syms ,out-sym)
+                              (ignorable ,dimensions))
+                     (if (and ,@(mapcar (lm sym `(equal ,dimensions
+                                                        (narray-dimensions ,sym)))
+                                        array-like-syms))
+                         (locally ;; (declare (optimize (safety 0)))
+                             ,main-code)
+                         (multiple-value-bind (,broadcast-compatible-p ,dimensions)
+                             (broadcast-compatible-p ,out-sym ,@array-like-syms)
+                           (declare (ignorable ,dimensions))
+                           (if ,broadcast-compatible-p
+                               (locally
+                                   (declare (type (array ,element-type) ,@array-like-syms ,out-sym)
+                                            ;; (optimize (safety 0))
+                                            )
+                                 ,main-code)
+                               (error 'incompatible-broadcast-dimensions
+                                      :array-likes (list ,@array-like-syms ,out-sym)
+                                      :dimensions (mapcar #'narray-dimensions
+                                                          (list ,@array-like-syms))))))
+                     ,out-sym))))))))))
+
+  (def nu:+ nu:two-arg-+ 0 t)
+  (def nu:- nu:two-arg-- 0)
+  (def nu:* nu:two-arg-* 1 t)
+  (def nu:/ nu:two-arg-/ 1))

@@ -1,177 +1,108 @@
-(cl:in-package :numericals.internals)
+(numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
-(defun concatenate-compatible-p (axis &rest arrays-or-dimensions)
+(5am:in-suite nu::array)
+
+(defun concatenate-compatible-p (axis &rest dimensions)
   "Returns two values:
   The first value is a generalized boolean indicating whether the arrays can be concatenated.
   The second value is the dimension of the array resulting from the concatenated."
-  (case (length arrays-or-dimensions)
+  (case (length dimensions)
     (0 t)
-    (1 (values t (ensure-array-dimensions (first arrays-or-dimensions))))
+    (1 (values t dimensions))
     (t (iter (cond ((every #'null dimension-lists) (terminate))
                    ((some #'null dimension-lists) (return nil)))
-             (for dimension-lists initially (mapcar #'ensure-array-dimensions
-                                                    arrays-or-dimensions)
-                  then (mapcar #'cdr dimension-lists))
-             (for ax from 0)
-             (for dimension-list = (mapcar #'car dimension-lists))
-             (collect (cond ((= ax axis) (apply #'+ dimension-list))
-                            ((apply #'= dimension-list) (car dimension-list))
-                            (t (return nil)))
-               into concatenate-dimensions)
-             (finally (return (values t concatenate-dimensions)))))))
+         (for dimension-lists initially dimensions
+              then (mapcar #'cdr dimension-lists))
+         (for ax from 0)
+         (for dimension-list = (mapcar #'car dimension-lists))
+         (collect (cond ((= ax axis) (apply #'+ dimension-list))
+                        ((apply #'= dimension-list) (car dimension-list))
+                        (t (return nil)))
+           into concatenate-dimensions)
+         (finally (return (values t concatenate-dimensions)))))))
 
-;;; With numpy it doesn't seem to matter if or not out is supplied. Here
-;;; it does matter very much.
-(defun nu:concatenate (&rest args)
-  "ARGS is of the form: (&rest args &key out (axis 0) (type *type*))
-so that (concatenate a b c :axis 0) is valid."
-  (destructuring-bind (args (&key (out nil out-supplied-p) (axis 0) (type *type*)))
-      (split-at-keywords args)
-    (let* ((*print-array* t)
-           (arrays (mapcar (curry #'ensure-array type) args))
-           (concatenate-dimensions (nth-value 1
-                                              (apply #'concatenate-compatible-p axis
-                                                     arrays))))
-      (when out-supplied-p
-        (assert (arrayp out) nil
-                "Cannot supply result in non-array type ~D" out)
-        (assert (equalp (array-dimensions out) concatenate-dimensions)))
-      (unless concatenate-dimensions
-        (error "Cannot concatenate ~D together along axis ~D" args axis))
-      (unless out-supplied-p
-        (setq out (apply #'nu:zeros (nconc concatenate-dimensions (list :type type)))))
-      (apply #'%concatenate axis out arrays))))
+(define-condition incompatible-concatenate-dimensions (error)
+  ((array-likes :initarg :array-likes)
+   (dimensions  :initarg :dimensions)
+   (axis        :initarg :axis))
+  (:report (lambda (c s)
+             (with-slots (array-likes dimensions axis) c
+               (format s "Cannot concatenate~%  ~S~%derived to be of dimensions~%  ~S~%along axis ~D~%"
+                       array-likes dimensions axis)))))
 
+(define-condition incompatible-concatenate-out-dimensions (error)
+  ((expected  :initarg :dimensions)
+   (actual    :initarg :axis))
+  (:report (lambda (c s)
+             (with-slots (array-likes dimensions axis) c
+               (format s "Expected OUT to be a "
+                       array-likes dimensions axis)))))
 
-;;; Due to the specialization on axis=0, we get speeds at par with numpy for that case.
-;;; However, in the general case, we are 20 times as slow! Of course, SIMD can save
-;;; up on about factor of 5-8; but a factor of 2-3 still remains!
-(defun %concatenate (axis out &rest arrays)
-  (declare (optimize (speed 3))
-           (type (array single-float) out)
-           (type (signed-byte 31) axis))
-  (if (zerop axis)
-      (apply #'concatenate-axis-0 out arrays)      
-      (let ((out-storage-array (1d-storage-array out))
-            (out-size (array-total-size out))
-            (out-offset-stride (/ (array-total-size out)
-                                  (apply #'* (subseq (array-dimensions out) 0 axis)))))
-        (declare (type (signed-byte 31) out-size out-offset-stride)
-                 (type (simple-array single-float) out-storage-array))
-        (flet ((copy-along-axis (initial-idx-offset array) ; there must be a better name!
-                 (declare (optimize (speed 3))
-                          (type (signed-byte 31) initial-idx-offset)                      
-                          (type (array single-float) array))
-                 (let* ((storage-array (1d-storage-array array))
-                        (size (array-total-size array))
-                        (stride (elt (strides array) axis))
-                        (offset-stride (/ (array-total-size array)
-                                          (apply #'* (subseq (array-dimensions array) 0 axis))))
-                        (offset-stride-1 (1- offset-stride))
-                        ;; -1 to avoid the (1+ i) calculations below
-                        (offset-stride-diff (- out-offset-stride offset-stride)))
-                   (declare (type (signed-byte 31) stride size offset-stride-1
-                                  offset-stride offset-stride-diff)
-                            (type (simple-array single-float) storage-array))
-                   ;; (print (vector initial-idx-offset offset-stride))
-                   ;; Given an row-major-index i into the out array, we need to determine
-                   ;; 1. when to skip indices
-                   ;; 2. how much to subtract to get the correct position into the array
-                   (loop for oi fixnum from initial-idx-offset below out-size
-                      for ai fixnum below size
-                      do ;; (print (list oi idx-offset))
-                        (setf (aref out-storage-array oi)
-                              (aref storage-array ai))
-                        (when ;; ((- (1+ oi) idx-offset))
-                            (= offset-stride-1 (rem ai offset-stride))
-                          (incf oi offset-stride-diff)))
-                   offset-stride)))
-          ;; (print (list out-axis-size out-stride))
-          ;; (handler-case (copy-along-axis 0 (first arrays))
-          ;;   (error (c) (format t "~%~D" c)))
-          ;; (handler-case (copy-along-axis 6 (second arrays))
-          ;;   (error (c) (format t "~%~D" c)))      
-          (let ((offset 0))
-            (declare (type (signed-byte 31) offset))
-            (loop for array in arrays
-               do (incf offset (copy-along-axis offset array))))
-          out))))
+;; FIXME: Still 3 times slower than numpy when OUT is not given
+(define-splice-list-fn nu:concat (args &key (axis 0) (out nil outp))
+  "If ARGS is a single argument and is a list, the arrays inside the list
+will be concatenated. Otherwise the multiple arguments constituting ARGS
+will be concatenated. 
+&KEY arguments
+- AXIS defaulting to 0
+- OUT defaulting to NIL"
+  (declare (type size axis))
+  (let* ((array-args (mapcar #'nu:asarray args))
+         (dimensions (mapcar #'narray-dimensions array-args)))
+    (multiple-value-bind (concatenate-compatible-p result-dimensions)
+        (apply #'concatenate-compatible-p axis dimensions)
+      (assert concatenate-compatible-p ()
+              'incompatible-concatenate-dimensions
+              :array-likes args
+              :dimensions dimensions
+              :axis axis)
+      (when outp
+        (assert (and (typep out 'array)
+                     (equalp result-dimensions
+                             (narray-dimensions out)))
+                (out)
+                "Expected OUT to be a DENSE-ARRAY with dimensions ~S but is ~%  ~S"
+                result-dimensions out))
+      ;; TODO: Speedup ZEROS!
+      ;; A looot of time is spent there!
+      (let* ((result (or out (nu:zeros result-dimensions)))
+             (result-args
+               (let* ((dim (narray-dimensions result))
+                      (inner-most-stride
+                        (reduce #'* (subseq dim (1+ axis)) :initial-value 1))
+                      (result (nu:reshape result
+                                          (append (subseq dim 0 axis)
+                                                  (list (* inner-most-stride
+                                                           (nth axis dim)))))))
+                 (declare (type size inner-most-stride)
+                          (type array result))
+                 (loop :for array :in array-args
+                       :with axis-offset :of-type size := 0
+                       :for axis-length :of-type size
+                         := (* inner-most-stride
+                               (array-dimension array axis))
+                       :collect (apply #'nu:aref
+                                       result
+                                       (nconc (make-list axis :initial-element nil)
+                                              (list (list axis-offset
+                                                          :end (+ axis-offset axis-length)))))
+                       :do (incf axis-offset axis-length))))
+             (last-axis-flattened-args
+               (loop :for array :in array-args
+                     :for dim :of-type list :in dimensions
+                     :collect (nu:reshape array (append (subseq dim 0 axis)
+                                                        (list (reduce #'* (subseq dim axis)
+                                                                      :initial-value 1)))))))
+        (loop :for result-arg :of-type array :in result-args
+              :for flattened-arg :of-type array :in last-axis-flattened-args
+              :do (nu:copy flattened-arg :out result-arg))
+        result))))
 
-(defun concatenate-axis-0 (out &rest arrays)
-  (declare (optimize (speed 3))
-           (type (array single-float) out))
-  (let ((start 0)
-        (out-storage-array (1d-storage-array out)))
-    (declare (type (simple-array single-float) out-storage-array)
-             (type (signed-byte 31) start))
-    (loop for array in arrays
-       do (multiple-value-bind (storage-array offset)
-              (1d-storage-array array)
-            (declare (type (simple-array single-float) storage-array))            
-            (unless offset (setq offset 0))
-            (let* ((array-simd-bound (* +simd-single-1d-aref-stride+
-                                        (floor (array-total-size array)
-                                               +simd-single-1d-aref-stride+)))
-                   (array-bound (+ offset (array-total-size array)))
-                   (out-simd-bound (+ start array-simd-bound))
-                   (out-bound (+ start (array-total-size array))))
-              (declare (type (signed-byte 31) out-bound out-simd-bound
-                             array-simd-bound array-bound)
-                       (optimize (speed 3)))
-              (loop :for idx fixnum :from start
-                 :below out-simd-bound :by +simd-single-1d-aref-stride+
-                 :for i fixnum :from offset
-                 :below array-simd-bound :by +simd-single-1d-aref-stride+
-                 :do ;; (print (list i idx 'simd))
-                   (setf (simd-single-1d-aref out-storage-array idx)
-                         (simd-single-1d-aref storage-array i))
-                 finally
-                   (loop :for idx :from out-simd-bound :below out-bound
-                      :for i :from (max offset array-simd-bound)
-                      :below array-bound
-                      :do ;; (print (list i idx))
-                        (setf (aref out-storage-array idx)
-                              (aref storage-array i))))
-              (setq start out-bound))))
-    out))
-
-;; (defun concatenate-axis-1 (out &rest arrays)
-;;   (declare (optimize (speed 3))
-;;            (type (array single-float) out))
-;;   (let ((start 0)
-;;         (out-storage-array (1d-storage-array out)))
-;;     (declare (type (simple-array single-float) out-storage-array)
-;;              (type (signed-byte 31) start))
-;;     (loop for array in arrays
-;;        do (let* ((storage-array (1d-storage-array array))
-;;                  (length-simd-bound (* +simd-single-1d-aref-stride+
-;;                                        (floor (length storage-array)
-;;                                               +simd-single-1d-aref-stride+)))
-;;                  (end-simd-bound (+ start length-simd-bound))
-;;                  (end (+ start (length storage-array))))
-;;             (declare (type (simple-array single-float) storage-array)
-;;                      (type (signed-byte 31) end)
-;;                      (optimize (speed 3)))
-;;             (loop for idx fixnum from start
-;;                below end-simd-bound by +simd-single-1d-aref-stride+
-;;                for i fixnum below length-simd-bound by +simd-single-1d-aref-stride+
-;;                do ;; (print (list i idx))
-;;                  (setf (simd-single-1d-aref out-storage-array idx)
-;;                        (simd-single-1d-aref storage-array i))
-;;                finally
-;;                  (loop for idx from (+ start length-simd-bound) below end
-;;                     for i from length-simd-bound below (length storage-array)
-;;                     do ;; (print (list i idx))
-;;                       (setf (aref out-storage-array idx)
-;;                             (aref storage-array i))))
-;;             (setq start end)))
-;;     out))
-
-;; (defparameter a (numcl:zeros '(1024 512 2) :type 'single-float))
-;; (defparameter b (numcl:zeros '(1024 512 2) :type 'single-float))
-;; (defparameter c (numcl:zeros '(2048 512 2) :type 'single-float))
-;; (defparameter d (numcl:zeros '(1024 512 4) :type 'single-float))
-
-;; (defparameter a (nu:zeros 1024 512 2))
-;; (defparameter b (nu:zeros 1024 512 2))
-;; (defparameter c (nu:zeros 2048 512))
+(5am:def-test nu:concat ()
+  (5am:is (nu:array= (nu:asarray '(1 2 3 4 5 6))
+                     (nu:concat '(1 2 3) '(4 5 6) :axis 0)))
+  (5am:is (nu:array= (nu:asarray '((1 2 3)
+                                   (4 5 6)))
+                     (nu:concat '((1 2 3)) '((4 5 6)) :axis 0)))
+  (5am:is (nu:array= (nu:asarray '((1 2 3 4 5 6)))
+                     (nu:concat '((1 2 3)) '((4 5 6)) :axis 1))))

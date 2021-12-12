@@ -1,5 +1,5 @@
 (in-package :numericals.internals)
-;;; The value is set in package / package+array file.
+;; (numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
 ;;; DO NOT INLINE CODE UNLESS NECESSARY
 
@@ -114,14 +114,14 @@ Examples:
 (defun nu:rand (&rest args)
   "Lambda List: (shape &key (type default-element-type) (min 0) (max 1))"
   (destructuring-bind
-      (shape &key (type default-element-type) (min 0) (max 1))
+      (shape &key (type default-element-type) (min (coerce 0 type)) (max (coerce 1 type)))
       (split-at-keywords args)
     (when (listp (first shape))
       (assert (null (rest shape)))
       (setq shape (first shape)))
     (let* ((a (nu:zeros (the list shape) :type type))
            (asv (array-storage a))
-           (range (coerce (- max min) type))
+           (range (- max min))
            (min (coerce min type)))
       (declare (type (cl:simple-array * 1) asv))
       ;; A good use of specialized function :)
@@ -144,8 +144,6 @@ Examples:
   (declare (type cl:array array))
   (nu:rand (array-dimensions array) :type (array-element-type array)))
 
-(define-polymorphic-function nu:astype (array type) :overwrite t)
-
 (defun nu:shape (array-like &optional (axis nil axis-p))
   ;; This is a potentially domain specific functionality; since
   ;; there exists the ambiguity of what should one do with strings
@@ -158,18 +156,30 @@ Examples:
         (elt dimensions axis)
         dimensions)))
 
-(defun single-float-type-p (object)
-  (type= object 'single-float))
-(deftype our-type= (type)
-  (eswitch (type :test #'type=)
-    ('single-float `(satisfies single-float-type-p))))
+(declaim (inline nu:reshape))
+(defun nu:reshape (array new-dimensions)
+  (make-array new-dimensions
+              :element-type (array-element-type array)
+              :displaced-to (array-storage array)
+              :displaced-index-offset (cl-array-offset array)))
 
+;;; TODO: Change &KEY TYPE to &KEY (TYPE DEFAULT-ELEMENT-TYPE)
+;;; Requires changes to polymorphic-functions
 (define-polymorphic-function nu:asarray (array-like &key type) :overwrite t
   :documentation "ARRAY-LIKE can be a nested sequence of sequences, or an array.")
-(defpolymorph nu:asarray (array-like &key (type default-element-type))
+(declaim (notinline nu:asarray))
+(defpolymorph (nu:asarray :inline t) (array-like &key ((type (eql :auto)))) (values cl:array &optional)
+  (declare (ignore type))
+  (nu:asarray array-like :type (element-type array-like)))
+
+(define-polymorphic-function nu:copy (x &key out broadcast))
+(defpolymorph nu:asarray (array-like &key ((type (polymorphic-functions.extended-types:subtypep real))
+                                           default-element-type))
     (values cl:array &optional)
   ;; TODO: Define the predicate array-like-p.
   (etypecase array-like
+    (atom (make-array 1 :element-type type
+                        :initial-element (trivial-coerce:coerce array-like type)))
     (sequence
      (let* ((result-array (nu:zeros (nu:shape array-like) :type type))
             (index 0)
@@ -193,15 +203,64 @@ Examples:
                     (real
                      (setf (cl:aref rsv index)
                            (trivial-coerce:coerce (the real array-like) type))
-                     (incf index))
-                    (t
-                     (setf (cl:aref rsv index)
-                           (trivial-coerce:coerce array-like type))
                      (incf index)))))
          (%asarray array-like))
        result-array))
     (array
-     (nu:astype array-like type))))
+     (nu:copy array-like :out (nu:zeros (narray-dimensions array-like)
+                                        :type type)))))
+
+(defmacro nu:macro-map-array (result-array function &rest arrays)
+  (alexandria:with-gensyms (result i result-type)
+    (let ((array-syms (alexandria:make-gensym-list (length arrays) "ARRAY"))
+          (function   (cond ((eq 'quote (first function)) (second function))
+                            ((eq 'function (first function)) (second function))
+                            (t (error "Unexpected")))))
+      `(let (,@(loop :for sym :in array-syms
+                     :for array-expr :in arrays
+                     :collect `(,sym ,array-expr)))
+         (declare (type array ,@array-syms))
+         ;; TODO: Optimize this
+         (let* ((,result (or ,result-array (nu:zeros-like ,(first array-syms))))
+                (,result-type (array-element-type ,result)))
+           (dotimes (,i (array-total-size ,(first array-syms)))
+             (funcall #'(setf row-major-aref)
+                      (trivial-coerce:coerce
+                       (,function ,@(mapcar (lm array-sym `(row-major-aref ,array-sym ,i))
+                                            array-syms))
+                       ,result-type)
+                      ,result ,i))
+           ,result)))))
+
+(defmacro nu:do-arrays (bindings &body body)
+  "Each element of BINDINGS is of the form (VAR ARRAY-EXPR &OPTIONAL ELEMENT-TYPE)"
+  (let* ((variables   (mapcar #'first bindings))
+         (array-exprs (mapcar #'second bindings))
+         (num-vars    (length variables))
+         (array-vars  (make-gensym-list num-vars "ARRAY"))
+         (storages    (make-gensym-list num-vars "ARRAY-STORAGE"))
+         (indices     (make-gensym-list num-vars "INDEX")))
+    `(let (,@(mapcar (lm v e `(,v ,e))
+                     array-vars array-exprs))
+       ,@(if (< num-vars 2)
+             ()
+             (mapcar (lm v `(assert (equalp (narray-dimensions ,v)
+                                            (narray-dimensions ,(first array-vars)))
+                                    (,v ,(first array-vars))
+                                    "DO-ARRAYS expects equal dimensions, but are ~S and ~S"
+                                    (narray-dimensions ,v)
+                                    (narray-dimensions ,(first array-vars))))
+                     array-vars))
+       (let (,@(mapcar (lm s v `(,s (array-storage ,v)))
+                       storages array-vars)
+             ,@(mapcar (lm i v `(,i (cl-array-offset ,v)))
+                       indices array-vars))
+         (symbol-macrolet (,@(mapcar (lm v s i `(,v (cl:aref ,s ,i)))
+                                     variables storages indices))
+           ,(when array-vars
+              `(loop :repeat (array-total-size ,(first array-vars))
+                     :do (locally ,@body)
+                     ,@(mapcar (lm i `(incf ,i)) indices))))))))
 
 ;; (defmacro nu:with-inline (&body body)
 ;;   `(let ()

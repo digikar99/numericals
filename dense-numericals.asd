@@ -1,7 +1,9 @@
 (defsystem "dense-numericals"
   :pathname "dense-numericals-src/"
   :version "0.1.0"
-  :depends-on ("dense-arrays-plus-lite"
+  :licence "MIT"
+  :depends-on ("numericals.common"
+               "dense-arrays-plus-lite"
                "cblas"
                "bmas"
                "cl-autowrap"
@@ -23,38 +25,26 @@
                (:file "lparallel"             :depends-on ("ptr-iterate-but-inner"))
                (:file "test"                  :depends-on ("package"))
                (:file "translations"          :depends-on ("package"))
-               (:file "copy-coerce"           :depends-on ("utils"))
+               (:file "copy-coerce"           :depends-on ("utils"
+                                                           "ptr-iterate-but-inner"
+                                                           "lparallel"))
                (:file "one-arg-fn-float"      :depends-on ("copy-coerce"
                                                            "translations"
-                                                           "test"
-                                                           "lparallel"
-                                                           "ptr-iterate-but-inner"))
+                                                           "test"))
                (:file "one-arg-fn-all"        :depends-on ("copy-coerce"
                                                            "translations"
-                                                           "test"
-                                                           "lparallel"
-                                                           "ptr-iterate-but-inner"))
+                                                           "test"))
                (:file "two-arg-fn-float"      :depends-on ("utils"
                                                            "test"
-                                                           "lparallel"
+                                                           "translations"))
+               (:file "two-arg-fn-all"        :depends-on ("copy-coerce"
                                                            "translations"
-                                                           "ptr-iterate-but-inner"))
-               (:file "two-arg-fn-non-broadcast" :depends-on ("utils"
-                                                              "translations"
-                                                              "test"
-                                                              "ptr-iterate-but-inner"))
-               (:file "bitwise"               :depends-on ("copy-coerce"
-                                                           "translations"
-                                                           "test"
-                                                           "lparallel"
-                                                           "ptr-iterate-but-inner"))
-               (:file "n-arg-fn"              :depends-on ("one-arg-fn-float"
-                                                           "bitwise"
-                                                           "two-arg-fn-non-broadcast"))
+                                                           "test"))
+               (:file "n-arg-fn"              :depends-on ("two-arg-fn-all"))
                (:file "n-arg-fn-compiler-macros" :depends-on ("n-arg-fn"
-                                                              "two-arg-fn-non-broadcast"))
+                                                              "two-arg-fn-all"))
                (:file "n-arg-fn-tests"        :depends-on ("n-arg-fn-compiler-macros"))
-               (:file "blas"                  :depends-on ("package"
+               (:file "blas"                  :depends-on ("utils"
                                                            "ptr-iterate-but-inner"))
                (:file "concatenate"           :depends-on ("blas"))
                (:file "one-arg-reduce-fn"     :depends-on ("translations"))

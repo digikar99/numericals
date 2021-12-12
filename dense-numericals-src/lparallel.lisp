@@ -1,18 +1,18 @@
 (in-package :dense-numericals.impl)
 
-(defparameter dn:*inline-with-multithreading* nil
+(defparameter nu:*inline-with-multithreading* nil
   "Inlining is usually necessary for smaller arrays; for such arrays multithreading
 becomes unnecessary. If this parameter is non-NIL, code using multithreading
 would be emitted; otherwise, the code would be skipped.")
 
-(defparameter dn:*multithreaded-threshold* 80000
+(defparameter nu:*multithreaded-threshold* 80000
   "The lower bound of the array size beyond which LPARALLEL is used for distributing
 operations across multiple threads.
 NOTE: It is not defined if this bound is inclusive or exclusive.")
-(declaim (type fixnum dn:*multithreaded-threshold*))
+(declaim (type fixnum nu:*multithreaded-threshold*))
 
 
-;;; While it's tempting to check the compile time value of DN:*MULTITHREADED-THRESHOLD*
+;;; While it's tempting to check the compile time value of NU:*MULTITHREADED-THRESHOLD*
 ;;; while inlining in an attempt to reduce code size, the actual size differences
 ;;; in the codes are minimal; the size is largely determined by the PTR-ITERATE-BUT-INNER
 
@@ -25,7 +25,7 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
          (out      (lastcar vars))
          (body-sym (gensym "BODY")))
     (if (and polymorphic-functions:*compiler-macro-expanding-p*
-             (not dn:*inline-with-multithreading*))
+             (not nu:*inline-with-multithreading*))
         `(progn ,@body)
         `(block thresholded-multithreading
            (flet ((,body-sym ,vars
@@ -33,11 +33,11 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
                                        vars))
                     ,@body))
              (if (< (the size ,threshold-measure)
-                    dn:*multithreaded-threshold*)
+                    nu:*multithreaded-threshold*)
                  (,body-sym ,@vars)
                  (progn
                    (let* ((worker-count  (lparallel:kernel-worker-count)))
-                     (declare (type dense-arrays::size worker-count))
+                     (declare (type size worker-count))
                      (multiple-value-bind (long-enough-axis axis/work-size)
                          ,(if simple-p
                               `(values 0 (array-total-size (the array ,out)))
@@ -52,7 +52,7 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
                        (let ((max-work-size (ceiling axis/work-size worker-count)))
                          (declare (type size max-work-size))
                          (lparallel:pdotimes (thread-idx worker-count)
-                           (declare (type dense-arrays::size thread-idx))
+                           (declare (type size thread-idx))
                            (let* ((index (nconc (if (zerop long-enough-axis)
                                                     ()
                                                     (make-list long-enough-axis))
@@ -74,3 +74,63 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
                                                             index))))
                              (declare (type array ,@vars))
                              (,body-sym ,@vars)))))))))))))
+
+(defmacro with-thresholded-multithreading/cl (threshold-measure (&rest vars) &body body &environment env)
+  (let* ((simple-p (eq :simple (first vars)))
+         (vars     (if simple-p
+                       (rest vars)
+                       vars))
+         (out      (lastcar vars)))
+    (declare (ignorable out))
+    (with-gensyms (worker-count thread-idx body-sym)
+      (if (and polymorphic-functions:*compiler-macro-expanding-p*
+               (not nu:*inline-with-multithreading*))
+          `(progn ,@body)
+          `(block thresholded-multithreading
+             (flet ((,body-sym ,vars
+                      (declare ,@(mapcar (lm var `(type ,(cl-form-types:nth-form-type var env 0) ,var))
+                                         vars))
+                      ,@body))
+               (if (< (the size ,threshold-measure)
+                      nu:*multithreaded-threshold*)
+                   (,body-sym ,@vars)
+                   ,(let ((work-size-vars       (make-gensym-list (length vars) "WORK-SIZE"))
+                          (max-work-size-vars   (make-gensym-list (length vars) "MAX-WORK-SIZE"))
+                          (local-work-size-vars (make-gensym-list (length vars) "LOCAL-WORK-SIZE")))
+                      `(let* ((,worker-count  (lparallel:kernel-worker-count))
+                              ,@(loop :for var :in vars
+                                      :for work-size-var :in work-size-vars
+                                      :collect `(,work-size-var (array-total-size ,var))))
+                         (declare (type size ,worker-count ,@work-size-vars))
+                         (let (,@(loop :for work-size-var :in work-size-vars
+                                       :for max-work-size-var :in max-work-size-vars
+                                       :collect `(,max-work-size-var (ceiling ,work-size-var
+                                                                              ,worker-count))))
+                           (declare (type size ,@max-work-size-vars))
+                           (lparallel:pdotimes (,thread-idx ,worker-count)
+                             (declare (type size ,thread-idx))
+                             (let* (,@(loop :for work-size-var :in work-size-vars
+                                            :for max-work-size-var :in max-work-size-vars
+                                            :for local-work-size-var :in local-work-size-vars
+                                            :collect
+                                            `(,local-work-size-var
+                                              (if (= ,thread-idx (1- ,worker-count))
+                                                  (the-size (- ,work-size-var
+                                                               (the-size (* (1- ,worker-count)
+                                                                            ,max-work-size-var))))
+                                                  ,max-work-size-var)))
+                                    ,@(loop :for var :in vars
+                                            :for max-work-size-var :in max-work-size-vars
+                                            :for local-work-size-var :in local-work-size-vars
+                                            :collect
+                                            `(,var
+                                              (cl:make-array ,local-work-size-var
+                                                             :element-type (array-element-type ,var)
+                                                             :displaced-to (array-storage ,var)
+                                                             :displaced-index-offset
+                                                             (the-size (+ (cl-array-offset ,var)
+                                                                          (the-size
+                                                                           (* ,thread-idx
+                                                                              ,max-work-size-var))))))))
+                               (declare (type array ,@vars))
+                               (,body-sym ,@vars)))))))))))))

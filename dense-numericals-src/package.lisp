@@ -4,10 +4,14 @@
   (:documentation "Functionality in this package is available with pure lisp.")
   (:use :dense-arrays-plus-lite)
   (:export #:array
+           #:array=
            #:simple-array
 
            #:aref
            #:row-major-aref
+           #:do-arrays
+           #:broadcast-array
+           #:macro-map-array
 
            #:array-dimension
            #:array-dimensions
@@ -21,6 +25,7 @@
            #:zeros-like
            #:ones-like
            #:rand-like
+           #:reshape
 
            #:*dense-array-class*
            #:*array-element-type*
@@ -36,7 +41,9 @@
   (:import-from :trivial-coerce
                 #:coerce)
   (:reexport :dense-numericals-lite)
-  (:export #:*multithreaded-threshold*
+  (:export #:astype
+           
+           #:*multithreaded-threshold*
            #:+optimized-types+
            #:*default-float-format*
            #:*inline-with-multithreading*
@@ -66,7 +73,7 @@
            #:fround
            #:abs
            #:ftruncate
-
+           
            #:copy
            #:coerce
            #:concat
@@ -122,6 +129,7 @@
 
 (uiop:define-package :dense-numericals.impl
   (:mix :dense-arrays-plus-lite :cl :alexandria :iterate)
+  (:use :numericals.common :abstract-arrays)
   (:import-from :polymorphic-functions
                 :define-polymorphic-function
                 :defpolymorph
@@ -129,6 +137,8 @@
                 :optim-speed
                 :optim-debug
                 :defpolymorph-compiler-macro)
+  (:import-from :cl-form-types
+                #:constant-form-value)
   (:import-from :dense-arrays
                 #:lm
                 #:array-strides
@@ -153,12 +163,17 @@
 
 (in-package :dense-numericals.impl)
 
-(loop :for (nick package) :in '((:dn    :dense-numericals))
-      :do (trivial-package-local-nicknames:add-package-local-nickname nick package))
-
-(defvar *src-dir* (asdf:component-pathname (asdf:find-system "dense-numericals")))
+;; FIXME: Avoid TPLN
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (trivial-package-local-nicknames:add-package-local-nickname :nu :dense-numericals))
 
 (5am:def-suite :dense-numericals)
 
-(push (cons (find-package :dense-numericals.impl) 'single-float)
-      *array-element-type-alist*)
+(pushnew (cons (find-package :dense-numericals.impl) 'single-float)
+         *array-element-type-alist*
+         :test #'equal)
+
+(setq numericals.common:*compiler-package* :dense-numericals.impl
+      numericals.common:*suite-name* :dense-numericals)
+
+(5am:def-suite nu::array :in :dense-numericals)

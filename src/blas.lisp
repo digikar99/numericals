@@ -1,16 +1,18 @@
-(in-package :numericals.internals)
+(numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
-;; (let ((a (asarray '((1 2 3))))
-;;             (b (asarray '((1) (2) (3))))
+(5am:in-suite nu::array)
+
+;; (let ((a (nu:asarray '((1 2 3))))
+;;             (b (nu:asarray '((1) (2) (3))))
 ;;             (c (zeros 1 1)))
-;;         (nu:two-arg-matmul a b :out c))
+;;         (dn:two-arg-matmul a b :out c))
 
 (define-polymorphic-function nu:two-arg-matmul (a b &key out) :overwrite t)
 
 (macrolet ((def (element-type c-fn)
-             `(defpolymorph nu:two-arg-matmul ((a (array ,element-type 2))
-                                               (b (array ,element-type 2))
-                                               &key ((out (array ,element-type 2))
+             `(defpolymorph nu:two-arg-matmul ((a (simple-array ,element-type 2))
+                                               (b (simple-array ,element-type 2))
+                                               &key ((out (simple-array ,element-type 2))
                                                      (nu:zeros (array-dimension a 0)
                                                                (array-dimension b 1)
                                                                :type ',element-type)))
@@ -31,12 +33,6 @@
                     (with-pointers-to-vectors-data ((ptr-b (array-storage b))
                                                     (ptr-a (array-storage a))
                                                     (ptr-o (array-storage out)))
-                      ,@(let ((elt-size (ecase element-type
-                                          (single-float 4)
-                                          (double-float 8))))
-                          `((cffi:incf-pointer ptr-b (* ,elt-size (cl-array-offset b)))
-                            (cffi:incf-pointer ptr-a (* ,elt-size (cl-array-offset a)))
-                            (cffi:incf-pointer ptr-o (* ,elt-size (cl-array-offset out)))))
                       (let ((m (array-dimension b 1))
                             (k (array-dimension b 0))
                             (n (array-dimension a 0)))
@@ -55,7 +51,7 @@
   (def double-float cblas:dgemm))
 
 (5am:def-test nu:two-arg-matmul ()
-  (loop :for nu:*array-element-type* :in '(single-float double-float)
+  (loop :for *array-element-type* :in '(single-float double-float)
         :do
            (5am:is (nu:array= (nu:asarray '((2)))
                               (nu:two-arg-matmul (nu:asarray '((1)))
@@ -86,31 +82,95 @@
                                                  :out (nu:zeros 3 2)))))
 
 
-(define-polymorphic-function nu:dot (a b &key out) :overwrite t)
-(defpolymorph nu:dot ((a (array single-float 1))
-                      (b (array single-float 1))
-                      &key out)
-    single-float
-  (declare (ignore out))
-  ;; TODO: Generalize this to more dimensions
-  (with-pointers-to-vectors-data ((ptr-a (array-storage a))
-                                  (ptr-b (array-storage b)))
-    (cffi:incf-pointer ptr-a (* 4 (cl-array-offset a)))
-    (cffi:incf-pointer ptr-b (* 4 (cl-array-offset b)))
-    (cblas:sdot (array-total-size a)
-                      ptr-a 1
-                      ptr-b 1)))
+(define-polymorphic-function nu:vdot (a b) :overwrite t
+  :documentation "Treat the two input arrays as 1D vectors and calculate their dot product.")
 
-(defpolymorph nu:dot ((a (array double-float 1))
-                      (b (array double-float 1))
-                      &key out)
-    double-float
-  (declare (ignore out))
-  ;; TODO: Generalize this to more dimensions
-  (with-pointers-to-vectors-data ((ptr-a (array-storage a))
-                                  (ptr-b (array-storage b)))
-    (cffi:incf-pointer ptr-a (* 8 (cl-array-offset a)))
-    (cffi:incf-pointer ptr-b (* 8 (cl-array-offset b)))
-    (cblas:ddot (array-total-size a)
-                ptr-a 1
-                ptr-b 1)))
+;;; CBLAS is faster than BMAS (obviously)
+
+(macrolet ((def (type c-fn type-size)
+
+             `(defpolymorph nu:vdot ((x (array ,type)) (y (array ,type)))
+                  (values ,type &optional)
+                (let ((sum ,(coerce 0 type)))
+                  (declare (type real sum))
+                  (ptr-iterate-but-inner (narray-dimensions x) n
+                    ((ptr-x ,type-size inc-x x)
+                     (ptr-y ,type-size inc-y y))
+                    (incf sum (,c-fn n ptr-x inc-x ptr-y inc-y)))
+                  (the (values ,type &optional)
+                       (nth-value 0 (trivial-coerce:coerce
+                                     (trivial-coerce:coerce (the real sum) 'integer)
+                                     ',type)))))))
+
+  ;; For verification purposes
+  ;; (def single-float     bmas:sdot 4)
+  ;; (def double-float     bmas:ddot 8)
+
+  ;; These are faster
+  (def single-float     cblas:sdot 4)
+  (def double-float     cblas:ddot 8)
+
+  (def (signed-byte 64) bmas:i64dot 8)
+  (def (signed-byte 32) bmas:i32dot 4)
+  (def (signed-byte 16) bmas:i16dot 2)
+  (def (signed-byte 08) bmas:i8dot  1)
+
+  ;; FIXME: Why does this work?
+  (def (unsigned-byte 64) bmas:i64dot 8)
+  (def (unsigned-byte 32) bmas:i32dot 4)
+  (def (unsigned-byte 16) bmas:i16dot 2)
+  (def (unsigned-byte 08) bmas:i8dot  1)
+
+  (def fixnum fixnum-dot 8))
+
+(5am:def-test nu:vdot ()
+  (flet ((float-close-p (x y)
+           (or (= x y)
+               (progn
+                 ;; (print (list x y))
+                 (< (/ (abs (- x y))
+                       (+ (abs x) (abs y)))
+                    0.1)))))
+    (loop :for *array-element-type* :in `(single-float
+                                          double-float
+
+                                          (signed-byte 64)
+                                          (signed-byte 32)
+                                          (signed-byte 16)
+                                          (signed-byte 08)
+
+                                          (unsigned-byte 64)
+                                          (unsigned-byte 32)
+                                          (unsigned-byte 16)
+                                          (unsigned-byte 08)
+
+                                          fixnum)
+          :do
+             (5am:is (= 14 (nu:vdot (nu:asarray '(1 2 3))
+                                    (nu:asarray '(1 2 3)))))
+             (5am:is (= 91 (nu:vdot (nu:asarray '((1 2 3)
+                                                  (4 5 6)))
+                                    (nu:asarray '((1 2 3)
+                                                  (4 5 6))))))
+             (let ((rand-1 (nu:rand 100))
+                   (rand-2 (nu:rand 100)))
+               (5am:is (float-close-p (nu:vdot rand-1 rand-2)
+                                      (let ((sum 0))
+                                        (nu:do-arrays ((x rand-1)
+                                                       (y rand-2))
+                                          (incf sum (* x y)))
+                                        sum))))
+             (let ((rand-1 (nu:aref (nu:rand 100 1000 :max 100)
+                                    '(10 :step 2)
+                                    '(100 :step 20)))
+                   (rand-2 (nu:aref (nu:rand 200 2000 :max 2)
+                                    '(88 :step -2)
+                                    '(200 :step 40))))
+               (5am:is (float-close-p (nu:vdot rand-1 rand-2)
+                                      (trivial-coerce:coerce
+                                       (let ((sum 0))
+                                         (nu:do-arrays ((x rand-1)
+                                                        (y rand-2))
+                                           (incf sum (* x y)))
+                                         sum)
+                                       *array-element-type*)))))))

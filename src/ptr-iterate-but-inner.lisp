@@ -1,6 +1,7 @@
 (in-package :numericals.internals)
 
-(defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings . expression))
+(defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings . expression)
+                                 &environment env)
   "Each bindings is of the form (PTR-VAR ELT-SIZE INNER-STRIDE-VAR ARRAY-EXPR)."
 
   (let* ((pointers      (mapcar #'first  bindings))
@@ -12,54 +13,55 @@
     (let ((array-vars   (make-gensym-list num-arrays "ARRAY"))
           (dimensions   (gensym "DIMENSIONS"))
           (ss           inner-strides) ; we use the same to avoid reassignment in nest-loop
-          (strides      (make-gensym-list num-arrays "STRIDES")))
+          (strides      (make-gensym-list num-arrays "STRIDES"))
+          (broadcast-dimensions (gensym "BROADCAST-DIMENSIONS")))
 
-      (with-gensyms (broadcast-dimensions)
-        `(let ((,broadcast-dimensions ,broadcast-dimensions-expr)
-               ,@(mapcar (lm var expr `(,var ,expr))
-                         array-vars array-exprs))
-           (declare (type cl:array ,@array-vars))
-           (with-pointers-to-vectors-data
-               (,@(mapcar (lm ptr var `(,ptr (array-storage ,var)))
-                          pointers array-vars))
-             ,@(mapcar (lm ptr var elt-size `(cffi:incf-pointer ,ptr
-                                                 (the-size (* ,elt-size
-                                                              (cl-array-offset ,var)))))
-                       pointers array-vars elt-sizes)
-             (let (,@(mapcar (lm strides var `(,strides (strides-for-broadcast
-                                                         (array-dimensions ,var)
-                                                         ,broadcast-dimensions)))
-                             strides array-vars))
-               (declare (type cffi-sys:foreign-pointer ,@pointers))
+      `(let ((,broadcast-dimensions ,broadcast-dimensions-expr)
+             ,@(mapcar (lm var expr `(,var ,expr))
+                       array-vars array-exprs))
+         (declare (type cl:array ,@array-vars))
+         (with-pointers-to-vectors-data
+             (,@(mapcar (lm ptr var `(,ptr (array-storage ,var)))
+                        pointers array-vars))
+           ,@(mapcar (lm ptr var elt-size `(cffi:incf-pointer ,ptr
+                                               (the-size (* ,elt-size
+                                                            (cl-array-offset ,var)))))
+                     pointers array-vars elt-sizes)
+           (let (,@(mapcar (lm strides var `(,strides (strides-for-broadcast
+                                                       (array-dimensions ,var)
+                                                       ,broadcast-dimensions)))
+                           strides array-vars))
+             (declare (type cffi-sys:foreign-pointer ,@pointers))
 
-               (labels ((nest-loop (,dimensions ,@strides)
-                          (let ((,n-var   (first ,dimensions))
-                                ,@(mapcar (lm ss strides `(,ss (first ,strides)))
-                                          ss strides))
-                            (declare (type int-index ,@ss)
-                                     (type size ,n-var))
-                            ;; (mapc #'print (list ,dimensions ,@pointers))
-                            (if (null (rest ,dimensions))
-                                (progn
-                                  ,@expression
-                                  nil)
-                                (loop :repeat ,n-var
-                                      :do (nest-loop
-                                           (rest ,dimensions)
-                                           ,@(mapcar (lm strides `(rest ,strides)) strides))
-                                      ,@(mapcar (lm ptr s elt-size
-                                                    `(cffi:incf-pointer
-                                                         ,ptr (the-int-index (* ,elt-size ,s))))
-                                                pointers ss elt-sizes)
-                                      :finally
-                                      ,@(mapcar (lm ptr s elt-size
-                                                    `(cffi:incf-pointer
-                                                         ,ptr
+             (labels ((nest-loop (,dimensions ,@strides)
+                        (let ((,n-var   (first ,dimensions))
+                              ,@(mapcar (lm ss strides `(,ss (first ,strides)))
+                                        ss strides))
+                          (declare (type int-index ,@ss)
+                                   (type size ,n-var))
+                          ;; (mapc #'print (list ,dimensions ,@pointers))
+                          (if (null (rest ,dimensions))
+                              (progn
+                                ,@expression
+                                nil)
+                              (loop :repeat ,n-var
+                                    :do (nest-loop
+                                         (rest ,dimensions)
+                                         ,@(mapcar (lm strides `(rest ,strides)) strides))
+                                    ,@(mapcar (lm ptr s elt-size
+                                                `(cffi:incf-pointer
+                                                     ,ptr (the-int-index (* ,elt-size ,s))))
+                                              pointers ss elt-sizes)
+                                    :finally
+                                    ,@(mapcar (lm ptr s elt-size
+                                                `(cffi:incf-pointer
+                                                     ,ptr
+                                                     (the-int-index
+                                                      (* ,elt-size
                                                          (the-int-index
-                                                          (* ,elt-size
-                                                             (the-int-index
-                                                              (- (the-int-index
-                                                                  (* ,n-var ,s))))))))
-                                                pointers ss elt-sizes))))))
-                 (nest-loop ,broadcast-dimensions
-                            ,@strides)))))))))
+                                                          (- (the-int-index
+                                                              (* ,n-var ,s))))))))
+                                              pointers ss elt-sizes))))))
+               (nest-loop ,broadcast-dimensions
+                          ,@strides))))))))
+
