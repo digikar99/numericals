@@ -89,12 +89,12 @@ Examples:
                                     (and (subtypep second-type '(eql :type))
                                          (= 3 args-length)))))
                        (return-from ,name
-                         `((lambda (shape &key (type default-element-type))
+                         `((cl:lambda (shape &key (type default-element-type))
                              (make-array shape :element-type type))
                            ,@args)))
                       ((every (lm type (subtypep type 'size)) arg-types)
                        (return-from ,name
-                         `((lambda (shape &key (type default-element-type))
+                         `((cl:lambda (shape &key (type default-element-type))
                              (make-array shape :element-type type))
                            (list ,@args))))
                       ((and (>= args-length 2)
@@ -102,7 +102,7 @@ Examples:
                                    (subseq arg-types 0 (- args-length 2)))
                             (subtypep second-last-type '(eql :type)))
                        (return-from ,name
-                         `((lambda (shape &key (type default-element-type))
+                         `((cl:lambda (shape &key (type default-element-type))
                              (make-array shape :element-type type))
                            (list ,@(subseq args 0 (- args-length 2)))
                            :type ,(lastcar args))))
@@ -173,7 +173,10 @@ Examples:
   (nu:asarray array-like :type (element-type array-like)))
 
 (define-polymorphic-function nu:copy (x &key out broadcast))
-(defpolymorph nu:asarray (array-like &key ((type (polymorphic-functions.extended-types:subtypep real))
+(defpolymorph nu:asarray (array-like &key (#-extensible-compound-types
+                                           (type (polymorphic-functions.extended-types:subtypep real))
+                                           #+extensible-compound-types
+                                           (type (extensible-compound-types:subtypep real))
                                            default-element-type))
     (values cl:array &optional)
   ;; TODO: Define the predicate array-like-p.

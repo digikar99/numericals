@@ -123,8 +123,12 @@
                                                        (cddr array-like-syms)))))))
              (unless (member element-type nu:+optimized-types+
                              :test (lambda (a b)
-                                     (and (trivial-types:type-specifier-p a)
-                                          (trivial-types:type-specifier-p b)
+                                     (and #+extensible-compound-types
+                                          (and (extensible-compound-types:type-specifier-p a)
+                                               (extensible-compound-types:type-specifier-p b))
+                                          #-extensible-compound-types
+                                          (and (trivial-types:type-specifier-p a)
+                                               (trivial-types:type-specifier-p b))
                                           (not (eq a 'cl:*))
                                           (not (eq b 'cl:*))
                                           (type= a b))))

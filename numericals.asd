@@ -8,6 +8,7 @@
                "ctype"
                "bmas"
                "cblas"
+               (:feature :extensible-compound-types "extensible-compound-types-cl")
                "fiveam"
                ;; #+sbcl "numericals/sbcl"
                "alexandria"

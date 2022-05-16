@@ -128,8 +128,12 @@
    ))
 
 (uiop:define-package :numericals.internals
-    (:mix :cl :alexandria :iterate :introspect-environment
-          :polymorphic-functions)
+  #-extensible-compound-types
+  (:mix :cl :alexandria :iterate :introspect-environment
+        :polymorphic-functions)
+  #+extensible-compound-types
+  (:mix :extensible-compound-types-cl :cl :alexandria :iterate :introspect-environment
+        :polymorphic-functions)
   (:import-from :numericals
                 #:maybe-form-not-constant-error
                 #:*type*
@@ -162,21 +166,24 @@
 
 (5am:def-suite nu::array :in :numericals)
 
-(pushnew (cons (cons `(and (eql :auto)
-                           (polymorphic-functions.extended-types:subtypep real))
-                     nil)
-               t)
-         polymorphic-functions.extended-types:*subtypep-alist*
-         :test #'equal)
+#-extensible-compound-types
+(progn
 
-(pushnew (cons (cons `(polymorphic-functions.extended-types:subtypep real)
-                     `(eql :auto))
-               nil)
-         polymorphic-functions.extended-types:*subtypep-alist*
-         :test #'equal)
+  (pushnew (cons (cons `(and (eql :auto)
+                             (polymorphic-functions.extended-types:subtypep real))
+                       nil)
+                 t)
+           polymorphic-functions.extended-types:*subtypep-alist*
+           :test #'equal)
 
-(pushnew (cons (cons `(eql :auto)
-                     `(polymorphic-functions.extended-types:subtypep real))
-               nil)
-         polymorphic-functions.extended-types:*subtypep-alist*
-         :test #'equal)
+  (pushnew (cons (cons `(polymorphic-functions.extended-types:subtypep real)
+                       `(eql :auto))
+                 nil)
+           polymorphic-functions.extended-types:*subtypep-alist*
+           :test #'equal)
+
+  (pushnew (cons (cons `(eql :auto)
+                       `(polymorphic-functions.extended-types:subtypep real))
+                 nil)
+           polymorphic-functions.extended-types:*subtypep-alist*
+           :test #'equal))
