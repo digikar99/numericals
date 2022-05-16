@@ -140,7 +140,7 @@
                               :dimensions (mapcar #'narray-dimensions (list y out))
                               :array-likes (list y out))
                       (cffi:with-foreign-pointer (ptr-x ,size)
-                        (setf (cffi:mem-ref ptr-x ,c-type) (trivial-coerce:coerce X ',type))
+                        (setf (cffi:mem-ref ptr-x ,c-type) (trivial-coerce:coerce x ',type))
                         (ptr-iterate-but-inner broadcast-dimensions n
                           ((ptr-y ,size iy y)
                            (ptr-o ,size io out))
@@ -319,15 +319,17 @@
                   &optional (sf-min 0.0f0) (sf-max 1.0f0))
                  (double-float-return-type double-float-error
                   &optional (df-min 0.0d0) (df-max 1.0d0)))
-             (eval `(define-polymorphic-function ,name (x y &key out)
+             (eval `(define-polymorphic-function ,name (x y &key out broadcast)
                       :overwrite t))
              `(progn
-                (define-polymorphic-function ,name (x y &key out))
-                (defpolymorph ,name (x y &key ((out null))) t
-                  (declare (ignore out))
-                  (two-arg-fn/all ',name x y))
-                (defpolymorph ,name (x y &key ((out (not null)))) t
-                  (two-arg-fn/all ',name x y :out out))
+                (define-polymorphic-function ,name (x y &key out broadcast))
+                (defpolymorph ,name (x y &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
+                  (declare (ignorable out))
+                  (two-arg-fn/all ',name x y :broadcast broadcast))
+                (defpolymorph ,name (x y &key ((out (not null)))
+                                       (broadcast nu:*broadcast-automatically*))
+                    t
+                  (two-arg-fn/all ',name x y :out out :broadcast broadcast))
                 (define-numericals-two-arg-test ,name nu::array nil
                     (,single-float-error ,sf-min ,sf-max ,single-float-return-type)
                     (,double-float-error ,df-min ,df-max ,double-float-return-type)))))

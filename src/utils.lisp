@@ -67,7 +67,7 @@ can be helpful to locate bugs.")
         (the-size (+ offset (cl-array-offset displaced-to))))))
 
 (declaim (inline array-storage)
-         (ftype (function (cl:array) (simple-array * 1))))
+         (ftype (function (cl:array) (cl:simple-array * 1))))
 (defun array-storage (array)
   (declare (ignorable array)
            (type cl:array array)

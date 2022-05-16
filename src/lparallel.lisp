@@ -103,5 +103,7 @@ would be emitted; otherwise, the code would be skipped.")
                                (declare (type array ,@vars))
                                (,body-sym ,@vars)))))))))))))
 
-(setf (macro-function 'with-thresholded-multithreading/cl)
-      (macro-function 'with-thresholded-multithreading))
+(defmacro with-thresholded-multithreading/cl (&whole form
+                                                threshold-measure (&rest vars) &body body &environment env)
+  (declare (ignore threshold-measure vars body env))
+  `(with-thresholded-multithreading ,@(rest form)))

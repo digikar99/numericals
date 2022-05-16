@@ -8,6 +8,24 @@ It provides mainly two ASDF systems: `numericals` for use with `cl:array` and `d
 
 At the moment, work is primarily happening under `dense-numericals`, so it has slightly greater functionality than `numericals`; raise an issue if you'd like to shift the focus to `numericals`.
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
+
+- [numericals](#numericals)
+    - [Functionality So Far](#functionality-so-far)
+    - [Usage and Features](#usage-and-features)
+        - [-](#-)
+        - [Non-native CL arrays](#non-native-cl-arrays)
+        - [Usage](#usage)
+    - [Why separate `numericals` and `dense-numericals` packages?](#why-separate-numericals-and-dense-numericals-packages)
+    - [Contributing and Future Plans](#contributing-and-future-plans)
+    - [Project Predecessors](#project-predecessors)
+    - [Background](#background)
+    - [Acknowledgements](#acknowledgements)
+
+<!-- markdown-toc end -->
+
+
 ## Functionality So Far
 
 Below:
@@ -101,14 +119,16 @@ Configurable parameters include (see docstrings for their description):
 
 Not doing so would mean an additional configuration option. That implies an usage overhead on the part of the user, besides employing a decision factor into the return type of the functions. Separate packages, functions, symbols simply by-passes this issue. If a user is interfacing with the lisp ecosystem at large, they can choose `numericals` without a second thought.
 
-## Planned
+## Contributing and Future Plans
 
 In no order of priority:
 
+- Compiler macros for `< <= = /= > >=`
+- Testing bitwise operations and adding compiler macros for them
+- Optimizing fixnum by breaking larger double passes into smaller ones to make use of cache
 - `transpose` with arbitrary axes
 - More operations from BLAS
-- Optimizing `astype`
-- Handle better configuration variable pertaining to whether compile time value of `default-element-type` should be used
+- Reviving sum/min/max/dot on not-all axes
 - Reviving `weop` and `with-elementwise-operations` using [sb-simd](https://github.com/marcoheisig/sb-simd/) or [cl-simd](https://github.com/angavrilov/cl-simd) (or one of its forks!)
 - Automate installation of [bmas](https://github.com/digikar99/bmas), and avoid hardcoding paths in cl-bmas and cl-cblas
 

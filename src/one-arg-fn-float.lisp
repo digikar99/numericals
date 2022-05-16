@@ -59,7 +59,7 @@ If the output array is not supplied, its element-type is given by *DEFAULT-FLOAT
                               (narray-dimensions out)))))
     (let ((svx (array-storage x))
           (svo (array-storage out)))
-      (declare (type (cl:simple-array single-float 1) svx svo))
+      (declare (type (cl:array single-float 1) svx svo))
       (with-thresholded-multithreading/cl
           (array-total-size svo)
           (svx svo)
