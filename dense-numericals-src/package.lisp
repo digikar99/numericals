@@ -128,6 +128,9 @@
            #:two-arg->=))
 
 (uiop:define-package :dense-numericals.impl
+  #+extensible-compound-types
+  (:mix :dense-arrays-plus-lite :extensible-compound-types-cl :cl :alexandria :iterate)
+  #-extensible-compound-types
   (:mix :dense-arrays-plus-lite :cl :alexandria :iterate)
   (:use :numericals.common :abstract-arrays)
   (:import-from :polymorphic-functions

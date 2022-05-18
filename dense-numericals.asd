@@ -11,6 +11,7 @@
                "iterate"
                "uiop"
                "cffi"
+               (:feature :extensible-compound-types "extensible-compound-types-cl")
                "fiveam"
                "lparallel"
                "policy-cond"
