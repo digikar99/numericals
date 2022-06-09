@@ -21,11 +21,13 @@
            #:asarray
            #:zeros
            #:ones
+           #:eye
            #:rand
            #:zeros-like
            #:ones-like
            #:rand-like
            #:reshape
+           #:transpose
 
            #:*dense-array-class*
            #:*array-element-type*
