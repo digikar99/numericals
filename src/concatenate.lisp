@@ -8,7 +8,7 @@
   The second value is the dimension of the array resulting from the concatenated."
   (case (length dimensions)
     (0 t)
-    (1 (values t dimensions))
+    (1 (values t (first dimensions)))
     (t (iter (cond ((every #'null dimension-lists) (terminate))
                    ((some #'null dimension-lists) (return nil)))
          (for dimension-lists initially dimensions
@@ -105,4 +105,6 @@ will be concatenated.
                                    (4 5 6)))
                      (nu:concat '((1 2 3)) '((4 5 6)) :axis 0)))
   (5am:is (nu:array= (nu:asarray '((1 2 3 4 5 6)))
-                     (nu:concat '((1 2 3)) '((4 5 6)) :axis 1))))
+                     (nu:concat '((1 2 3)) '((4 5 6)) :axis 1)))
+  (5am:is (nu:array= (nu:asarray '(((1 2 3) (4 5 6))))
+                     (nu:concat '(((1 2 3))) '(((4 5 6))) :axis 1))))
