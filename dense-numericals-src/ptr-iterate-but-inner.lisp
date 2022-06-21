@@ -47,7 +47,7 @@ the arrays were SIMPLE with same strides and offsets."
                              strides array-vars)
                    ,@(mapcar (lm offsets var `(,offsets (array-offsets ,var)))
                              offsets array-vars))
-               (declare (type cffi-sys:foreign-pointer ,@pointers))
+               (declare (cl:type cffi-sys:foreign-pointer ,@pointers))
 
                (labels ((nest-loop (,dimensions ,@strides ,@offsets)
                           (let ((,n-var   (first ,dimensions))
@@ -55,8 +55,8 @@ the arrays were SIMPLE with same strides and offsets."
                                           ss strides)
                                 ,@(mapcar (lm os offsets `(,os (first ,offsets)))
                                           os offsets))
-                            (declare (type int-index ,@os ,@ss)
-                                     (type size ,n-var))
+                            (declare (cl:type int-index ,@os ,@ss)
+                                     (cl:type size ,n-var))
                             ;; (mapc #'print (list ,dimensions ,@pointers))
                             (if (null (rest ,dimensions))
                                 (progn

@@ -9,7 +9,7 @@ would be emitted; otherwise, the code would be skipped.")
   "The lower bound of the array size beyond which LPARALLEL is used for distributing
 operations across multiple threads.
 NOTE: It is not defined if this bound is inclusive or exclusive.")
-(declaim (type fixnum nu:*multithreaded-threshold*))
+(declaim (cl:type size nu:*multithreaded-threshold*))
 
 
 ;;; While it's tempting to check the compile time value of NU:*MULTITHREADED-THRESHOLD*
@@ -32,12 +32,12 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
                     (declare ,@(mapcar (lm var `(type ,(cl-form-types:nth-form-type var env 0) ,var))
                                        vars))
                     ,@body))
-             (if (< (the size ,threshold-measure)
+             (if (< (cl:the size ,threshold-measure)
                     nu:*multithreaded-threshold*)
                  (,body-sym ,@vars)
                  (progn
                    (let* ((worker-count  (lparallel:kernel-worker-count)))
-                     (declare (type size worker-count))
+                     (declare (cl:type size worker-count))
                      (multiple-value-bind (long-enough-axis axis/work-size)
                          ,(if simple-p
                               `(values 0 (array-total-size (the array ,out)))
@@ -48,11 +48,11 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
                                      :finally
                                         (return-from thresholded-multithreading
                                           (,body-sym ,@vars))))
-                       (declare (type size long-enough-axis axis/work-size))
+                       (declare (cl:type size long-enough-axis axis/work-size))
                        (let ((max-work-size (ceiling axis/work-size worker-count)))
-                         (declare (type size max-work-size))
+                         (declare (cl:type size max-work-size))
                          (lparallel:pdotimes (thread-idx worker-count)
-                           (declare (type size thread-idx))
+                           (declare (cl:type size thread-idx))
                            (let* ((index (nconc (if (zerop long-enough-axis)
                                                     ()
                                                     (make-list long-enough-axis))
@@ -103,7 +103,7 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
                       (declare ,@(mapcar (lm var `(type ,(cl-form-types:nth-form-type var env 0) ,var))
                                          vars))
                       ,@body))
-               (if (< (the size ,threshold-measure)
+               (if (< (cl:the size ,threshold-measure)
                       nu:*multithreaded-threshold*)
                    (,body-sym ,@vars)
                    ,(let ((work-size-vars       (make-gensym-list (length vars) "WORK-SIZE"))
@@ -113,14 +113,14 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
                               ,@(loop :for var :in vars
                                       :for work-size-var :in work-size-vars
                                       :collect `(,work-size-var (array-total-size ,var))))
-                         (declare (type size ,worker-count ,@work-size-vars))
+                         (declare (cl:type size ,worker-count ,@work-size-vars))
                          (let (,@(loop :for work-size-var :in work-size-vars
                                        :for max-work-size-var :in max-work-size-vars
                                        :collect `(,max-work-size-var (ceiling ,work-size-var
                                                                               ,worker-count))))
-                           (declare (type size ,@max-work-size-vars))
+                           (declare (cl:type size ,@max-work-size-vars))
                            (lparallel:pdotimes (,thread-idx ,worker-count)
-                             (declare (type size ,thread-idx))
+                             (declare (cl:type size ,thread-idx))
                              (let* (,@(loop :for work-size-var :in work-size-vars
                                             :for max-work-size-var :in max-work-size-vars
                                             :for local-work-size-var :in local-work-size-vars
