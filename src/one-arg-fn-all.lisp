@@ -2,20 +2,84 @@
 
 (5am:in-suite nu::array)
 
-(define-polymorphic-function one-arg-fn/all (name x &key out broadcast) :overwrite t
+(define-constant +one-arg-fn-all-doc+
   ;; See the below non-array polymorphs for the element-type deduction procedure
-  :documentation "These functions have a single array as input and a single array as output.
-If the output array is not supplied, its element-type is obtained from the element-type
-as the input array. If the input is not an array, then the element-type is deduced from
-the elements as closely as possible.")
+  "
+These functions have a single array as input and a single array as output.
+If the output array is not supplied, its element-type is computed :AUTO-matically
+
+For large arrays, you should be happy without any declarations. You can
+use *MULTITHREADED-THRESHOLD* to a large enough value to disable lparallel
+based multithreading.
+
+Declarations become necessary for smaller arrays. An (OPTIMIZE SPEED) declaration
+should help you with optimization by providing optimization notes.
+Optimization for small arrays essentially involves inlining, along with:
+  (i)  providing the OUT parameter to allow the user to eliminate allocation wherever possible
+  (ii) eliminating work involved in broadcasting and multithreading
+
+TODO: Provide more details
+  "
+  :test #'string=)
+
+(define-polymorphic-function one-arg-fn/all (name x &key out broadcast) :overwrite t
+  :documentation +one-arg-fn-all-doc+)
 
 (macrolet ((def (type c-type fn-retriever size)
 
              `(progn
 
-                (defpolymorph one-arg-fn/all
+                ;; most optimal case: BROADCAST is NIL and OUT is supplied
+                (defpolymorph (one-arg-fn/all :inline t)
+                    ((name symbol) (x (simple-array ,type))
+                     &key ((out (simple-array ,type)))
+                     ((broadcast null) nu:*broadcast-automatically*))
+                    (simple-array ,type)
+                  (declare (ignorable name broadcast))
+                  (policy-cond:with-expectations (= safety 0)
+                      ((assertion (or broadcast
+                                      (equalp (narray-dimensions x)
+                                              (narray-dimensions out)))))
+                    (let ((svx (array-storage x))
+                          (svo (array-storage out)))
+                      (declare (type (cl:simple-array ,type 1) svx svo))
+                      (with-thresholded-multithreading/cl
+                          (cl:array-total-size svo)
+                          (svx svo)
+                        (with-pointers-to-vectors-data ((ptr-x svx)
+                                                        (ptr-o svo))
+                          (funcall (,fn-retriever name)
+                                   (array-total-size svo)
+                                   ptr-x 1
+                                   ptr-o 1)))))
+                  out)
+
+                ;; OUT is unsupplied
+                (defpolymorph (one-arg-fn/all :inline :maybe
+                                              :suboptimal-note runtime-array-allocation)
                     ((name symbol) (x (array ,type))
-                     &key ((out (array ,type)) (nu:zeros-like x))
+                     &key ((out null))
+                     (broadcast nu:*broadcast-automatically*))
+                    (simple-array ,type)
+                  (declare (ignorable name out broadcast))
+                  (let ((out (nu:zeros-like x)))
+                    (declare (type (array ,type) out))
+                    (ptr-iterate-but-inner (narray-dimensions out) n
+                      ((ptr-x   ,size ix   x)
+                       (ptr-out ,size iout out))
+                      (funcall (,fn-retriever name) n ptr-x ix ptr-out iout))
+                    out))
+
+                ;; OUT is supplied, but BROADCAST is not known to be NIL
+
+                (defpolymorph (one-arg-fn/all
+                               :inline :maybe
+                               :more-optimal-type-list
+                               (symbol (simple-array ,type)
+                                       &key (:out (simple-array ,type))
+                                       (:broadcast null)))
+                    ((name symbol) (x (array ,type))
+                     &key ((out (array ,type)))
                      (broadcast nu:*broadcast-automatically*))
                     (array ,type)
                   (if broadcast
@@ -42,31 +106,8 @@ the elements as closely as possible.")
                           (funcall (,fn-retriever name) n ptr-x ix ptr-out iout))))
                   out)
 
+                ;; Direct NUMBER to ARRAY: BROADCAST is necessarily non-NIL
                 (defpolymorph (one-arg-fn/all :inline t)
-                    ((name symbol) (x (simple-array ,type))
-                     &key ((out (simple-array ,type)) (nu:zeros-like x))
-                     ((broadcast null) nu:*broadcast-automatically*))
-                    (array ,type)
-                  (declare (ignorable name broadcast))
-                  (policy-cond:with-expectations (= safety 0)
-                      ((assertion (or broadcast
-                                      (equalp (narray-dimensions x)
-                                              (narray-dimensions out)))))
-                    (let ((svx (array-storage x))
-                          (svo (array-storage out)))
-                      (declare (type (cl:simple-array ,type 1) svx svo))
-                      (with-thresholded-multithreading/cl
-                          (cl:array-total-size svo)
-                          (svx svo)
-                        (with-pointers-to-vectors-data ((ptr-x svx)
-                                                        (ptr-o svo))
-                          (funcall (,fn-retriever name)
-                                   (array-total-size svo)
-                                   ptr-x 1
-                                   ptr-o 1)))))
-                  out)
-
-                (defpolymorph one-arg-fn/all
                     ((name symbol) (x real)
                      &key ((out (array ,type)))
                      ((broadcast (not null))))
@@ -75,11 +116,16 @@ the elements as closely as possible.")
                   (cffi:with-foreign-pointer (ptr-x ,size)
                     (setf (cffi:mem-ref ptr-x ,c-type)
                           (trivial-coerce:coerce x ',type))
-                    (with-thresholded-multithreading (array-total-size out)
-                        (out)
-                      (ptr-iterate-but-inner (narray-dimensions out) n
-                        ((ptr-out ,size iout out))
-                        (funcall (,fn-retriever name) n ptr-x 0 ptr-out iout))))
+                    (let ((svo (array-storage out)))
+                      (declare (type (cl:simple-array ,type 1) svo))
+                      (with-thresholded-multithreading/cl
+                          (cl:array-total-size svo)
+                          (svo)
+                        (with-pointers-to-vectors-data ((ptr-o svo))
+                          (funcall (,fn-retriever name)
+                                   (array-total-size svo)
+                                   ptr-x 0
+                                   ptr-o 1)))))
                   out))))
 
   (def (signed-byte 64) :long  int64-c-name 8)
@@ -105,9 +151,10 @@ the elements as closely as possible.")
   (funcall (cl-name name) x))
 
 ;; lists - 2 polymorphs
-(defpolymorph (one-arg-fn/all :inline t) ((name symbol) (x list)
-                                          &key ((out null))
-                                          (broadcast nu:*broadcast-automatically*))
+(defpolymorph (one-arg-fn/all :inline t :suboptimal-note runtime-array-allocation)
+    ((name symbol) (x list)
+     &key ((out null))
+     (broadcast nu:*broadcast-automatically*))
     (values array &optional)
   (declare (ignorable out))
   ;; Why didn't we create ARRAY in the lambda-list itself?
@@ -115,34 +162,27 @@ the elements as closely as possible.")
   ;;   Also think over the implication of being required to allocate a separate
   ;; array in the second case below; perhaps we also need a way to copy from a
   ;; array-like to an array.
-  ;; FIXME: Make ASARRAY work with :TYPE :AUTO
   (let ((array (nu:asarray x :type :auto)))
     (one-arg-fn/all name array :out array :broadcast broadcast)))
 
-(defpolymorph (one-arg-fn/all :inline t) ((name symbol) (x list)
-                                          &key ((out array))
-                                          (broadcast nu:*broadcast-automatically*))
-    (values array &optional)
-  (declare (ignorable out))
-  (one-arg-fn/all name (nu:asarray x :type (array-element-type out)) :out out :broadcast broadcast))
-
-;; non-float arrays
-(defpolymorph (one-arg-fn/all :inline nil) ; this is recursive
-    ((name symbol) (x array)
-     &key ((out (or (array single-float) (array double-float)))
-           (nu:zeros (array-dimensions x) :type nu:*default-float-format*))
+(defpolymorph (one-arg-fn/all :inline t :suboptimal-note runtime-array-allocation)
+    ((name symbol) (x list)
+     &key ((out array))
      (broadcast nu:*broadcast-automatically*))
     (values array &optional)
-  (nu:copy x :out out)
-  (one-arg-fn/all name out :out out :broadcast broadcast))
+  (declare (ignorable out))
+  ;; TODO: Define copy from list to array directly
+  (one-arg-fn/all name (nu:asarray x :type (array-element-type out)) :out out :broadcast broadcast))
 
 (macrolet ((def (name)
              `(progn
-                (define-polymorphic-function ,name (x &key out broadcast) :overwrite t)
+                (define-polymorphic-function ,name (x &key out broadcast)
+                  :overwrite t :documentation +one-arg-fn-all-doc+)
                 (defpolymorph ,name (x &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
                   (declare (ignore out))
                   (one-arg-fn/all ',name x :broadcast broadcast))
-                (defpolymorph ,name (x &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
+                (defpolymorph ,name (x &key ((out (not null))) (broadcast nu:*broadcast-automatically*))
+                    t
                   (one-arg-fn/all ',name x :out out :broadcast broadcast))
                 (define-numericals-one-arg-test ,name nu::array (0.0f0) (0.0d0))
                 (define-numericals-one-arg-test/integers ,name nu::array))))

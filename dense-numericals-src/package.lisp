@@ -138,6 +138,7 @@
   (:import-from :polymorphic-functions
                 :define-polymorphic-function
                 :defpolymorph
+                :suboptimal-polymorph-note
                 :env
                 :optim-speed
                 :optim-debug
