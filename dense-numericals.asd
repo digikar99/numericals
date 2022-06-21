@@ -17,6 +17,7 @@
                "policy-cond"
                "polymorphic-functions"
                "dense-arrays+static-vectors"
+               "swank"
                "trivial-coerce"
                "trivial-package-local-nicknames")
   ;; TODO: Use CFFI-GROVEL or something to manage shared library / c files

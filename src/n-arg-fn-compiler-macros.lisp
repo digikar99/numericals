@@ -68,7 +68,9 @@
                                  ;; 1. Optimization is insignificant if OUT is unsupplied
                            :finally
                               (cond ((every (lm type (subtypep type 'number)) arg-types)
-                                     (return-from ,name `(,',(cl-name reduce-fn) ,@args)))
+                                     (return-from ,name `(,',(swank/backend:function-name
+                                                              (cl-name reduce-fn))
+                                                          ,@args)))
                                     ,@(if returns-identity
                                           `(((= 1 (length arg-types))
                                              (return-from ,name (first args)))))

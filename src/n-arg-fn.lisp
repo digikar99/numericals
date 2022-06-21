@@ -77,10 +77,10 @@
                                        :do (,reduce-fn out array-like :out out))))
                           out)
                         (if (rest array-likes)
-                            (reduce #',(cl-name reduce-fn)
+                            (reduce #',(swank/backend:function-name (cl-name reduce-fn))
                                     (rest array-likes)
                                     :initial-value (first array-likes))
-                            (funcall #',(cl-name reduce-fn)
+                            (funcall #',(swank/backend:function-name (cl-name reduce-fn))
                                      (first array-likes)))))))))
   (def nu:+ nu:two-arg-+ 0)
   (def nu:- nu:two-arg-- 0)
@@ -171,7 +171,7 @@
                                             (nu:two-arg-logand out tmp :out out)))))
                          out)
                         (t
-                         (if (apply #',(cl-name reduce-fn) array-likes)
+                         (if (apply #',(swank/backend:function-name (cl-name reduce-fn)) array-likes)
                              1
                              0)))))))
   (def nu:<  nu:two-arg-<)
@@ -243,7 +243,7 @@
                                  (loop :for array-like :in (cddr array-likes)
                                        :do (,reduce-fn out array-like :out out))))
                           out)
-                        (apply #',(cl-name reduce-fn) (rest array-likes))))))))
+                        (apply #',(swank/backend:function-name (cl-name reduce-fn)) (rest array-likes))))))))
 
   (def nu:logand nu:two-arg-logand -1)
   (def nu:logior nu:two-arg-logior 0)

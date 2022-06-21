@@ -137,8 +137,9 @@
                 (defun ,fn-name (name)
                   (declare (optimize speed)
                            (type symbol name))
-                  (or (nth ,index (gethash name *translation-table*))
-                      (error "No CFUNCTION known for ~S for ~S" name ',fn-name)))
+                  (fdefinition
+                   (or (nth ,index (gethash name *translation-table*))
+                       (error "No CFUNCTION known for ~S for ~S" name ',fn-name))))
                 (define-compiler-macro ,fn-name (&whole form name &environment env)
                   (let ((form-type (cl-form-types:form-type name env)))
                     ;; TODO: Use CTYPE to normalize types?
