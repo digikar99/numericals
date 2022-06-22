@@ -84,9 +84,15 @@
            #:matmul
            #:two-arg-matmul
            #:max
+           #:two-arg-max
            #:min
+           #:two-arg-min
+
            #:vdot
            #:sum
+           #:maximum
+           #:minimum
+
            #:shape
 
            #:+

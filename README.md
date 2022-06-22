@@ -14,7 +14,7 @@ At the moment, work is primarily happening under `dense-numericals`, so it has s
 - [numericals](#numericals)
     - [Functionality So Far](#functionality-so-far)
     - [Usage and Features](#usage-and-features)
-        - [-](#-)
+        - [Native CL arrays](#native-cl-arrays)
         - [Non-native CL arrays](#non-native-cl-arrays)
         - [Usage](#usage)
     - [Why separate `numericals` and `dense-numericals` packages?](#why-separate-numericals-and-dense-numericals-packages)
@@ -79,7 +79,7 @@ These functions should be within a factor of two of numpy/torch for "common case
 
 ## Usage and Features
 
-#### Native CL arrays
+### Native CL arrays
 
 As of this writing,
 
@@ -93,13 +93,13 @@ As of this writing,
 
 The author of `numericals` [did not find other libraries operating on native CL arrays](https://gist.github.com/digikar99/16066dbf24b8789c969ea58837e0fbef).
 
-#### Non-native CL arrays
+### Non-native CL arrays
 
 There are [quite](https://github.com/CodyReichert/awesome-cl#machine-learning) a [few](https://github.com/CodyReichert/awesome-cl#numerical-and-scientific) libraries in Common Lisp in this domain. I have only managed to take a peak at [femlisp-matlisp](https://gist.github.com/digikar99/16066dbf24b8789c969ea58837e0fbef#femlisp-matlisp).
 
 That said, the goal of `numericals` is not to *replace* python ecosystems, at least not in the short run, but instead to overcome the limitations of libraries like [py4cl](https://github.com/bendudson/py4cl)/[2](https://github.com/digikar99/py4cl2) of sub-10,000 instructions per second.
 
-#### Usage
+### Usage
 
 For the time being, preferably, [fetch from this dist of ultralisp](https://github.com/digikar99/polymorphic-functions#getting-it-from-ultralisp). Users may need to `bash make.sh` [bmas](https://github.com/digikar99/bmas) manually; this currently requires `gcc`, but the `make.sh` should be trivial enough to edit per the user's configurations. This step may be automated in the future.
 
@@ -126,7 +126,7 @@ In no order of priority:
 - Compiler macros for `< <= = /= > >=`
 - Testing bitwise operations and adding compiler macros for them
 - Optimizing fixnum by breaking larger double passes into smaller ones to make use of cache
-- `transpose` with arbitrary axes
+- `transpose` with arbitrary axes for CL arrays
 - More operations from BLAS
 - Reviving sum/min/max/dot on not-all axes
 - Reviving `weop` and `with-elementwise-operations` using [sb-simd](https://github.com/marcoheisig/sb-simd/) or [cl-simd](https://github.com/angavrilov/cl-simd) (or one of its forks!)
