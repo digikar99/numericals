@@ -20,7 +20,7 @@ can be helpful to locate bugs.")
   "Each entry of BINDINGS is of the form (POINTER-VAR VECTOR)."
   (if bindings
       `(cffi:with-pointer-to-vector-data ,(first bindings)
-         (locally (declare (type cffi-sys:foreign-pointer ,(caar bindings)))
+         (locally (declare (cl:type cffi-sys:foreign-pointer ,(caar bindings)))
            (with-pointers-to-vectors-data ,(rest bindings) ,@body)))
       `(progn ,@body)))
 

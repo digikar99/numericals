@@ -23,9 +23,11 @@
            #:ones
            #:eye
            #:rand
+           #:full
            #:zeros-like
            #:ones-like
            #:rand-like
+           #:full-like
            #:reshape
            #:transpose
 

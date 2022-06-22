@@ -91,15 +91,22 @@
                                             fixnum-mul)
      (nu:two-arg-/ bmas:sdiv bmas:ddiv cl:/)
 
-     (nu:sum bmas:ssum bmas:dsum cl:+   bmas:i64sum bmas:i32sum bmas:i16sum bmas:i8sum
-                                        bmas:i64sum bmas:i32sum bmas:i16sum bmas:i8sum
-                                        fixnum-sum)
-     (nu:max bmas:smax bmas:dmax cl:max bmas:i64max bmas:i32max bmas:i16max bmas:i8max
-                                        bmas:u64max bmas:u32max bmas:u16max bmas:u8max
-                                        fixnum-max)
-     (nu:min bmas:smin bmas:dmin cl:min bmas:i64min bmas:i32min bmas:i16min bmas:i8min
-                                        bmas:u64min bmas:u32min bmas:u16min bmas:u8min
-                                        fixnum-min)
+     (nu:two-arg-max bmas:smax bmas:dmax cl:+ bmas:i64max bmas:i32max bmas:i16max bmas:i8max
+                                              bmas:i64max bmas:i32max bmas:i16max bmas:i8max
+                                              fixnum-max)
+     (nu:two-arg-min bmas:smin bmas:dmin cl:+ bmas:i64min bmas:i32min bmas:i16min bmas:i8min
+                                              bmas:i64min bmas:i32min bmas:i16min bmas:i8min
+                                              fixnum-min)
+
+     (nu:sum bmas:ssum bmas:dsum cl:+ bmas:i64sum bmas:i32sum bmas:i16sum bmas:i8sum
+                                      bmas:i64sum bmas:i32sum bmas:i16sum bmas:i8sum
+                                      fixnum-sum)
+     (nu:maximum bmas:shmax bmas:dhmax cl:max bmas:i64hmax bmas:i32hmax bmas:i16hmax bmas:i8hmax
+                                              bmas:u64hmax bmas:u32hmax bmas:u16hmax bmas:u8hmax
+                                              fixnum-hmax)
+     (nu:minimum bmas:shmin bmas:dhmin cl:min bmas:i64hmin bmas:i32hmin bmas:i16hmin bmas:i8hmin
+                                              bmas:u64hmin bmas:u32hmin bmas:u16hmin bmas:u8hmin
+                                              fixnum-hmin)
 
      (nu:two-arg-logand nil nil cl:logand bmas:i8and bmas:i8and bmas:i8and bmas:i8and)
      (nu:two-arg-logior nil nil cl:logior bmas:i8or  bmas:i8or  bmas:i8or  bmas:i8or)
