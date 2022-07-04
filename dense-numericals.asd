@@ -4,7 +4,7 @@
   :licence "MIT"
   :depends-on ("numericals.common"
                "dense-arrays-plus-lite"
-               "cblas"
+               "magicl/ext-blas"
                "bmas"
                "cl-autowrap"
                "alexandria"
@@ -76,7 +76,7 @@
              (declare (ignore o c))
              ;; Or should we use STATIC?
              (eval (read-from-string "(LET* ((DENSE-ARRAYS:*DENSE-ARRAY-CLASS*
-                                                'DENSE-ARRAYS:STANDARD-DENSE-ARRAY))
+                                               'DENSE-ARRAYS:STANDARD-DENSE-ARRAY))
                                         (5AM:RUN! :DENSE-NUMERICALS/BENCHMARKS))"))))
 
 (defsystem "dense-numericals/examples"

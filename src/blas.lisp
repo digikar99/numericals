@@ -9,7 +9,7 @@
 
 (define-polymorphic-function nu:two-arg-matmul (a b &key out) :overwrite t)
 
-(macrolet ((def (element-type c-fn)
+(macrolet ((def (element-type c-fn ctype)
              `(defpolymorph nu:two-arg-matmul ((a (simple-array ,element-type 2))
                                                (b (simple-array ,element-type 2))
                                                &key ((out (simple-array ,element-type 2))
@@ -28,58 +28,71 @@
                            (and (= a0 o0) (= a1 b0) (= b1 o1)))))
                   (policy-cond:with-expectations (= 0 safety)
                       ((assertion (matmul-compatible-arrays a b out) (a b out)))
-                    ;; We do C^T = (B^T A^T) - since we are unable
-                    ;; to obtain the result with cblas:+row-major+ :/
                     (with-pointers-to-vectors-data ((ptr-b (array-storage b))
                                                     (ptr-a (array-storage a))
                                                     (ptr-o (array-storage out)))
+                      ;; Compute C^T = B^T * A^T
+                      ;; B^T is mxk, A^T is kxn, as per BLAS conventions
+                      ;; However, the transpose of row-major arrays are actually column-major
+                      ;; arrays, and that is what BLAS expects
                       (let ((m (array-dimension b 1))
                             (k (array-dimension b 0))
                             (n (array-dimension a 0)))
-                        (,c-fn cblas:+col-major+
-                               cblas:+no-trans+
-                               cblas:+no-trans+
-                               m n k
-                               (coerce 1 ',element-type)
-                               ptr-b m
-                               ptr-a k
-                               (coerce 0 ',element-type)
-                               ptr-o m)))))
+                        (with-foreign-objects ((m :int m)
+                                               (k :int k)
+                                               (n :int n)
+                                               (alpha ,ctype (coerce 1 ',element-type))
+                                               (beta  ,ctype (coerce 0 ',element-type)))
+                          (,c-fn "N"
+                                 "N"
+                                 m n k
+                                 alpha
+                                 ptr-b m
+                                 ptr-a k
+                                 beta
+                                 ptr-o m))))))
                 out)))
 
-  (def single-float cblas:sgemm)
-  (def double-float cblas:dgemm))
+  (def single-float magicl.blas-cffi::%%sgemm :float)
+  (def double-float magicl.blas-cffi::%%dgemm :double))
 
 (5am:def-test nu:two-arg-matmul ()
   (loop :for *array-element-type* :in '(single-float double-float)
-        :do
-           (5am:is (nu:array= (nu:asarray '((2)))
-                              (nu:two-arg-matmul (nu:asarray '((1)))
-                                                 (nu:asarray '((2)))
-                                                 :out (nu:zeros 1 1))))
-           (5am:is (nu:array= (nu:asarray '((8)))
-                              (nu:two-arg-matmul (nu:asarray '((1 2)))
-                                                 (nu:asarray '((2) (3)))
-                                                 :out (nu:zeros 1 1))))
-           (5am:is (nu:array= (nu:asarray '((2 4)
-                                            (3 6)))
-                              (nu:two-arg-matmul (nu:asarray '((2) (3)))
-                                                 (nu:asarray '((1 2)))
-                                                 :out (nu:zeros 2 2))))
-           (5am:is (nu:array= (nu:asarray '((2 4)
-                                            (3 6)
-                                            (1 2)))
-                              (nu:two-arg-matmul (nu:asarray '((2) (3) (1)))
-                                                 (nu:asarray '((1 2)))
-                                                 :out (nu:zeros 3 2))))
-           (5am:is (nu:array= (nu:asarray '((2 4)
-                                            (3 6)
-                                            (1 2)))
-                              (nu:two-arg-matmul (nu:asarray '((2) (3) (1)))
-                                                 (nu:asarray '((1 2))))))
-           (5am:signals error (nu:two-arg-matmul (nu:asarray '((2) (3) (1)))
-                                                 (nu:asarray '((1 2 3)))
-                                                 :out (nu:zeros 3 2)))))
+        :do (loop :for layout :in '(:row-major :column-major)
+                  :do
+                     (5am:is (nu:array= (nu:asarray '((2)) :layout layout)
+                                        (nu:two-arg-matmul (nu:asarray '((1)) :layout layout)
+                                                           (nu:asarray '((2)) :layout layout)
+                                                           :out (nu:zeros 1 1 :layout layout))))
+                     (5am:is (nu:array= (nu:asarray '((8)) :layout layout)
+                                        (nu:two-arg-matmul (nu:asarray '((1 2)) :layout layout)
+                                                           (nu:asarray '((2) (3)) :layout layout)
+                                                           :out (nu:zeros 1 1 :layout layout))))
+                     (5am:is (nu:array= (nu:asarray '((2 4)
+                                                      (3 6))
+                                                    :layout layout)
+                                        (nu:two-arg-matmul (nu:asarray '((2) (3)) :layout layout)
+                                                           (nu:asarray '((1 2)) :layout layout)
+                                                           :out (nu:zeros 2 2 :layout layout))))
+                     (5am:is (nu:array= (nu:asarray '((2 4)
+                                                      (3 6)
+                                                      (1 2))
+                                                    :layout layout)
+                                        (nu:two-arg-matmul (nu:asarray '((2) (3) (1)) :layout layout)
+                                                           (nu:asarray '((1 2)) :layout layout)
+                                                           :out (nu:zeros 3 2 :layout layout))))
+                     (5am:is (nu:array= (nu:asarray '((2 4)
+                                                      (3 6)
+                                                      (1 2))
+                                                    :layout layout)
+                                        (nu:two-arg-matmul (nu:asarray '((2) (3) (1)) :layout layout)
+                                                           (nu:asarray '((1 2)) :layout layout))))
+                     (5am:is (nu:array= (nu:asarray '((-3 0) (-5 2)) :layout layout)
+                                        (nu:two-arg-matmul (asarray '((1 2) (3 4)) :layout layout)
+                                                           (asarray '((1 2) (-2 -1)) :layout layout))))
+                     (5am:signals error (nu:two-arg-matmul (nu:asarray '((2) (3) (1)) :layout layout)
+                                                           (nu:asarray '((1 2 3)) :layout layout)
+                                                           :out (nu:zeros 3 2 :layout layout))))))
 
 
 (define-polymorphic-function nu:vdot (a b) :overwrite t
@@ -90,25 +103,29 @@
 (macrolet ((def (type c-fn type-size)
 
              `(defpolymorph nu:vdot ((x (array ,type)) (y (array ,type)))
-                  (values ,type &optional)
+                  ,type
                 (let ((sum ,(coerce 0 type)))
                   (declare (type real sum))
                   (ptr-iterate-but-inner (narray-dimensions x) n
                     ((ptr-x ,type-size inc-x x)
                      (ptr-y ,type-size inc-y y))
-                    (incf sum (,c-fn n ptr-x inc-x ptr-y inc-y)))
-                  (the (values ,type &optional)
-                       (nth-value 0 (trivial-coerce:coerce
-                                     (trivial-coerce:coerce (the real sum) 'integer)
-                                     ',type)))))))
+                    ,(if (starts-with-subseq "%%" (symbol-name c-fn))
+                         `(with-foreign-objects ((n :int n)
+                                                 (inc-x :int inc-x)
+                                                 (inc-y :int inc-y))
+                            (incf sum (,c-fn n ptr-x inc-x ptr-y inc-y)))
+                         `(incf sum (,c-fn n ptr-x inc-x ptr-y inc-y))))
+                  (nth-value 0 (trivial-coerce:coerce
+                                (trivial-coerce:coerce (the real sum) 'integer)
+                                ',type))))))
 
   ;; For verification purposes
   ;; (def single-float     bmas:sdot 4)
   ;; (def double-float     bmas:ddot 8)
 
   ;; These are faster
-  (def single-float     cblas:sdot 4)
-  (def double-float     cblas:ddot 8)
+  (def single-float     magicl.blas-cffi::%%sdot 4)
+  (def double-float     magicl.blas-cffi::%%ddot 8)
 
   (def (signed-byte 64) bmas:i64dot 8)
   (def (signed-byte 32) bmas:i32dot 4)

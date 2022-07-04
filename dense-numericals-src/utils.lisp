@@ -24,6 +24,22 @@ can be helpful to locate bugs.")
            (with-pointers-to-vectors-data ,(rest bindings) ,@body)))
       `(progn ,@body)))
 
+(defmacro with-foreign-object ((var type &optional (value nil valuep)) &body body)
+  "A wrapper around CFFI:WITH-FOREIGN-OBJECT with an additional VALUE option."
+  (once-only (value)
+    `(cffi:with-foreign-object (,var ,type)
+       ,(when valuep
+          `(setf (cffi:mem-ref ,var ,type) ,value))
+       ,@body)))
+
+(defmacro with-foreign-objects (bindings &body body)
+  "A wrapper around CFFI:WITH-FOREIGN-OBJECTS with an additional VALUE option."
+  (if bindings
+      `(with-foreign-object ,(first bindings)
+         (with-foreign-objects ,(rest bindings)
+           ,@body))
+      `(locally ,@body)))
+
 ;; FIXME: This should be in DENSE-ARRAYS itself?
 (define-condition incompatible-broadcast-dimensions (error)
   ((dimensions :initarg :dimensions :reader condition-dimensions)
