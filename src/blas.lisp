@@ -15,9 +15,11 @@
                                                &key ((out (simple-array ,element-type 2))
                                                      (nu:zeros (array-dimension a 0)
                                                                (array-dimension b 1)
-                                                               :type ',element-type)))
+                                                               :type ',element-type
+                                                               :layout (array-layout a))))
                   (simple-array ,element-type 2)
                 ;; TODO: Generalize this to more dimensions
+                (declare (inline ,c-fn))
                 (flet ((matmul-compatible-arrays (a b out)
                          (let ((a0 (array-dimension a 0))
                                (a1 (array-dimension a 1))
@@ -31,26 +33,27 @@
                     (with-pointers-to-vectors-data ((ptr-b (array-storage b))
                                                     (ptr-a (array-storage a))
                                                     (ptr-o (array-storage out)))
-                      ;; Compute C^T = B^T * A^T
-                      ;; B^T is mxk, A^T is kxn, as per BLAS conventions
-                      ;; However, the transpose of row-major arrays are actually column-major
-                      ;; arrays, and that is what BLAS expects
-                      (let ((m (array-dimension b 1))
-                            (k (array-dimension b 0))
-                            (n (array-dimension a 0)))
-                        (with-foreign-objects ((m :int m)
-                                               (k :int k)
-                                               (n :int n)
-                                               (alpha ,ctype (coerce 1 ',element-type))
-                                               (beta  ,ctype (coerce 0 ',element-type)))
-                          (,c-fn "N"
-                                 "N"
-                                 m n k
-                                 alpha
-                                 ptr-b m
-                                 ptr-a k
-                                 beta
-                                 ptr-o m))))))
+                      (let ((m (array-dimension a 0))
+                            (k (array-dimension a 1))
+                            (n (array-dimension b 1))
+                            (col-major-out (eq :column-major (array-layout out))))
+                        (multiple-value-bind (m k n a b ptr-a ptr-b)
+                            (if col-major-out
+                                (values m k n a b ptr-a ptr-b)
+                                (values n k m b a ptr-b ptr-a))
+                          (with-foreign-objects ((m :int m)
+                                                 (k :int k)
+                                                 (n :int n)
+                                                 (alpha ,ctype (coerce 1 ',element-type))
+                                                 (beta  ,ctype (coerce 0 ',element-type)))
+                            (,c-fn (blas-trans a (not col-major-out))
+                                   (blas-trans b (not col-major-out))
+                                   m n k
+                                   alpha
+                                   ptr-a m
+                                   ptr-b k
+                                   beta
+                                   ptr-o m)))))))
                 out)))
 
   (def single-float magicl.blas-cffi::%%sgemm :float)
@@ -58,41 +61,49 @@
 
 (5am:def-test nu:two-arg-matmul ()
   (loop :for *array-element-type* :in '(single-float double-float)
-        :do (loop :for layout :in '(:row-major :column-major)
+        :do (loop :for *array-layout* :in '(:row-major :column-major)
                   :do
-                     (5am:is (nu:array= (nu:asarray '((2)) :layout layout)
-                                        (nu:two-arg-matmul (nu:asarray '((1)) :layout layout)
-                                                           (nu:asarray '((2)) :layout layout)
-                                                           :out (nu:zeros 1 1 :layout layout))))
-                     (5am:is (nu:array= (nu:asarray '((8)) :layout layout)
-                                        (nu:two-arg-matmul (nu:asarray '((1 2)) :layout layout)
-                                                           (nu:asarray '((2) (3)) :layout layout)
-                                                           :out (nu:zeros 1 1 :layout layout))))
+                     (5am:is (nu:array= (nu:asarray '((2)))
+                                        (nu:two-arg-matmul (nu:asarray '((1)))
+                                                           (nu:asarray '((2)))
+                                                           :out (nu:zeros 1 1))))
+                     (5am:is (nu:array= (nu:asarray '((8)))
+                                        (nu:two-arg-matmul (nu:asarray '((1 2)))
+                                                           (nu:asarray '((2) (3)))
+                                                           :out (nu:zeros 1 1))))
                      (5am:is (nu:array= (nu:asarray '((2 4)
-                                                      (3 6))
-                                                    :layout layout)
-                                        (nu:two-arg-matmul (nu:asarray '((2) (3)) :layout layout)
-                                                           (nu:asarray '((1 2)) :layout layout)
-                                                           :out (nu:zeros 2 2 :layout layout))))
-                     (5am:is (nu:array= (nu:asarray '((2 4)
-                                                      (3 6)
-                                                      (1 2))
-                                                    :layout layout)
-                                        (nu:two-arg-matmul (nu:asarray '((2) (3) (1)) :layout layout)
-                                                           (nu:asarray '((1 2)) :layout layout)
-                                                           :out (nu:zeros 3 2 :layout layout))))
+                                                      (3 6)))
+                                        (nu:two-arg-matmul (nu:asarray '((2) (3)))
+                                                           (nu:asarray '((1 2)))
+                                                           :out (nu:zeros 2 2))))
                      (5am:is (nu:array= (nu:asarray '((2 4)
                                                       (3 6)
-                                                      (1 2))
-                                                    :layout layout)
-                                        (nu:two-arg-matmul (nu:asarray '((2) (3) (1)) :layout layout)
-                                                           (nu:asarray '((1 2)) :layout layout))))
-                     (5am:is (nu:array= (nu:asarray '((-3 0) (-5 2)) :layout layout)
-                                        (nu:two-arg-matmul (asarray '((1 2) (3 4)) :layout layout)
-                                                           (asarray '((1 2) (-2 -1)) :layout layout))))
-                     (5am:signals error (nu:two-arg-matmul (nu:asarray '((2) (3) (1)) :layout layout)
-                                                           (nu:asarray '((1 2 3)) :layout layout)
-                                                           :out (nu:zeros 3 2 :layout layout))))))
+                                                      (1 2)))
+                                        (nu:two-arg-matmul (nu:asarray '((2) (3) (1)))
+                                                           (nu:asarray '((1 2)))
+                                                           :out (nu:zeros 3 2))))
+                     (5am:is (nu:array= (nu:asarray '((2 4)
+                                                      (3 6)
+                                                      (1 2)))
+                                        (nu:two-arg-matmul (nu:asarray '((2) (3) (1)))
+                                                           (nu:asarray '((1 2))))))
+                     (5am:is (nu:array= (nu:asarray '((-3 0) (-5 2)))
+                                        (nu:two-arg-matmul (asarray '((1 2) (3 4)))
+                                                           (asarray '((1 2) (-2 -1))))))
+                     (5am:signals error (nu:two-arg-matmul (nu:asarray '((2) (3) (1)))
+                                                           (nu:asarray '((1 2 3)))
+                                                           :out (nu:zeros 3 2))))
+            ;; Mixed layout
+            (5am:is (nu:array= (nu:asarray '((-3 0) (-5 2)) :layout :row-major)
+                               (nu:two-arg-matmul (asarray '((1 2) (3 4)) :layout :row-major)
+                                                  (asarray '((1 2) (-2 -1)) :layout :column-major))))
+            (5am:is (nu:array= (nu:asarray '((-3 0) (-5 2)) :layout :column-major)
+                               (nu:two-arg-matmul (asarray '((1 2) (3 4)) :layout :column-major)
+                                                  (asarray '((1 2) (-2 -1)) :layout :row-major))))
+            (5am:is (nu:array= (nu:asarray '((-3 0) (-5 2)) :layout :column-major)
+                               (nu:two-arg-matmul (asarray '((1 2) (3 4)) :layout :column-major)
+                                                  (asarray '((1 2) (-2 -1)) :layout :row-major)
+                                                  :out (zeros 2 2 :layout :row-major))))))
 
 
 (define-polymorphic-function nu:vdot (a b) :overwrite t

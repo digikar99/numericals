@@ -40,6 +40,15 @@ can be helpful to locate bugs.")
            ,@body))
       `(locally ,@body)))
 
+(declaim (inline blas-trans))
+(defun blas-trans (array &optional invertedp)
+  (declare (optimize speed)
+           (type dense-arrays::dense-array array))
+  (ecase (array-layout array)
+    (:row-major (if invertedp "N" "T"))
+    (:column-major (if invertedp "T" "N"))
+    ('nil (error "Expected array to have a known layout"))))
+
 ;; FIXME: This should be in DENSE-ARRAYS itself?
 (define-condition incompatible-broadcast-dimensions (error)
   ((dimensions :initarg :dimensions :reader condition-dimensions)
