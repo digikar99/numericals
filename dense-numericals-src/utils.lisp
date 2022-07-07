@@ -1,6 +1,14 @@
 (in-package :dense-numericals.impl)
 ;; (numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
+(define-condition runtime-array-allocation (suboptimal-polymorph-note)
+  ()
+  (:report (lambda (c s)
+             (declare (ignore c))
+             (format s "Unable to avoid array allocation at run time. Consider supplying
+the OUT argument, and/or ensuring all the appropriate arguments are
+arrays of appropriate types."))))
+
 (defun ensure-appropriate-dense-array (array-like)
   (if (typep array-like `(array ,default-element-type))
       array-like

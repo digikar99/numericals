@@ -68,6 +68,175 @@
 
 ;; single-float - 4 polymorphs
 
+;;; As with one arg float functions, following are the
+;;; cases of optimality of polymorphs:
+;;; - OUT is supplied and BROADCAST is NIL; this can in fact be inlined
+;;;   - no note is necessary in this case; this is the most optimal case
+;;; - OUT is supplied, but BROADCAST is not known to be NIL;
+;;;   - this necessitates code that handles broadcasting
+;;;   - we point to the more optimal polymorph in this case
+;;; - OUT is not supplied, but operating on SIMPLE-ARRAY with BROADCAST as NIL
+;;;   - sometimes the cost of creating the OUT is comparable to BROADCAST being non-NIL
+;;;   - it will help to signal a OUT not supplied note in this case
+;;; - OUT is not supplied, BROADCAST is whatever: no benefits of inlining
+;;;   - it will help to signal a OUT not supplied note in this case
+
+;;; In addition to these, there are 2 other polymorphs dealing with REAL to arrays
+
+;; Most optimal case - OUT is supplied, BROADCAST is NIL
+(defpolymorph (two-arg-fn/float :inline t)
+    ((name symbol) (x (simple-array single-float)) (y (simple-array single-float))
+     &key ((out (simple-array single-float)))
+     ((broadcast null) nu:*broadcast-automatically*))
+    (simple-array single-float)
+  (declare (ignorable name broadcast))
+  (policy-cond:with-expectations (= safety 0)
+      ((assertion (equalp (narray-dimensions x)
+                          (narray-dimensions y)))
+       (assertion (equalp (narray-dimensions x)
+                          (narray-dimensions out))))
+    (let ((single-float-c-name (single-float-c-name name))
+          (svx (array-storage x))
+          (svy (array-storage y))
+          (svo (array-storage out)))
+      (declare (type (cl:array single-float 1) svx svy svo))
+      (with-thresholded-multithreading/cl
+          (array-total-size svo)
+          (svx svy svo)
+        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                        (ptr-y (array-storage svy))
+                                        (ptr-o (array-storage svo)))
+          (cffi:incf-pointer ptr-x (* 4 (cl-array-offset svx)))
+          (cffi:incf-pointer ptr-y (* 4 (cl-array-offset svy)))
+          (cffi:incf-pointer ptr-o (* 4 (cl-array-offset svo)))
+          (funcall single-float-c-name
+                   (array-total-size svo)
+                   ptr-x 1
+                   ptr-y 1
+                   ptr-o 1)))))
+  out)
+
+(defpolymorph (two-arg-fn/float :inline t :suboptimal-note runtime-array-allocation)
+    ((name symbol) (x (simple-array single-float)) (y (simple-array single-float))
+     &key ((out null))
+     ((broadcast null) nu:*broadcast-automatically*))
+    (simple-array single-float)
+  ;; OUT is unsupplied, but BROADCAST is known to be NIL
+  (declare (ignorable name out broadcast))
+  (policy-cond:with-expectations (= safety 0)
+      ((assertion (equalp (narray-dimensions x)
+                          (narray-dimensions y))))
+    (let* ((out (zeros (narray-dimensions x) :type 'single-float))
+           (single-float-c-name (single-float-c-name name))
+           (svx (array-storage x))
+           (svy (array-storage y))
+           (svo (array-storage out)))
+      (declare (type (cl:array single-float 1) svx svy svo))
+      (with-thresholded-multithreading/cl
+          (array-total-size svo)
+          (svx svy svo)
+        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                        (ptr-y (array-storage svy))
+                                        (ptr-o (array-storage svo)))
+          (cffi:incf-pointer ptr-x (* 4 (cl-array-offset svx)))
+          (cffi:incf-pointer ptr-y (* 4 (cl-array-offset svy)))
+          (cffi:incf-pointer ptr-o (* 4 (cl-array-offset svo)))
+          (funcall single-float-c-name
+                   (array-total-size svo)
+                   ptr-x 1
+                   ptr-y 1
+                   ptr-o 1)))
+      out)))
+
+(defpolymorph (two-arg-fn/float
+               :inline :maybe
+               :more-optimal-type-list (symbol (simple-array single-float)
+                                               (simple-array single-float)
+                                               &key (:out (simple-array single-float))
+                                               (:broadcast null)))
+    ;; Slightly unoptimal case - OUT is supplied, BROADCAST is not known to be NIL
+    ((name symbol) (x (array single-float)) (y (array single-float))
+     &key ((out (array single-float)))
+     (broadcast nu:*broadcast-automatically*))
+    (array single-float)
+  (declare (ignorable name broadcast))
+  (if broadcast
+      (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+          (broadcast-compatible-p x y out)
+        (assert broadcast-compatible-p (x y out)
+                'incompatible-broadcast-dimensions
+                :dimensions (mapcar #'narray-dimensions (list x y out))
+                :array-likes (list x y out))
+        (let ((single-float-c-name (single-float-c-name name)))
+          (ptr-iterate-but-inner broadcast-dimensions n ((ptr-x 4 ix x)
+                                                         (ptr-y 4 iy y)
+                                                         (ptr-o 4 io out))
+                                 (funcall single-float-c-name
+                                          n
+                                          ptr-x ix
+                                          ptr-y iy
+                                          ptr-o io))))
+      (policy-cond:with-expectations (= safety 0)
+          ((assertion (or broadcast
+                          (and (equalp (narray-dimensions x)
+                                       (narray-dimensions y))
+                               (equalp (narray-dimensions x)
+                                       (narray-dimensions out))))))
+        (let ((single-float-c-name (single-float-c-name name)))
+          (ptr-iterate-but-inner (narray-dimensions x) n ((ptr-x 4 ix x)
+                                                          (ptr-y 4 iy y)
+                                                          (ptr-o 4 io out))
+                                 (funcall single-float-c-name
+                                          n
+                                          ptr-x ix
+                                          ptr-y iy
+                                          ptr-o io)))))
+  out)
+
+(defpolymorph (two-arg-fn/float
+               :inline :maybe
+               :suboptimal-note runtime-array-allocation)
+    ((name symbol) (x (array single-float)) (y (array single-float))
+     &key ((out null))
+     (broadcast nu:*broadcast-automatically*))
+    (array single-float)
+  (declare (ignorable name out broadcast))
+  (if broadcast
+      (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+          (broadcast-compatible-p x y)
+        (assert broadcast-compatible-p (x y)
+                'incompatible-broadcast-dimensions
+                :dimensions (mapcar #'narray-dimensions (list x y))
+                :array-likes (list x y))
+        (let ((out (nu:zeros broadcast-dimensions :type 'single-float)))
+          (declare (type (array single-float) out))
+          (let ((single-float-c-name (single-float-c-name name)))
+            (ptr-iterate-but-inner broadcast-dimensions n ((ptr-x 4 ix x)
+                                                           (ptr-y 4 iy y)
+                                                           (ptr-o 4 io out))
+                                   (funcall single-float-c-name
+                                            n
+                                            ptr-x ix
+                                            ptr-y iy
+                                            ptr-o io)))
+          out))
+      (policy-cond:with-expectations (= safety 0)
+          ((assertion (or broadcast
+                          (equalp (narray-dimensions x)
+                                  (narray-dimensions y)))))
+        (let ((out (nu:zeros (narray-dimensions x) :type 'single-float)))
+          (declare (type (array single-float) out))
+          (let ((single-float-c-name (single-float-c-name name)))
+            (ptr-iterate-but-inner (narray-dimensions x) n ((ptr-x 4 ix x)
+                                                            (ptr-y 4 iy y)
+                                                            (ptr-o 4 io out))
+                                   (funcall single-float-c-name
+                                            n
+                                            ptr-x ix
+                                            ptr-y iy
+                                            ptr-o io)))
+          out))))
+
 (defpolymorph two-arg-fn/float
     ((name symbol) (x (array single-float)) (y number)
      &key ((out (array single-float))
@@ -123,98 +292,160 @@
                    ptr-o io)))))
   out)
 
-(defpolymorph two-arg-fn/float
-    ((name symbol) (x (array single-float)) (y (array single-float))
-     ;; We are not producing OUT in the lambda-list because it is
-     ;; non-trivial to work out the dimensions in a short
-     ;; human-readable space. This work has been done just below.
-     &key ((out (or null (array single-float))))
+;;; double-float - 6 polymorphs
+
+(defpolymorph (two-arg-fn/float :inline t)
+    ((name symbol) (x (simple-array double-float)) (y (simple-array double-float))
+     &key ((out (simple-array double-float)))
+     ((broadcast null) nu:*broadcast-automatically*))
+    (simple-array double-float)
+  (declare (ignorable name broadcast))
+  (policy-cond:with-expectations (= safety 0)
+      ((assertion (equalp (narray-dimensions x)
+                          (narray-dimensions y)))
+       (assertion (equalp (narray-dimensions x)
+                          (narray-dimensions out))))
+    (let ((double-float-c-name (double-float-c-name name))
+          (svx (array-storage x))
+          (svy (array-storage y))
+          (svo (array-storage out)))
+      (declare (type (cl:array double-float 1) svx svy svo))
+      (with-thresholded-multithreading/cl
+          (array-total-size svo)
+          (svx svy svo)
+        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                        (ptr-y (array-storage svy))
+                                        (ptr-o (array-storage svo)))
+          (cffi:incf-pointer ptr-x (* 8 (cl-array-offset svx)))
+          (cffi:incf-pointer ptr-y (* 8 (cl-array-offset svy)))
+          (cffi:incf-pointer ptr-o (* 8 (cl-array-offset svo)))
+          (funcall double-float-c-name
+                   (array-total-size svo)
+                   ptr-x 1
+                   ptr-y 1
+                   ptr-o 1)))))
+  out)
+
+(defpolymorph (two-arg-fn/float :inline t :suboptimal-note runtime-array-allocation)
+    ((name symbol) (x (simple-array double-float)) (y (simple-array double-float))
+     &key ((out null))
+     ((broadcast null) nu:*broadcast-automatically*))
+    (simple-array double-float)
+  ;; OUT is unsupplied, but BROADCAST is known to be NIL
+  (declare (ignorable name out broadcast))
+  (policy-cond:with-expectations (= safety 0)
+      ((assertion (equalp (narray-dimensions x)
+                          (narray-dimensions y))))
+    (let* ((out (zeros (narray-dimensions x) :type 'double-float))
+           (double-float-c-name (double-float-c-name name))
+           (svx (array-storage x))
+           (svy (array-storage y))
+           (svo (array-storage out)))
+      (declare (type (cl:array double-float 1) svx svy svo))
+      (with-thresholded-multithreading/cl
+          (array-total-size svo)
+          (svx svy svo)
+        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                        (ptr-y (array-storage svy))
+                                        (ptr-o (array-storage svo)))
+          (cffi:incf-pointer ptr-x (* 8 (cl-array-offset svx)))
+          (cffi:incf-pointer ptr-y (* 8 (cl-array-offset svy)))
+          (cffi:incf-pointer ptr-o (* 8 (cl-array-offset svo)))
+          (funcall double-float-c-name
+                   (array-total-size svo)
+                   ptr-x 1
+                   ptr-y 1
+                   ptr-o 1)))
+      out)))
+
+(defpolymorph (two-arg-fn/float
+               :inline :maybe
+               :more-optimal-type-list (symbol (simple-array double-float)
+                                               (simple-array double-float)
+                                               &key (:out (simple-array double-float))
+                                               (:broadcast null)))
+    ;; Slightly unoptimal case - OUT is supplied, BROADCAST is not known to be NIL
+    ((name symbol) (x (array double-float)) (y (array double-float))
+     &key ((out (array double-float)))
      (broadcast nu:*broadcast-automatically*))
-    (array single-float)
-  ;; We are not broadcasting OUT because doing so would mean
-  ;; OUT would be written multiple times leading to all sorts of bad things
-  (declare (ignorable name))
-  (when (or (not broadcast)
-            (equalp (narray-dimensions x)
-                    (narray-dimensions y)))
-    (setq out (or out (nu:zeros (narray-dimensions x) :type 'single-float))))
-  (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-      (broadcast-compatible-p x y out)
-    (assert broadcast-compatible-p (x y out)
-            'incompatible-broadcast-dimensions
-            :dimensions (mapcar #'narray-dimensions (list x y out))
-            :array-likes (list x y out))
-    (let ((out (or out (nu:zeros broadcast-dimensions :type 'single-float))))
-      (declare (type (array single-float) out))
+    (array double-float)
+  (declare (ignorable name broadcast))
+  (if broadcast
+      (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+          (broadcast-compatible-p x y out)
+        (assert broadcast-compatible-p (x y out)
+                'incompatible-broadcast-dimensions
+                :dimensions (mapcar #'narray-dimensions (list x y out))
+                :array-likes (list x y out))
+        (let ((double-float-c-name (double-float-c-name name)))
+          (ptr-iterate-but-inner broadcast-dimensions n ((ptr-x 8 ix x)
+                                                         (ptr-y 8 iy y)
+                                                         (ptr-o 8 io out))
+                                 (funcall double-float-c-name
+                                          n
+                                          ptr-x ix
+                                          ptr-y iy
+                                          ptr-o io))))
+      (policy-cond:with-expectations (= safety 0)
+          ((assertion (or broadcast
+                          (and (equalp (narray-dimensions x)
+                                       (narray-dimensions y))
+                               (equalp (narray-dimensions x)
+                                       (narray-dimensions out))))))
+        (let ((double-float-c-name (double-float-c-name name)))
+          (ptr-iterate-but-inner (narray-dimensions x) n ((ptr-x 8 ix x)
+                                                          (ptr-y 8 iy y)
+                                                          (ptr-o 8 io out))
+                                 (funcall double-float-c-name
+                                          n
+                                          ptr-x ix
+                                          ptr-y iy
+                                          ptr-o io)))))
+  out)
+
+(defpolymorph (two-arg-fn/float
+               :inline :maybe
+               :suboptimal-note runtime-array-allocation)
+    ((name symbol) (x (array double-float)) (y (array double-float))
+     &key ((out null))
+     (broadcast nu:*broadcast-automatically*))
+    (array double-float)
+  (declare (ignorable name out broadcast))
+  (if broadcast
+      (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+          (broadcast-compatible-p x y)
+        (assert broadcast-compatible-p (x y)
+                'incompatible-broadcast-dimensions
+                :dimensions (mapcar #'narray-dimensions (list x y))
+                :array-likes (list x y))
+        (let ((out (nu:zeros broadcast-dimensions :type 'double-float)))
+          (declare (type (array double-float) out))
+          (let ((double-float-c-name (double-float-c-name name)))
+            (ptr-iterate-but-inner broadcast-dimensions n ((ptr-x 8 ix x)
+                                                           (ptr-y 8 iy y)
+                                                           (ptr-o 8 io out))
+                                   (funcall double-float-c-name
+                                            n
+                                            ptr-x ix
+                                            ptr-y iy
+                                            ptr-o io)))
+          out))
       (policy-cond:with-expectations (= safety 0)
           ((assertion (or broadcast
                           (equalp (narray-dimensions x)
-                                  (narray-dimensions y))))
-           (assertion (or broadcast
-                          (equalp (narray-dimensions x)
-                                  (narray-dimensions out)))))
-        (let ((single-float-c-name (single-float-c-name name)))
-          (ptr-iterate-but-inner broadcast-dimensions n ((ptr-x 4 ix x)
-                                                         (ptr-y 4 iy y)
-                                                         (ptr-o 4 io out))
-            (funcall single-float-c-name
-                     n
-                     ptr-x ix
-                     ptr-y iy
-                     ptr-o io))))
-      out)))
-
-;; TODO: Measure the benefits of doing this
-;; (defpolymorph two-arg-fn/float
-;;     ((name symbol) (x (simple-array single-float)) (y (simple-array single-float))
-;;      &key ((out (or null (simple-array single-float))))
-;;      (broadcast nu:*broadcast-automatically*))
-;;     (simple-array single-float)
-;;   (declare (ignorable name))
-;;   (let ((single-float-c-name (single-float-c-name name)))
-;;     (if (and out
-;;              (equalp (narray-dimensions x)
-;;                      (narray-dimensions y))
-;;              (equalp (narray-dimensions out)
-;;                      (narray-dimensions y)))
-;;         (progn
-;;           (with-thresholded-multithreading (array-total-size (the array out))
-;;               (:simple x y out)
-;;             (with-pointers-to-vectors-data ((ptr-x (array-storage x))
-;;                                             (ptr-y (array-storage y))
-;;                                             (ptr-o (array-storage out)))
-;;               (cffi:incf-pointer ptr-x (* 4 (array-total-offset x)))
-;;               (cffi:incf-pointer ptr-y (* 4 (array-total-offset y)))
-;;               (cffi:incf-pointer ptr-o (* 4 (array-total-offset out)))
-;;               (funcall single-float-c-name
-;;                        (array-total-size (the array out))
-;;                        ptr-x 1
-;;                        ptr-x 1
-;;                        ptr-o 1)))
-;;           out)
-;;         (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-;;             (broadcast-compatible-p x y)
-;;           (assert broadcast-compatible-p (x y)
-;;                   'incompatible-broadcast-dimensions
-;;                   :dimensions (mapcar #'narray-dimensions (list x y))
-;;                   :array-likes (list x y))
-;;           (let ((x (broadcast-array x broadcast-dimensions))
-;;                 (y (broadcast-array y broadcast-dimensions))
-;;                 (out (or out (nu:zeros broadcast-dimensions :type 'single-float))))
-;;             (declare (type (array single-float) x y out))
-;;             (with-thresholded-multithreading (array-total-size (the array out))
-;;                 (x y out)
-;;               (ptr-iterate-but-inner n ((ptr-x 4 ix x)
-;;                                         (ptr-y 4 iy y)
-;;                                         (ptr-o 4 io out))
-;;                 (funcall single-float-c-name
-;;                          n
-;;                          ptr-x ix
-;;                          ptr-y iy
-;;                          ptr-o io)))
-;;             out)))))
-
-;;; double-float - 4 polymorphs
+                                  (narray-dimensions y)))))
+        (let ((out (nu:zeros (narray-dimensions x) :type 'double-float)))
+          (declare (type (array double-float) out))
+          (let ((double-float-c-name (double-float-c-name name)))
+            (ptr-iterate-but-inner (narray-dimensions x) n ((ptr-x 8 ix x)
+                                                            (ptr-y 8 iy y)
+                                                            (ptr-o 8 io out))
+                                   (funcall double-float-c-name
+                                            n
+                                            ptr-x ix
+                                            ptr-y iy
+                                            ptr-o io)))
+          out))))
 
 (defpolymorph two-arg-fn/float
     ((name symbol) (x (array double-float)) (y number)
@@ -270,47 +501,6 @@
                    ptr-y iy
                    ptr-o io)))))
   out)
-
-(defpolymorph two-arg-fn/float
-    ((name symbol) (x (array double-float)) (y (array double-float))
-     ;; We are not producing OUT in the lambda-list because it is
-     ;; non-trivial to work out the dimensions in a short
-     ;; human-readable space. This work has been done just below.
-     &key ((out (or null (array double-float))))
-     (broadcast nu:*broadcast-automatically*))
-    (array double-float)
-  ;; We are not broadcasting OUT because doing so would mean
-  ;; OUT would be written multiple times leading to all sorts of bad things
-  (declare (ignorable name))
-  (when (or (not broadcast)
-            (equalp (narray-dimensions x)
-                    (narray-dimensions y)))
-    (setq out (or out (nu:zeros (narray-dimensions x) :type 'double-float))))
-  (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-      (broadcast-compatible-p x y out)
-    (assert broadcast-compatible-p (x y out)
-            'incompatible-broadcast-dimensions
-            :dimensions (mapcar #'narray-dimensions (list x y out))
-            :array-likes (list x y out))
-    (let ((out (or out (nu:zeros broadcast-dimensions :type 'double-float))))
-      (declare (type (array double-float) out))
-      (policy-cond:with-expectations (= safety 0)
-          ((assertion (or broadcast
-                          (equalp (narray-dimensions x)
-                                  (narray-dimensions y))))
-           (assertion (or broadcast
-                          (equalp (narray-dimensions x)
-                                  (narray-dimensions out)))))
-        (let ((double-float-c-name (double-float-c-name name)))
-          (ptr-iterate-but-inner broadcast-dimensions n ((ptr-x 8 ix x)
-                                                         (ptr-y 8 iy y)
-                                                         (ptr-o 8 io out))
-            (funcall double-float-c-name
-                     n
-                     ptr-x ix
-                     ptr-y iy
-                     ptr-o io))))
-      out)))
 
 
 

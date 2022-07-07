@@ -35,14 +35,6 @@ TODO: Provide more details
 (define-polymorphic-function one-arg-fn/float (name x &key out broadcast) :overwrite t
   :documentation +one-arg-fn-float-doc+)
 
-(define-condition runtime-array-allocation (suboptimal-polymorph-note)
-  ()
-  (:report (lambda (c s)
-             (declare (ignore c))
-             (format s "Unable to avoid array allocation at run time. Consider supplying
-the OUT argument, and/or ensuring all the appropriate arguments are
-arrays of appropriate types."))))
-
 ;;; Combined with the above, then, we have the following
 ;;; cases of optimality of polymorphs:
 ;;; - OUT is supplied and BROADCAST is NIL; this can in fact be inlined
@@ -55,6 +47,8 @@ arrays of appropriate types."))))
 ;;;   - it will help to signal a OUT not supplied note in this case
 ;;; - OUT is not supplied, BROADCAST is whatever: no benefits of inlining
 ;;;   - it will help to signal a OUT not supplied note in this case
+
+;;; In addition, there is one more case of REAL to ARRAY
 
 ;; If OUT is not supplied aka is definitely NIL, then we don't need to worry about broadcasting
 
@@ -135,8 +129,9 @@ arrays of appropriate types."))))
            (ptr-out 4 iout out))
           (funcall (single-float-c-name name) n ptr-x ix ptr-out iout)))
       (policy-cond:with-expectations (= safety 0)
-          ((assertion (equalp (narray-dimensions x)
-                              (narray-dimensions out))))
+          ((assertion (or broadcast
+                          (equalp (narray-dimensions x)
+                                  (narray-dimensions out)))))
         (ptr-iterate-but-inner (narray-dimensions out) n
           ((ptr-x   4 ix   x)
            (ptr-out 4 iout out))
