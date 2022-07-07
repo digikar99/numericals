@@ -79,13 +79,16 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
 (declaim (ftype (function (cl:array) size) cl-array-offset))
 (defun cl-array-offset (array)
   (declare (optimize speed)
-           (type cl:array array)
-           (notinline cl-array-offset))
-  (if (typep array 'cl:simple-array)
-      0
-      (multiple-value-bind (displaced-to offset)
-          (cl:array-displacement array)
-        (the-size (+ offset (cl-array-offset displaced-to))))))
+           (type cl:array array))
+  (loop :with total-offset :of-type size := 0
+        :if (typep array 'cl:simple-array)
+          :do (return total-offset)
+        :else
+          :do (multiple-value-bind (displaced-to offset)
+                  (cl:array-displacement array)
+                (declare (type size offset))
+                (incf total-offset offset)
+                (setq array displaced-to))))
 
 (defmacro with-thresholded-multithreading/cl (threshold-measure (&rest vars) &body body &environment env)
   (let* ((simple-p (eq :simple (first vars)))
