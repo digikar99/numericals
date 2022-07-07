@@ -50,6 +50,9 @@ arrays of appropriate types."))))
 ;;; - OUT is supplied, but BROADCAST is not known to be NIL;
 ;;;   - this necessitates code that handles broadcasting
 ;;;   - we point to the more optimal polymorph in this case
+;;; - OUT is not supplied, but operating on SIMPLE-ARRAY with BROADCAST as NIL
+;;;   - sometimes the cost of creating the OUT is comparable to BROADCAST being non-NIL
+;;;   - it will help to signal a OUT not supplied note in this case
 ;;; - OUT is not supplied, BROADCAST is whatever: no benefits of inlining
 ;;;   - it will help to signal a OUT not supplied note in this case
 
@@ -71,13 +74,40 @@ arrays of appropriate types."))))
       (with-thresholded-multithreading/cl
           (array-total-size svo)
           (svx svo)
-        (with-pointers-to-vectors-data ((ptr-x svx)
-                                        (ptr-o svo))
+        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                        (ptr-o (array-storage svo)))
+          (cffi:incf-pointer ptr-x (* 4 (cl-array-offset svx)))
+          (cffi:incf-pointer ptr-o (* 4 (cl-array-offset svo)))
           (funcall (single-float-c-name name)
-                   (array-total-size out)
+                   (array-total-size svo)
                    ptr-x 1
                    ptr-o 1)))))
   out)
+
+(defpolymorph (one-arg-fn/float :inline t :suboptimal-note runtime-array-allocation)
+    ;; BROADCAST is NIL, but OUT is unsupplied
+    ((name symbol) (x (simple-array single-float))
+     &key ((out null))
+     ((broadcast null) nu:*broadcast-automatically*))
+    (simple-array single-float)
+  (declare (ignorable name out broadcast))
+  (let ((out (nu:zeros (narray-dimensions x) :type 'single-float)))
+    (declare (type (array single-float) out))
+    (let ((svx (array-storage x))
+          (svo (array-storage out)))
+      (declare (type (cl:array single-float 1) svx svo))
+      (with-thresholded-multithreading/cl
+          (array-total-size svo)
+          (svx svo)
+        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                        (ptr-o (array-storage svo)))
+          (cffi:incf-pointer ptr-x (* 4 (cl-array-offset svx)))
+          (cffi:incf-pointer ptr-o (* 4 (cl-array-offset svo)))
+          (funcall (single-float-c-name name)
+                   (array-total-size svo)
+                   ptr-x 1
+                   ptr-o 1))))
+    out))
 
 (defpolymorph (one-arg-fn/float
                :inline :maybe
@@ -167,13 +197,41 @@ arrays of appropriate types."))))
       (with-thresholded-multithreading/cl
           (array-total-size svo)
           (svx svo)
-        (with-pointers-to-vectors-data ((ptr-x svx)
-                                        (ptr-o svo))
+        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                        (ptr-o (array-storage svo)))
+          (cffi:incf-pointer ptr-x (* 8 (cl-array-offset svx)))
+          (cffi:incf-pointer ptr-o (* 8 (cl-array-offset svo)))
           (funcall (double-float-c-name name)
-                   (array-total-size out)
+                   (array-total-size svo)
                    ptr-x 1
                    ptr-o 1)))))
   out)
+
+
+(defpolymorph (one-arg-fn/float :inline t :suboptimal-note runtime-array-allocation)
+    ;; BROADCAST is NIL, but OUT is unsupplied
+    ((name symbol) (x (simple-array double-float))
+     &key ((out null))
+     ((broadcast null) nu:*broadcast-automatically*))
+    (simple-array double-float)
+  (declare (ignorable name out broadcast))
+  (let ((out (nu:zeros (narray-dimensions x) :type 'double-float)))
+    (declare (type (array double-float) out))
+    (let ((svx (array-storage x))
+          (svo (array-storage out)))
+      (declare (type (cl:array double-float 1) svx svo))
+      (with-thresholded-multithreading/cl
+          (array-total-size svo)
+          (svx svo)
+        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                        (ptr-o (array-storage svo)))
+          (cffi:incf-pointer ptr-x (* 8 (cl-array-offset svx)))
+          (cffi:incf-pointer ptr-o (* 8 (cl-array-offset svo)))
+          (funcall (double-float-c-name name)
+                   (array-total-size svo)
+                   ptr-x 1
+                   ptr-o 1))))
+    out))
 
 (defpolymorph (one-arg-fn/float
                :inline nil
