@@ -66,10 +66,24 @@
            #:acosh
            #:atanh
 
+           #:sin!
+           #:cos!
+           #:tan!
+           #:asin!
+           #:acos!
+           #:atan!
+           #:sinh!
+           #:cosh!
+           #:tanh!
+           #:asinh!
+           #:acosh!
+           #:atanh!
+
            #:exp
            #:log
            #:expt
 
+           #:exp!
            #:sqrt
 
            #:ffloor
@@ -77,7 +91,13 @@
            #:fround
            #:abs
            #:ftruncate
-           
+
+           #:ffloor!
+           #:fceiling!
+           #:fround!
+           #:abs!
+           #:ftruncate!
+
            #:copy
            #:coerce
            #:concat

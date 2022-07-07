@@ -267,8 +267,9 @@ arrays of appropriate types."))))
      (broadcast nu:*broadcast-automatically*))
     (values array &optional)
   (declare (ignorable out))
-  ;; TODO: Define copy from list to array directly
-  (one-arg-fn/float name (nu:asarray x :type (array-element-type out)) :out out :broadcast broadcast))
+  ;; TODO: Define copy from list to array directly, along with broadcasting
+  (one-arg-fn/float name (nu:asarray x :type (array-element-type out))
+                    :out out :broadcast broadcast))
 
 ;; non-float arrays - these two are recursive
 (defpolymorph (one-arg-fn/float :inline nil :suboptimal-note runtime-array-allocation)
@@ -350,8 +351,21 @@ arrays of appropriate types."))))
                   (one-arg-fn/float ',name x :out out :broadcast broadcast))
                 (define-numericals-one-arg-test ,name nu::array
                     (,single-float-error) (,double-float-error)))))
-  (def nu:log       (2f-7)  (1d-15))
+  (def nu:abs       (2f-7)  (1d-15))
   (def nu:fround    (0.0f0) (0.0d0))
   (def nu:ftruncate (0.0f0) (0.0d0))
   (def nu:ffloor    (0.0f0) (0.0d0))
   (def nu:fceiling  (0.0f0) (0.0d0)))
+
+(macrolet ((def (&rest names)
+             `(progn
+                ,@(loop :for name :in names
+                        :for name! := (find-symbol (format nil "~A!" name) :nu)
+                        :collect `(progn
+                                    (define-polymorphic-function ,name! (x) :overwrite t)
+                                    (defpolymorph (,name! :inline t) (x) t
+                                      (,name x :out x :broadcast nil)))))))
+  (def nu:sin nu:asin nu:sinh nu:asinh
+       nu:cos nu:acos nu:cosh nu:acosh
+       nu:tan nu:atan nu:tanh nu:atanh
+    nu:exp nu:abs nu:fround nu:ftruncate nu:ffloor nu:fceiling))
