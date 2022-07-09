@@ -1,7 +1,6 @@
 (in-package :numericals.impl)
 
-(defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings . expression)
-                                 &environment env)
+(defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings . expression))
   "Each bindings is of the form (PTR-VAR ELT-SIZE INNER-STRIDE-VAR ARRAY-EXPR)."
 
   (let* ((pointers      (mapcar #'first  bindings))
@@ -19,7 +18,7 @@
       `(let ((,broadcast-dimensions ,broadcast-dimensions-expr)
              ,@(mapcar (lm var expr `(,var ,expr))
                        array-vars array-exprs))
-         (declare (type cl:array ,@array-vars))
+         (declare (cl:type cl:array ,@array-vars))
          (with-pointers-to-vectors-data
              (,@(mapcar (lm ptr var `(,ptr (array-storage ,var)))
                         pointers array-vars))
@@ -37,8 +36,8 @@
                         (let ((,n-var   (first ,dimensions))
                               ,@(mapcar (lm ss strides `(,ss (first ,strides)))
                                         ss strides))
-                          (declare (type int-index ,@ss)
-                                   (type size ,n-var))
+                          (declare (cl:type int-index ,@ss)
+                                   (cl:type size ,n-var))
                           ;; (mapc #'print (list ,dimensions ,@pointers))
                           (if (null (rest ,dimensions))
                               (progn

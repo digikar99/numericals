@@ -97,8 +97,8 @@
                "cl-ascii-table"
                "numericals"
                "py4cl2"
-               "fiveam")
-  :components ((:file "package")
-               (:file "benchmark")
+               "fiveam"
+               "jsown-utils")
+  :components ((:file "benchmark")
                (:file "one-arg-fn")
                (:file "two-arg-fn")))

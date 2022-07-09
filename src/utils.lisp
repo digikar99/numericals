@@ -42,7 +42,10 @@ can be helpful to locate bugs.")
   (if invertedp "N" "T"))
 
 (declaim (inline narray-dimensions))
-(defun narray-dimensions (array) (array-dimensions array))
+(defun narray-dimensions (array)
+  (declare (type cl:array array)
+           (optimize speed))
+  (array-dimensions array))
 
 (declaim (inline array-stride))
 (defun array-stride (array axis)
@@ -104,11 +107,11 @@ can be helpful to locate bugs.")
   (declare (ignorable array)
            (optimize speed))
   #+sbcl (loop :with array := array
-               :if (typep array 'cl:simple-array)
-                 :do (locally (declare (type (cl:simple-array *) array))
-                       (return (sb-ext:array-storage-vector array)))
-               :else
-                 :do (setq array (cl:array-displacement array)))
+               :do (locally (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
+                     (typecase array
+                       ((cl:simple-array * (*)) (return array))
+                       (cl:simple-array (return (sb-ext:array-storage-vector array)))
+                       (t (setq array (cl:array-displacement array))))))
   #-sbcl (error "ARRAY-STORAGE not implemented for CL:ARRAY!"))
 
 (defpolymorph nu:array= ((array1 cl:array) (array2 cl:array) &key (test #'equalp)) boolean
