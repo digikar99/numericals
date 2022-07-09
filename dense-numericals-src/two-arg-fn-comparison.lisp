@@ -1,1 +1,1 @@
-../src/two-arg-fn-all.lisp
+../src/two-arg-fn-comparison.lisp

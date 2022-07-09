@@ -1,4 +1,4 @@
-(cl:in-package :numericals.internals)
+(cl:in-package :numericals.impl)
 ;;; The value is set in package / package+array file.
 
 ;; A common use case I have known is having the data arranged in row-major-order

@@ -164,7 +164,7 @@
                                                           (list ,@array-like-syms))))))
                      ,out-sym))))))))))
 
-  (def nu:+ nu:two-arg-+ 0 t)
-  (def nu:- nu:two-arg-- 0)
-  (def nu:* nu:two-arg-* 1 t)
-  (def nu:/ nu:two-arg-/ 1))
+  (def nu:+ nu:add      0 t)
+  (def nu:- nu:subtract 0)
+  (def nu:* nu:multiply 1 t)
+  (def nu:/ nu:divide   1))

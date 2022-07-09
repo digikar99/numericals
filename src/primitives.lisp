@@ -1,4 +1,4 @@
-(in-package :numericals.internals)
+(in-package :numericals.impl)
 ;; (numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
 ;;; DO NOT INLINE CODE UNLESS NECESSARY
@@ -28,6 +28,10 @@ Is overriden by *ARRAY-ELEMENT-TYPE* when bound, or by explicitly passing an
         package-local-element-type
         t))
 
+(defvar nu:*array-layout* :row-major
+  "Dummy variable provided so that code written for NUMERICALS may be easily
+upgradeable to DENSE-NUMERICALS")
+
 (defun ensure-appropriate-array (array-like)
   (if (typep array-like `(array ,default-element-type))
       array-like
@@ -51,6 +55,12 @@ Is overriden by *ARRAY-ELEMENT-TYPE* when bound, or by explicitly passing an
                     keyword-args)))
       '(nil)))
 
+(defmacro ensure-row-major-layout ()
+  `(assert (eq layout :row-major)
+           (layout)
+           "CL:ARRAY can only have :ROW-MAJOR layout. See DENSE-ARRAYS:ARRAY
+or MAGICL:TENSOR for arrays with :COLUMN-MAJOR or other layouts."))
+
 
 (macrolet
     ((def (name initial-value)
@@ -65,12 +75,13 @@ Examples:
                      (string-downcase name)
                      (string-downcase name)
                      (string-downcase name))
-            (destructuring-bind (shape &key (type default-element-type))
+            (destructuring-bind (shape &key (type default-element-type) (layout :row-major))
                 (split-at-keywords args)
               (when (listp (first shape))
                 (assert (null (rest shape)) (shape)
                         "Expected (REST SHAPE) to be NULL but is ~S" (rest shape))
                 (setq shape (first shape)))
+              (ensure-row-major-layout)
               (make-array shape :element-type type
                                 :initial-element (coerce ,initial-value type))))
 
@@ -114,11 +125,13 @@ Examples:
 (defun nu:rand (&rest args)
   "Lambda List: (shape &key (type default-element-type) (min 0) (max 1))"
   (destructuring-bind
-      (shape &key (type default-element-type) (min (coerce 0 type)) (max (coerce 1 type)))
+      (shape &key (type default-element-type) (min (coerce 0 type)) (max (coerce 1 type))
+               (layout :row-major))
       (split-at-keywords args)
     (when (listp (first shape))
       (assert (null (rest shape)))
       (setq shape (first shape)))
+    (ensure-row-major-layout)
     (let* ((a (nu:zeros (the list shape) :type type))
            (asv (array-storage a))
            (range (- max min))
@@ -130,7 +143,18 @@ Examples:
           (funcall #'(setf row-major-aref) (+ min (random range)) asv index)))
       a)))
 
-(declaim (inline nu:zeros-like nu:ones-like nu:rand-like))
+(defun nu:full (&rest args)
+  "Lambda List: (shape &key value (type default-element-type))"
+  (destructuring-bind (shape &key value (type default-element-type) (layout :row-major))
+      (split-at-keywords args)
+    (when (listp (first shape))
+      (assert (null (rest shape)) (shape)
+              "expected (rest shape) to be null but is ~s" (rest shape))
+      (setq shape (first shape)))
+    (ensure-row-major-layout)
+    (make-array shape :element-type type :initial-element (coerce value type))))
+
+(declaim (inline nu:zeros-like nu:ones-like nu:rand-like nu:full-like))
 (defun nu:zeros-like (array)
   ;; FIXME: Expand this to array-like
   (declare (type cl:array array))
@@ -143,6 +167,10 @@ Examples:
   ;; FIXME: Expand this to array-like
   (declare (type cl:array array))
   (nu:rand (array-dimensions array) :type (array-element-type array)))
+(defun nu:full-like (array value)
+  (declare (type cl:array array))
+  (nu:full (array-dimensions array) :value value
+           :type (array-element-type array)))
 
 (defun nu:shape (array-like &optional (axis nil axis-p))
   ;; This is a potentially domain specific functionality; since
@@ -165,11 +193,13 @@ Examples:
 
 ;;; TODO: Change &KEY TYPE to &KEY (TYPE DEFAULT-ELEMENT-TYPE)
 ;;; Requires changes to polymorphic-functions
-(define-polymorphic-function nu:asarray (array-like &key type) :overwrite t
+(define-polymorphic-function nu:asarray (array-like &key type layout) :overwrite t
   :documentation "ARRAY-LIKE can be a nested sequence of sequences, or an array.")
 (declaim (notinline nu:asarray))
-(defpolymorph (nu:asarray :inline t) (array-like &key ((type (eql :auto)))) (values cl:array &optional)
+(defpolymorph (nu:asarray :inline t) (array-like &key ((type (eql :auto))) (layout :row-major))
+    (values cl:array &optional)
   (declare (ignore type))
+  (ensure-row-major-layout)
   (nu:asarray array-like :type (element-type array-like)))
 
 (define-polymorphic-function nu:copy (x &key out broadcast))
@@ -177,9 +207,11 @@ Examples:
                                            (type (polymorphic-functions.extended-types:subtypep real))
                                            #+extensible-compound-types
                                            (type (extensible-compound-types:subtypep real))
-                                           default-element-type))
+                                           default-element-type)
+                                     (layout :row-major))
     (values cl:array &optional)
   ;; TODO: Define the predicate array-like-p.
+  (ensure-row-major-layout)
   (etypecase array-like
     (atom (make-array 1 :element-type type
                         :initial-element (trivial-coerce:coerce array-like type)))

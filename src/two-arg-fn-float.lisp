@@ -126,7 +126,7 @@
   (policy-cond:with-expectations (= safety 0)
       ((assertion (equalp (narray-dimensions x)
                           (narray-dimensions y))))
-    (let* ((out (zeros (narray-dimensions x) :type 'single-float))
+    (let* ((out (nu:zeros (narray-dimensions x) :type 'single-float))
            (single-float-c-name (single-float-c-name name))
            (svx (array-storage x))
            (svy (array-storage y))
@@ -336,7 +336,7 @@
   (policy-cond:with-expectations (= safety 0)
       ((assertion (equalp (narray-dimensions x)
                           (narray-dimensions y))))
-    (let* ((out (zeros (narray-dimensions x) :type 'double-float))
+    (let* ((out (nu:zeros (narray-dimensions x) :type 'double-float))
            (double-float-c-name (double-float-c-name name))
            (svx (array-storage x))
            (svy (array-storage y))
@@ -538,13 +538,3 @@
 ;;   (two-arg-fn/non-broadcast 'nu::ash-right x y))
 ;; (defpolymorph nu::ash-right (x y &key ((out (not null)))) t
 ;;   (two-arg-fn/non-broadcast 'nu::ash-right x y :out out))
-
-(macrolet ((def (&rest names)
-             `(progn
-                ,@(loop :for name :in names
-                        :for name! := (find-symbol (format nil "~A!" name) :nu)
-                        :collect `(progn
-                                    (define-polymorphic-function ,name! (x y) :overwrite t)
-                                    (defpolymorph (,name! :inline t) (x y) t
-                                      (,name x y :out x :broadcast nil)))))))
-  (def nu:expt))

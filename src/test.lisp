@@ -263,7 +263,7 @@
                                              "/FIXNUM")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
-           ,(if (eq name 'nu:two-arg-*)
+           ,(if (eq name 'nu:multiply)
                 (verification-form 'fixnum
                                    (- (expt 2 30)) (1- (expt 2 30))
                                    (or return-type 'fixnum))
@@ -595,7 +595,7 @@
                                              "/FIXNUM")
                                 (symbol-package suite-name))
              (:suite ,suite-name)
-           ,(if (eq name 'nu:two-arg-*)
+           ,(if (eq name 'nu:multiply)
                 (verification-form 'fixnum
                                    (- (expt 2 30)) (1- (expt 2 30))
                                    (or return-type 'fixnum))

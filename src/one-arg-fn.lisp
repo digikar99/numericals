@@ -1,4 +1,4 @@
-(in-package :numericals.internals)
+(in-package :numericals.impl)
 
 ;; (c:dn-ssin (array-total-size x) (ptr x) 1 (ptr out) 1)
 

@@ -12,6 +12,7 @@
 
    #:*array-element-type*
    #:*array-element-type-alist*
+   #:*array-layout*
 
    #:broadcast-array
 
@@ -43,7 +44,10 @@
    #:ones-like
    #:rand
    #:rand-like
+   #:full
+   #:full-like
    #:shape
+   #:eye
    :transpose
 
    #:sin
@@ -59,9 +63,27 @@
    #:acosh
    #:atanh
 
+   #:sin!
+   #:cos!
+   #:tan!
+   #:asin!
+   #:acos!
+   #:atan!
+   #:sinh!
+   #:cosh!
+   #:tanh!
+   #:asinh!
+   #:acosh!
+   #:atanh!
+
+
    #:exp
    #:log
    #:expt
+
+   #:exp!
+   #:log!
+   #:expt!
 
    :sqrt
 
@@ -71,28 +93,42 @@
    #:abs
    #:ftruncate
 
+   #:ffloor!
+   #:fceiling!
+   #:fround!
+   #:abs!
+   #:ftruncate!
+
    #:copy
    #:coerce
    #:concat
    #:matmul
    #:two-arg-matmul
    #:dot
-   #:sum
    #:max
+   #:two-arg-max
    #:min
+   #:two-arg-min
+   #:sum
+   #:maximum
+   #:minimum
    #:vdot
    #:reshape
    
    #:shape
 
    #:+
-   #:two-arg-+
+   #:add
+   #:add!
    #:*
-   #:two-arg-*
+   #:multiply
+   #:multiply!
    #:-
-   #:two-arg--
+   #:subtract
+   #:subtract!
    #:/
-   #:two-arg-/
+   #:divide
+   #:divide!
 
    #:logand
    #:two-arg-logand
@@ -127,7 +163,7 @@
 
    ))
 
-(uiop:define-package :numericals.internals
+(uiop:define-package :numericals.impl
   #-extensible-compound-types
   (:mix :cl :alexandria :iterate :introspect-environment
         :polymorphic-functions)
@@ -148,7 +184,7 @@
                 #:env))
 
 
-(cl:in-package :numericals.internals)
+(cl:in-package :numericals.impl)
 
 #+sbcl
 `(declaim (sb-ext:maybe-inline
@@ -161,7 +197,7 @@
 
 (5am:def-suite :numericals)
 
-(setq numericals.common:*compiler-package* :numericals.internals
+(setq numericals.common:*compiler-package* :numericals.impl
       numericals.common:*suite-name* :numericals)
 
 (5am:def-suite nu::array :in :numericals)

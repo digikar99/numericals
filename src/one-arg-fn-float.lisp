@@ -409,16 +409,3 @@ TODO: Provide more details
   (def nu:ftruncate (0.0f0) (0.0d0))
   (def nu:ffloor    (0.0f0) (0.0d0))
   (def nu:fceiling  (0.0f0) (0.0d0)))
-
-(macrolet ((def (&rest names)
-             `(progn
-                ,@(loop :for name :in names
-                        :for name! := (find-symbol (format nil "~A!" name) :nu)
-                        :collect `(progn
-                                    (define-polymorphic-function ,name! (x) :overwrite t)
-                                    (defpolymorph (,name! :inline t) (x) t
-                                      (,name x :out x :broadcast nil)))))))
-  (def nu:sin nu:asin nu:sinh nu:asinh
-       nu:cos nu:acos nu:cosh nu:acosh
-       nu:tan nu:atan nu:tanh nu:atanh
-    nu:exp nu:abs nu:fround nu:ftruncate nu:ffloor nu:fceiling))

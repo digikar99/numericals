@@ -1,4 +1,4 @@
-(in-package :numericals.internals)
+(in-package :numericals.impl)
 ;; (numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
 (defvar nu:*default-float-format* 'single-float
@@ -14,9 +14,32 @@ can be helpful to locate bugs.")
 (defmacro with-pointers-to-vectors-data (bindings &body body)
   (if bindings
       `(cffi:with-pointer-to-vector-data ,(first bindings)
-         (locally (declare (type cffi-sys:foreign-pointer ,(caar bindings)))
+         (locally (declare (cl:type cffi-sys:foreign-pointer ,(caar bindings)))
            (with-pointers-to-vectors-data ,(rest bindings) ,@body)))
       `(progn ,@body)))
+
+(defmacro with-foreign-object ((var type &optional (value nil valuep)) &body body)
+  "A wrapper around CFFI:WITH-FOREIGN-OBJECT with an additional VALUE option."
+  (once-only (value)
+    `(cffi:with-foreign-object (,var ,type)
+       ,(when valuep
+          `(setf (cffi:mem-ref ,var ,type) ,value))
+       ,@body)))
+
+(defmacro with-foreign-objects (bindings &body body)
+  "A wrapper around CFFI:WITH-FOREIGN-OBJECTS with an additional VALUE option."
+  (if bindings
+      `(with-foreign-object ,(first bindings)
+         (with-foreign-objects ,(rest bindings)
+           ,@body))
+      `(locally ,@body)))
+
+(declaim (inline blas-trans))
+(defun blas-trans (array &optional invertedp)
+  (declare (optimize speed)
+           (type cl:array array)
+           (ignore array))
+  (if invertedp "N" "T"))
 
 (declaim (inline narray-dimensions))
 (defun narray-dimensions (array) (array-dimensions array))
@@ -27,6 +50,12 @@ can be helpful to locate bugs.")
         :with stride := 1
         :do (setq stride (* d stride))
         :finally (return stride)))
+
+(declaim (inline array-layout))
+(defun array-layout (array)
+  (declare (type array array)
+           (ignore array))
+  :row-major)
 
 (defmacro ccall (name &rest args)
   "Calls CFFI:FOREIGN-FUNCALL on NAME with appropriate type declarations on args."
@@ -58,24 +87,29 @@ can be helpful to locate bugs.")
 (declaim (ftype (function (cl:array) size) cl-array-offset))
 (defun cl-array-offset (array)
   (declare (optimize speed)
-           (type cl:array array)
-           (notinline cl-array-offset))
-  (if (typep array 'simple-array)
-      0
-      (multiple-value-bind (displaced-to offset)
-          (array-displacement array)
-        (the-size (+ offset (cl-array-offset displaced-to))))))
+           (type cl:array array))
+  (loop :with total-offset :of-type (signed-byte 61) := 0
+        :if (typep array 'cl:simple-array)
+          :do (return total-offset)
+        :else
+          :do (multiple-value-bind (displaced-to offset)
+                  (cl:array-displacement array)
+                (declare (type (signed-byte 61) offset))
+                (incf total-offset offset)
+                (setq array displaced-to))))
 
 (declaim (inline array-storage)
          (ftype (function (cl:array) (cl:simple-array * 1))))
 (defun array-storage (array)
   (declare (ignorable array)
-           (type cl:array array)
-           (notinline array-storage))
-  (if (typep array 'simple-array)
-      #+sbcl (sb-ext:array-storage-vector array)
-      #-sbcl (error "ARRAY-STORAGE not implemented for CL:ARRAY!")
-      (array-storage (nth-value 0 (array-displacement array)))))
+           (optimize speed))
+  #+sbcl (loop :with array := array
+               :if (typep array 'cl:simple-array)
+                 :do (locally (declare (type (cl:simple-array *) array))
+                       (return (sb-ext:array-storage-vector array)))
+               :else
+                 :do (setq array (cl:array-displacement array)))
+  #-sbcl (error "ARRAY-STORAGE not implemented for CL:ARRAY!"))
 
 (defpolymorph nu:array= ((array1 cl:array) (array2 cl:array) &key (test #'equalp)) boolean
   (and (equalp (array-dimensions array1)

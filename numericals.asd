@@ -7,7 +7,7 @@
                "compiler-macro-notes"
                "ctype"
                "bmas"
-               "cblas"
+               "magicl/ext-blas"
                (:feature :extensible-compound-types "extensible-compound-types-cl")
                "fiveam"
                ;; #+sbcl "numericals/sbcl"
@@ -52,9 +52,16 @@
                (:file "two-arg-fn-float"      :depends-on ("copy-coerce"
                                                            "test"
                                                            "translations"))
-               (:file "two-arg-fn-all"        :depends-on ("copy-coerce"
+               (:file "two-arg-fn-comparison" :depends-on ("copy-coerce"
                                                            "test"
                                                            "translations"))
+               (:file "two-arg-fn-non-comparison" :depends-on ("copy-coerce"
+                                                               "test"
+                                                               "translations"))
+               (:file "in-place-operators" :depends-on ("one-arg-fn-float"
+                                                        "two-arg-fn-float"
+                                                        "two-arg-fn-comparison"
+                                                        "two-arg-fn-non-comparison"))
                ;; FIXME: with-elementwise-operations
                ;; It's not sanely possible to implement this without SB-SIMD or CL-SIMD
                ;; or being able to call CFFI with SIMD packs, because of cases like
@@ -62,7 +69,8 @@
                ;; ^This necessitates temporary memory allocation
                ;; This operation stays important for large arrays because of cpu caches
                ;; (:file "with-elementwise-operations")
-               (:file "n-arg-fn"               :depends-on ("two-arg-fn-all"))
+               (:file "n-arg-fn"               :depends-on ("two-arg-fn-comparison"
+                                                            "two-arg-fn-non-comparison"))
                (:file "n-arg-fn-compiler-macros" :depends-on ("n-arg-fn"))
                (:file "n-arg-fn-tests"          :depends-on ("n-arg-fn-compiler-macros"))
                ;; (:file "outer")
@@ -70,7 +78,7 @@
                ;; FIXME: Do we really want a "good" AREF? Because that was one of the
                ;; main points of DENSE-ARRAYS; besides, NUMCL and SELECT already provide
                ;; the "good" aref
-               ;; (:file "transpose")
+               (:file "transpose")
                (:file "blas"                    :depends-on ("primitives"
                                                              "ptr-iterate-but-inner"))
                ;; (:file "misc")

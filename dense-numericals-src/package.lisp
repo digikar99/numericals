@@ -119,15 +119,19 @@
            #:shape
 
            #:+
-           #:two-arg-+
+           #:add
+           #:add!
            #:*
-           #:two-arg-*
+           #:multiply
+           #:multiply!
            #:-
            ;; #:one-arg--
-           #:two-arg--
+           #:subtract
+           #:subtract!
            #:/
            ;; #:one-arg-/
-           #:two-arg-/
+           #:divide
+           #:divide!
 
            #:logand
            #:two-arg-logand
@@ -196,13 +200,39 @@
                 #:element-type))
 
 (defpackage :dense-numericals.linalg
-  (:export #:axpy))
+  (:export #:multidot
+           #:matrix-power
+
+           #:cholesky
+           #:qr
+           #:svd
+
+           #:eig
+           #:eigh
+           #:eigvals
+           #:eigvalsh
+
+           #:norm
+           #:cond
+           #:det
+           #:matrix-rank
+           #:slogdet
+
+           #:solve
+           #:tensorsolve
+           #:lstsq
+           #:inv
+           #:pinv
+           #:tensorinv
+
+           #:axpy))
 
 (in-package :dense-numericals.impl)
 
 ;; FIXME: Avoid TPLN
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (trivial-package-local-nicknames:add-package-local-nickname :nu :dense-numericals))
+  (trivial-package-local-nicknames:add-package-local-nickname :nu :dense-numericals)
+  (trivial-package-local-nicknames:add-package-local-nickname :la :dense-numericals.linalg))
 
 (5am:def-suite :dense-numericals)
 

@@ -1,4 +1,4 @@
-(cl:in-package :numericals.internals)
+(cl:in-package :numericals.impl)
 
 ;; Numpy uses an array wrapper, and a slice of the matrix
 ;; is actually a part of the original matrix - meaning, writing to the
@@ -170,8 +170,8 @@ See tests for examples."
                                    (5 6 7 8))
                                  :type 'int32))))
 
-(defun strides (array)
-  (let ((reversed-dimensions (nreverse (array-dimensions array)))
+(defun strides (array-dimensions)
+  (let ((reversed-dimensions (nreverse array-dimensions))
         (product 1))
     (nreverse
      (loop for i in reversed-dimensions

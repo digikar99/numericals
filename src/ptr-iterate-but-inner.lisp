@@ -1,4 +1,4 @@
-(in-package :numericals.internals)
+(in-package :numericals.impl)
 
 (defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings . expression)
                                  &environment env)
@@ -31,7 +31,7 @@
                                                        (array-dimensions ,var)
                                                        ,broadcast-dimensions)))
                            strides array-vars))
-             (declare (type cffi-sys:foreign-pointer ,@pointers))
+             (declare (cl:type cffi-sys:foreign-pointer ,@pointers))
 
              (labels ((nest-loop (,dimensions ,@strides)
                         (let ((,n-var   (first ,dimensions))
@@ -64,4 +64,3 @@
                                               pointers ss elt-sizes))))))
                (nest-loop ,broadcast-dimensions
                           ,@strides))))))))
-

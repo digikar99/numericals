@@ -1,4 +1,4 @@
-(in-package :numericals.internals)
+(in-package :numericals.impl)
 
 (defparameter nu:*inline-with-multithreading* nil
   "Inlining is usually necessary for smaller arrays; for such arrays multithreading

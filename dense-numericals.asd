@@ -45,6 +45,10 @@
                (:file "two-arg-fn-non-comparison" :depends-on ("copy-coerce"
                                                                "translations"
                                                                "test"))
+               (:file "in-place-operators" :depends-on ("one-arg-fn-float"
+                                                        "two-arg-fn-float"
+                                                        "two-arg-fn-comparison"
+                                                        "two-arg-fn-non-comparison"))
                (:file "n-arg-fn"              :depends-on ("two-arg-fn-comparison"
                                                            "two-arg-fn-non-comparison"))
                (:file "n-arg-fn-compiler-macros" :depends-on ("n-arg-fn"

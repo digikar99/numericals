@@ -46,13 +46,40 @@ TODO: Provide more details
                       (with-thresholded-multithreading/cl
                           (cl:array-total-size svo)
                           (svx svo)
-                        (with-pointers-to-vectors-data ((ptr-x svx)
-                                                        (ptr-o svo))
+                        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                                        (ptr-o (array-storage svo)))
+                          (cffi:incf-pointer ptr-x (* ,size (cl-array-offset svx)))
+                          (cffi:incf-pointer ptr-o (* ,size (cl-array-offset svo)))
                           (funcall (,fn-retriever name)
                                    (array-total-size svo)
                                    ptr-x 1
                                    ptr-o 1)))))
                   out)
+
+                ;; BROADCAST is NIL, but OUT is unsupplied
+                (defpolymorph (one-arg-fn/all :inline t :suboptimal-note runtime-array-allocation)
+                    ((name symbol) (x (simple-array ,type))
+                     &key ((out null))
+                     ((broadcast null) nu:*broadcast-automatically*))
+                    (simple-array ,type)
+                  (declare (ignorable name out broadcast))
+                  (let ((out (nu:zeros (narray-dimensions x) :type ',type)))
+                    (declare (type (array ,type) out))
+                    (let ((svx (array-storage x))
+                          (svo (array-storage out)))
+                      (declare (type (cl:array ,type 1) svx svo))
+                      (with-thresholded-multithreading/cl
+                          (array-total-size svo)
+                          (svx svo)
+                        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
+                                                        (ptr-o (array-storage svo)))
+                          (cffi:incf-pointer ptr-x (* ,size (cl-array-offset svx)))
+                          (cffi:incf-pointer ptr-o (* ,size (cl-array-offset svo)))
+                          (funcall (single-float-c-name name)
+                                   (array-total-size svo)
+                                   ptr-x 1
+                                   ptr-o 1))))
+                    out))
 
                 ;; OUT is unsupplied
                 (defpolymorph (one-arg-fn/all :inline :maybe

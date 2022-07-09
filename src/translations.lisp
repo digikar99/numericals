@@ -80,16 +80,16 @@
      (nu::atan2 bmas:satan2 bmas::datan2 cl:atan)
      (nu:expt   bmas:spow   bmas:dpow    cl:expt)
 
-     (nu:two-arg-+ bmas:sadd bmas:dadd cl:+ bmas:i64add bmas:i32add bmas:i16add bmas:i8add
-                                            bmas:i64add bmas:i32add bmas:i16add bmas:i8add
-                                            bmas:i64add)
-     (nu:two-arg-- bmas:ssub bmas:dsub cl:- bmas:i64sub bmas:i32sub bmas:i16sub bmas:i8sub
-                                            bmas:i64sub bmas:i32sub bmas:i16sub bmas:i8sub
-                                            bmas:i64sub)
-     (nu:two-arg-* bmas:smul bmas:dmul cl:* bmas:i64mul bmas:i32mul bmas:i16mul bmas:i8mul
-                                            bmas:u64mul bmas:u32mul bmas:u16mul bmas:u8mul
-                                            fixnum-mul)
-     (nu:two-arg-/ bmas:sdiv bmas:ddiv cl:/)
+     (nu:add      bmas:sadd bmas:dadd cl:+ bmas:i64add bmas:i32add bmas:i16add bmas:i8add
+                                           bmas:i64add bmas:i32add bmas:i16add bmas:i8add
+                                           bmas:i64add)
+     (nu:subtract bmas:ssub bmas:dsub cl:- bmas:i64sub bmas:i32sub bmas:i16sub bmas:i8sub
+                                           bmas:i64sub bmas:i32sub bmas:i16sub bmas:i8sub
+                                           bmas:i64sub)
+     (nu:multiply bmas:smul bmas:dmul cl:* bmas:i64mul bmas:i32mul bmas:i16mul bmas:i8mul
+                                           bmas:u64mul bmas:u32mul bmas:u16mul bmas:u8mul
+                                           fixnum-mul)
+     (nu:divide   bmas:sdiv bmas:ddiv cl:/)
 
      (nu:two-arg-max bmas:smax bmas:dmax cl:+ bmas:i64max bmas:i32max bmas:i16max bmas:i8max
                                               bmas:i64max bmas:i32max bmas:i16max bmas:i8max
