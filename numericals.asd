@@ -17,6 +17,7 @@
                "lparallel"
                "policy-cond"
                "specialized-function"
+               "swank"
                "trivial-coerce"
                "trivial-types"
                "trivial-package-local-nicknames"
