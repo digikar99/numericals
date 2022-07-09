@@ -84,6 +84,9 @@
            #:expt
 
            #:exp!
+           #:log!
+           #:expt!
+
            #:sqrt
 
            #:ffloor

@@ -39,12 +39,17 @@
                (:file "two-arg-fn-float"      :depends-on ("utils"
                                                            "test"
                                                            "translations"))
-               (:file "two-arg-fn-all"        :depends-on ("copy-coerce"
+               (:file "two-arg-fn-comparison" :depends-on ("copy-coerce"
                                                            "translations"
                                                            "test"))
-               (:file "n-arg-fn"              :depends-on ("two-arg-fn-all"))
+               (:file "two-arg-fn-non-comparison" :depends-on ("copy-coerce"
+                                                               "translations"
+                                                               "test"))
+               (:file "n-arg-fn"              :depends-on ("two-arg-fn-comparison"
+                                                           "two-arg-fn-non-comparison"))
                (:file "n-arg-fn-compiler-macros" :depends-on ("n-arg-fn"
-                                                              "two-arg-fn-all"))
+                                                              "two-arg-fn-comparison"
+                                                              "two-arg-fn-non-comparison"))
                (:file "n-arg-fn-tests"        :depends-on ("n-arg-fn-compiler-macros"))
                (:file "blas"                  :depends-on ("utils"
                                                            "ptr-iterate-but-inner"))
@@ -68,8 +73,7 @@
                "dense-numericals"
                "py4cl2"
                "fiveam")
-  :components ((:file "package")
-               (:file "benchmark")
+  :components ((:file "benchmark")
                (:file "one-arg-fn")
                (:file "two-arg-fn"))
   :perform (test-op (o c)
