@@ -1,10 +1,8 @@
-(in-package :numericals/benchmarks)
-
-(in-suite :numericals/benchmarks)
+(numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
 ;; Credits: https://github.com/digikar99/numericals
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (pyexec "
+  (py4cl2:pyexec "
 def numpy_one_arg_fn(fn, a_sizes, o_sizes, num_operations, elt_type):
   import time
   import numpy as np
@@ -24,7 +22,7 @@ def numpy_one_arg_fn(fn, a_sizes, o_sizes, num_operations, elt_type):
   return tuple(timings)
 ")
 
-  (pyexec "
+  (py4cl2:pyexec "
 def torch_one_arg_fn(fn, a_sizes, o_sizes, num_operations, elt_type):
   import time
   import math as m
@@ -45,8 +43,8 @@ def torch_one_arg_fn(fn, a_sizes, o_sizes, num_operations, elt_type):
   return tuple(timings)
 "))
 
-(defpyfun "numpy_one_arg_fn")
-(defpyfun "torch_one_arg_fn")
+(py4cl2:defpyfun "numpy_one_arg_fn")
+(py4cl2:defpyfun "torch_one_arg_fn")
 
 ;; This is better suited as a function because we don't want to care about the
 ;; "form" of the arguments - we want to play with the values of the arguments.
@@ -57,20 +55,25 @@ def torch_one_arg_fn(fn, a_sizes, o_sizes, num_operations, elt_type):
         :collect
         (let* ((a (nu:ones a-size :type elt-type))
                (o (nu:ones o-size :type elt-type))
+               (total-size (apply #'* o-size))
                (num-operation (floor (/ (elt num-operations i)
-                                        (apply #'* o-size))))
+                                        total-size)))
                (fn (compile nil
-                            `(lambda (a o)
-                               (declare (type (simple-array ,elt-type ,(length o-size)) a o))
+                            `(cl:lambda (a o)
+                               (declare (cl:type (simple-array ,elt-type ,(length o-size)) a o)
+                                        #+extensible-compound-types
+                                        (type (simple-array ,elt-type ,(length o-size)) a o))
                                (time-it
-                                 (locally (declare (optimize speed))
+                                 (locally ,(if (> total-size nu:*multithreaded-threshold*)
+                                               ()
+                                               `(declare (optimize speed)))
                                    (loop :for i :of-type fixnum :below ,num-operation
-                                         :do (,fn a :out o))))))))
+                                         :do (,fn a :out o :broadcast nil))))))))
           (funcall fn a o))))
 
 (defun one-arg-fn (lisp-names numpy-names &optional torch-names)
-  (when *numpy* (pyexec "import numpy as np"))
-  (when *torch* (pyexec "import torch as t"))
+  (when *numpy* (py4cl2:pyexec "import numpy as np"))
+  (when *torch* (py4cl2:pyexec "import torch as t"))
   (let* ((a-sizes '((10 1) (10 10) (100 100) (1000 1000) #-arm64 (10000 10000)))
          (o-sizes '((10 1) (10 10) (100 100) (1000 1000) #-arm64 (10000 10000)))
          (num-operations '(1e7 1e8 1e9 1e9 #-arm64 1e9)))

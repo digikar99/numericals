@@ -1,4 +1,4 @@
-(in-package :numericals/benchmarks)
+(numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
 (defstruct fun-report
   (name)
@@ -13,7 +13,61 @@
 
 (defvar *report*)
 
-(defun report (report &optional (stream *standard-output*))
+(defun save-json-report (reports &optional savep)
+  ;; Layers: library > element-type > function-name > sizes > framework
+  (let*
+      ((library (string-downcase (package-name (find-package :nu))))
+       (filename (trivial-coerce:coerce
+                  (uiop:strcat
+                   (trivial-coerce:coerce
+                    (uiop:pathname-parent-directory-pathname
+                     (asdf:component-pathname (asdf:find-system "numericals")))
+                    'cl:string)
+                   "docs/" library ".json")
+                  'cl:pathname))
+       (json
+         (jsown:pretty-json
+          (jsown:to-json
+           (plist-hash-table
+            (list library
+                  (loop :for report :in reports
+                        :collect
+                        (plist-hash-table
+                         (list (string-downcase (report-element-type report))
+                               (loop :for fun-report :in (report-fun-reports report)
+                                     :collect
+                                     (plist-hash-table
+                                      (list (string-downcase (fun-report-name fun-report))
+                                            (plist-hash-table
+                                             ;; FIXME: Average over array sizes
+                                             (with-slots (array-sizes lisp numpy torch) fun-report
+                                               (loop :for array-size :in array-sizes
+                                                     :for size := (apply #'* array-size)
+                                                     :for lisp-time  :in lisp
+                                                     :for numpy-time :in numpy
+                                                     :for torch-time :in torch
+                                                     :for speedup-over-numpy
+                                                       := (write-to-string
+                                                           (coerce (/ numpy-time lisp-time)
+                                                                   'single-float))
+                                                     :for speedup-over-torch
+                                                       := (write-to-string
+                                                           (coerce (/ torch-time lisp-time)
+                                                                   'single-float))
+                                                     :appending
+                                                     (list size
+                                                           (plist-hash-table
+                                                            (list "numpy"
+                                                                  speedup-over-numpy
+                                                                  "torch"
+                                                                  speedup-over-torch))))))))))))))))))
+
+    (if savep
+        (with-output-to-file (f filename :if-exists :supersede)
+          (write-string json f))
+        (format t json))))
+
+(defun report (reports &optional (stream *standard-output*))
   (let ((s stream)
         (ascii-table:*default-value-formatter*
           (lambda (value)
@@ -44,7 +98,7 @@
                                           (cons 'numpy
                                                 (mapcar #'/ numpy lisp)))
                      (when torch
-		               (ascii-table:add-row table
+                       (ascii-table:add-row table
                                             (cons 'torch
                                                   (mapcar #'/ torch lisp))))
                      table)
@@ -86,25 +140,25 @@
                  (*report* (make-report :element-type element-type)))
              (push *report* reports)
 
-             (one-arg-fn '(nu:sin nu:cos nu:tan)
-                         '(np.sin np.cos np.tan)
-                         '( t.sin  t.cos  t.tan))
+             ;; (one-arg-fn '(nu:sin nu:cos nu:tan)
+             ;;             '(np.sin np.cos np.tan)
+             ;;             '( t.sin  t.cos  t.tan))
 
-             (one-arg-fn '(nu:sinh nu:cosh nu:tanh)
-                         '(np.sinh np.cosh np.tanh)
-                         '( t.sinh  t.cosh  t.tanh))
+             ;; (one-arg-fn '(nu:sinh nu:cosh nu:tanh)
+             ;;             '(np.sinh np.cosh np.tanh)
+             ;;             '( t.sinh  t.cosh  t.tanh))
 
-             (one-arg-fn '(nu:asin   nu:acos   nu:atan)
-                         '(np.arcsin np.arccos np.arctan)
-                         '( t.arcsin  t.arccos  t.arctan))
+             ;; (one-arg-fn '(nu:asin   nu:acos   nu:atan)
+             ;;             '(np.arcsin np.arccos np.arctan)
+             ;;             '( t.arcsin  t.arccos  t.arctan))
 
-             (one-arg-fn '(nu:asinh   nu:acosh   nu:atanh)
-                         '(np.arcsinh np.arccosh np.arctanh)
-                         '( t.arcsinh  t.arccosh  t.arctanh))
+             ;; (one-arg-fn '(nu:asinh   nu:acosh   nu:atanh)
+             ;;             '(np.arcsinh np.arccosh np.arctanh)
+             ;;             '( t.arcsinh  t.arccosh  t.arctanh))
 
-             (two-arg-fn '(nu:expt  nu:atan)
-                         '(np.power np.arctan2)
-                         '( t.pow    t.atan2))
+             ;; (two-arg-fn '(nu:expt  nu:atan)
+             ;;             '(np.power np.arctan2)
+             ;;             '( t.pow    t.atan2))
 
              ;; (two-arg-fn '(nu:atan)
              ;;             '(np.arctan2)
@@ -112,8 +166,8 @@
              ;; (two-arg-fn '(nu:expt)
              ;;             '(np.power)
              ;;             '( t.pow))
-             (two-arg-fn '(nu:+   nu:-        nu:*        nu:/)
+             (two-arg-fn '(nu:two-arg-+   nu:two-arg--        nu:two-arg-*        nu:two-arg-/)
                          '(np.add np.subtract np.multiply np.divide)
-                         '( t.add  t.subtract  t.multiply  t.divide))
+                       '( t.add  t.subtract  t.multiply  t.divide))
              ))
       (return-from benchmark (values-list reports)))))

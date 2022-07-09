@@ -1,7 +1,7 @@
-(in-package :numericals/benchmarks)
+(numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (pyexec "
+  (py4cl2:pyexec "
 def numpy_two_arg_fn(fn, a_sizes, b_sizes, o_sizes, num_operations, elt_type):
   import time
   import numpy as np
@@ -22,7 +22,7 @@ def numpy_two_arg_fn(fn, a_sizes, b_sizes, o_sizes, num_operations, elt_type):
   return tuple(timings)
 ")
 
-  (pyexec "
+  (py4cl2:pyexec "
 def torch_two_arg_fn(fn, a_sizes, b_sizes, o_sizes, num_operations, elt_type):
   import time
   import math as m
@@ -44,8 +44,8 @@ def torch_two_arg_fn(fn, a_sizes, b_sizes, o_sizes, num_operations, elt_type):
   return tuple(timings)
 "))
 
-(defpyfun "numpy_two_arg_fn")
-(defpyfun "torch_two_arg_fn")
+(py4cl2:defpyfun "numpy_two_arg_fn")
+(py4cl2:defpyfun "torch_two_arg_fn")
 
 (defun nu-two-arg-fn (&key fn a-sizes b-sizes o-sizes num-operations elt-type)
   (loop :for i :below (length num-operations)
@@ -56,26 +56,33 @@ def torch_two_arg_fn(fn, a_sizes, b_sizes, o_sizes, num_operations, elt_type):
         (let* ((a (nu:ones a-size :type elt-type))
                (b (nu:ones b-size :type elt-type))
                (o (nu:ones o-size :type elt-type))
-               (num-operation (floor (/ (elt num-operations i)
-                                        (apply #'* o-size))))
+               (total-size (apply #'* o-size))
+               (num-operation (floor (/ (elt num-operations i) total-size)))
+               (type (list (if (and (equalp a-size b-size)
+                                    (equalp a-size o-size))
+                               'simple-array
+                               'array)
+                           elt-type
+                           (length o-size)))
                (fn (compile nil
-                            `(lambda (a b o)
-                               (declare (type (,(if (and (equalp a-size b-size)
-                                                         (equalp a-size o-size))
-                                                    'simple-array
-                                                    'array)
-                                               ,elt-type
-                                               ,(length o-size))
-                                              a b o))
+                            `(cl:lambda (a b o)
+                               (declare (cl:type ,type a b o)
+                                        #+extensible-compound-types
+                                        (type ,type a b o))
                                (time-it
-                                 (locally (declare (optimize speed))
+                                 (locally ,(if (> total-size nu:*multithreaded-threshold*)
+                                               ()
+                                               `(declare (optimize speed)))
                                    (loop :for i :of-type fixnum :below ,num-operation
-                                         :do (,fn a b :out o))))))))
+                                         :do (,fn a b :out o
+                                                      :broadcast ,(not
+                                                                   (and (equalp a-size b-size)
+                                                                        (equalp a-size o-size)))))))))))
           (funcall fn a b o))))
 
 (defun two-arg-fn (lisp-names numpy-names &optional torch-names)
-  (when *numpy* (pyexec "import numpy as np"))
-  (when *torch* (pyexec "import torch as t"))
+  (when *numpy* (py4cl2:pyexec "import numpy as np"))
+  (when *torch* (py4cl2:pyexec "import torch as t"))
   (let* ((a-sizes '((10 1) (10 10) (100 100) (100 1)   (100 1 100)   #-arm64 (10000 10000)))
          (b-sizes '((10 1) (10 10) (100 100) (1 100)   (1 100 100)   #-arm64 (10000 10000)))
          (o-sizes '((10 1) (10 10) (100 100) (100 100) (100 100 100) #-arm64 (10000 10000)))
