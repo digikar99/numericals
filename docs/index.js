@@ -1,5 +1,13 @@
 
-var get_color_class = function(value){
+function load_subpage(href){
+    console.log("load_subpage", href, "called");
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", href, false);
+    xmlhttp.send();
+    return xmlhttp.responseText;
+};
+
+function get_color_class(value){
     if (typeof(value) === "string") value = parseFloat(value);
     /* console.log(value); */
     if (value < 0.1) return "very-slow";
@@ -9,8 +17,10 @@ var get_color_class = function(value){
     else return "very-fast";
 };
 
-var writeBenchmarkTable = function(data, library, framework, scale, elt_type){
-    table_div = document.getElementById("benchmark-table-div");
+function writeBenchmarkTable(data, library, framework, scale, elt_type){
+    let table_div = document.getElementById("benchmark-table-div");
+    let table_div_carousel = document.getElementById("benchmark-table-div-carousel");
+
     if (framework === "all" && scale === "all"){
         table_div.innerHTML = `<p class="error">Only ONE of FRAMEWORK or SCALE can be 'All'</p>`;
         return false;
@@ -86,9 +96,11 @@ var writeBenchmarkTable = function(data, library, framework, scale, elt_type){
 
     // finally prepare the table
     table_div.innerHTML = `<table id="benchmark-table">${header_row}${rows}</table>`;
+    table_div_carousel.innerHTML = `<table id="benchmark-table">${header_row}${rows}</table>`;
+
 };
 
-var updateBenchmarkTable = function(){
+function updateBenchmarkTable(){
     let library   = document.getElementsByName("library")[0].value;
     let framework = document.getElementsByName("framework")[0].value;
     let scale = document.getElementsByName("scale")[0].value;
@@ -99,11 +111,26 @@ var updateBenchmarkTable = function(){
         .then((response) => {
             if (response.ok){return response.json();}
             else {
-                table_div = document.getElementById("benchmark-table-div");
+                let table_div = document.getElementById("benchmark-table-div");
                 table_div.innerHTML = `<p class="error">The benchmark information for the selected combination seems to be absent.</p>`;
             }
         })
         .then(data => writeBenchmarkTable(data, library, framework, scale, elt_type));
 };
 
-window.onload = updateBenchmarkTable;
+function loadElements(){
+    updateBenchmarkTable();
+    document.getElementById('tutorial-contents').innerHTML
+        = load_subpage('./tutorial-pre.html');
+
+    let optimization_contents = load_subpage('./optimization-pre.html');
+    document.getElementById('optimization-contents').innerHTML
+        = optimization_contents;
+    document.getElementById('optimization-contents-carousel').innerHTML
+        = optimization_contents;
+
+    document.getElementById('nice-print-object-carousel').innerHTML
+        = load_subpage('./nice-print-object-carousel.html');
+};
+
+window.onload = loadElements;

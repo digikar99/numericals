@@ -1,0 +1,72 @@
+<pre class="src src-lisp"><span style="color: #00ffff;">CL-USER&gt;</span> (<span style="color: #00ffff;">uiop:define-package</span> <span style="color: #b0c4de;">:dn-user</span>
+           (<span style="color: #b0c4de;">:mix</span> <span style="color: #b0c4de;">:dense-numericals</span> <span style="color: #b0c4de;">:dense-arrays-plus-lite</span> <span style="color: #b0c4de;">:cl</span>))
+#&lt;PACKAGE <span style="color: #ffc1c1;">"DN-USER"</span>&gt;
+<span style="color: #00ffff;">CL-USER&gt;</span> (<span style="color: #00ffff;">in-package</span> <span style="color: #b0c4de;">:dn-user</span>)
+#&lt;PACKAGE <span style="color: #ffc1c1;">"DN-USER"</span>&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (setq *array-element-type* 'single-float)
+SINGLE-FLOAT
+<span style="color: #00ffff;">DN-USER&gt;</span> (setq *default-float-format* 'single-float)
+SINGLE-FLOAT
+<span style="color: #00ffff;">DN-USER&gt;</span> (+ 2 3)
+5
+<span style="color: #00ffff;">DN-USER&gt;</span> (+ 2 '(1 2 3))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #b0c4de;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
+     3.000       4.000       5.000
+ {10431597F3}&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (asarray '(1 2 3))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #b0c4de;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
+     1.000       2.000       3.000
+ {1046EA2653}&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (sin '(1 2 3))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #b0c4de;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
+     0.841       0.909       0.141
+ {10435CF5B3}&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (sin '(1 2 3) <span style="color: #b0c4de;">:out</span> (zeros 3))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #b0c4de;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
+     0.841       0.909       0.141
+ {1044146793}&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (sin '(1 2 3) <span style="color: #b0c4de;">:out</span> (zeros 3 <span style="color: #b0c4de;">:type</span> 'double-float))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #b0c4de;">:ROW-MAJOR</span> 3 DOUBLE-FLOAT
+     0.841       0.909       0.141
+ {104502EE13}&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (sin! (asarray '(1 2 3) <span style="color: #b0c4de;">:type</span> 'double-float)) <span style="color: #ff7f24; font-style: italic;">; in-place operator</span>
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #b0c4de;">:ROW-MAJOR</span> 3 DOUBLE-FLOAT
+     0.841       0.909       0.141
+ {1046626D73}&gt;
+</pre>
+<pre class="src src-lisp"><span style="color: #A52A2A; font-weight: bold;">CL-USER&gt;</span> (<span style="color: #A52A2A; font-weight: bold;">uiop:define-package</span> <span style="color: #A020F0;">:dn-user</span>
+           (<span style="color: #A020F0;">:mix</span> <span style="color: #A020F0;">:dense-numericals</span> <span style="color: #A020F0;">:dense-arrays-plus-lite</span> <span style="color: #A020F0;">:cl</span>))
+#&lt;PACKAGE <span style="color: #4E9A06;">"DN-USER"</span>&gt;
+<span style="color: #A52A2A; font-weight: bold;">CL-USER&gt;</span> (<span style="color: #A52A2A; font-weight: bold;">in-package</span> <span style="color: #A020F0;">:dn-user</span>)
+#&lt;PACKAGE <span style="color: #4E9A06;">"DN-USER"</span>&gt;
+<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (setq *array-element-type* 'single-float)
+SINGLE-FLOAT
+<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (setq *default-float-format* 'single-float)
+SINGLE-FLOAT
+<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (+ 2 3)
+5
+<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (+ 2 '(1 2 3))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
+     3.000       4.000       5.000
+ {10431597F3}&gt;
+<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (asarray '(1 2 3))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
+     1.000       2.000       3.000
+ {1046EA2653}&gt;
+<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (sin '(1 2 3))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
+     0.841       0.909       0.141
+ {10435CF5B3}&gt;
+<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (sin '(1 2 3) <span style="color: #A020F0;">:out</span> (zeros 3))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
+     0.841       0.909       0.141
+ {1044146793}&gt;
+<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (sin '(1 2 3) <span style="color: #A020F0;">:out</span> (zeros 3 <span style="color: #A020F0;">:type</span> 'double-float))
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 DOUBLE-FLOAT
+     0.841       0.909       0.141
+ {104502EE13}&gt;
+<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (sin! (asarray '(1 2 3) <span style="color: #A020F0;">:type</span> 'double-float)) <span style="color: #204A87;">; in-place operator</span>
+#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 DOUBLE-FLOAT
+     0.841       0.909       0.141
+ {1046626D73}&gt;
+</pre>

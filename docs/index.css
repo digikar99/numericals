@@ -3,8 +3,36 @@ body{
     font-family:sans-serif;
 }
 
+.carousel-item{
+    min-height:75vh;
+    max-height:75vh;
+    opacity:50%;
+    overflow-x:none;
+    overflow-y:none;
+    transition: opacity 0.5s transform .6s ease-in-out;
+}
+
+.carousel-item:hover{
+    opacity:100%;
+    transition: opacity 0.5s;
+}
+
+.carousel-indicators button {
+    height: 10px !important;
+    width: 10px !important;
+    margin: 0 10px !important;
+    border-radius: 100%;
+    background-color: #1963ac !important;
+}
+
+#benchmark-table-div-carousel, #optimization-contents-carousel{
+    min-height:75vh;
+    max-height:75vh;
+    overflow-x:none;
+    overflow-y:none;
+}    
+
 p{
-    width:480px;
     margin:auto;
     text-align:justify;
 }
@@ -33,9 +61,14 @@ label{
     width:150px;
 }
 
-pre{
-    display:inline;
+.src{
+    background-color:#222222;
+    color:white;
+    padding:12px;
 }
+
+.src::-webkit-scrollbar { width: 0 !important }
+    
 
 select{
     width:150px;
@@ -50,14 +83,14 @@ table, th, td{
     border-collapse: collapse;
     text-align:center;
     padding:5px;
+    margin:auto;
 }
 
-#benchmark-table-div{
+#benchmark-table-div, #benchmark-table-div-carousel{
     margin:15px;
 }
-
-td{
-    width:75px;
+a > #benchmark-table-div-carousel{
+    font-decoration:none;
 }
 
 .very-slow{
@@ -82,4 +115,8 @@ td{
     background-color:#009933;
     color:white;
 }
-    
+
+#optimization-contents{
+    overflow-y:scroll;
+    max-height:200vh;
+}
