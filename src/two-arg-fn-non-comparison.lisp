@@ -107,7 +107,7 @@
   (policy-cond:with-expectations (= safety 0)
       ((assertion
         (or broadcast (equalp (narray-dimensions x) (narray-dimensions y)))))
-    (pflet* ((out (zeros (narray-dimensions x) :type <type>))
+    (pflet* ((out (nu:zeros (narray-dimensions x) :type <type>))
              (c-name (c-name <type> name))
              (svx (array-storage x)) (svy (array-storage y))
              (svo (array-storage out))
@@ -174,7 +174,7 @@
                   'incompatible-broadcast-dimensions :dimensions
                   (mapcar #'narray-dimensions (list x y)) :array-likes
                   (list x y))
-          (pflet ((out (zeros broadcast-dimensions :type <type>)))
+          (pflet ((out (nu:zeros broadcast-dimensions :type <type>)))
             (declare (type (array <type>) out))
             (let ((c-name (c-name <type> name)))
               (ptr-iterate-but-inner broadcast-dimensions
@@ -186,7 +186,7 @@
             ((assertion
               (or broadcast
                   (equalp (narray-dimensions x) (narray-dimensions y)))))
-          (pflet ((out (zeros (narray-dimensions x) :type <type>)))
+          (pflet ((out (nu:zeros (narray-dimensions x) :type <type>)))
             (declare (type (array <type>) out))
             (let ((c-name (c-name <type> name)))
               (ptr-iterate-but-inner (narray-dimensions x)
@@ -198,7 +198,7 @@
 (defpolymorph two-arg-fn/non-comparison
     ((name symbol) (x (array <type>)) (y number) &key
      ((out (array <type>))
-      (zeros (narray-dimensions x) :type (array-element-type x)))
+      (nu:zeros (narray-dimensions x) :type (array-element-type x)))
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array <type>)
   (declare (ignorable name broadcast))
@@ -220,7 +220,7 @@
 (defpolymorph two-arg-fn/non-comparison
     ((name symbol) (x number) (y (array <type>)) &key
      ((out (array <type>))
-      (zeros (narray-dimensions y) :type (array-element-type y)))
+      (nu:zeros (narray-dimensions y) :type (array-element-type y)))
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array <type>)
   (declare (ignorable name broadcast))

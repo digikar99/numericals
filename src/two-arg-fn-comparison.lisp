@@ -122,7 +122,7 @@
     (policy-cond:with-expectations (= safety 0)
         ((assertion
           (or broadcast (equalp (narray-dimensions x) (narray-dimensions y)))))
-      (pflet* ((out (zeros (narray-dimensions x) :type '(unsigned-byte 8)))
+      (pflet* ((out (nu:zeros (narray-dimensions x) :type '(unsigned-byte 8)))
                (c-name (c-name <type> name))
                (svx (array-storage x)) (svy (array-storage y))
                (svo (array-storage out)))
@@ -200,7 +200,7 @@
                   'incompatible-broadcast-dimensions
                   :dimensions (mapcar #'narray-dimensions (list x y))
                   :array-likes (list x y))
-          (let ((out (zeros broadcast-dimensions :type '(unsigned-byte 8))))
+          (let ((out (nu:zeros broadcast-dimensions :type '(unsigned-byte 8))))
             (declare (type (array (unsigned-byte 8)) out))
             (ptr-iterate-but-inner broadcast-dimensions
                 n
@@ -211,7 +211,7 @@
             ((assertion
               (or broadcast
                   (equalp (narray-dimensions x) (narray-dimensions y)))))
-          (let ((out (zeros (narray-dimensions x) :type '(unsigned-byte 8))))
+          (let ((out (nu:zeros (narray-dimensions x) :type '(unsigned-byte 8))))
             (declare (type (array (unsigned-byte 8)) out))
             (ptr-iterate-but-inner (narray-dimensions x)
                 n
@@ -225,7 +225,7 @@
 
     ((name symbol) (x (array <type>)) (y number) &key
      ((out (array (unsigned-byte 8)))
-      (zeros (narray-dimensions x) :type '(unsigned-byte 8)))
+      (nu:zeros (narray-dimensions x) :type '(unsigned-byte 8)))
      ((broadcast (not null)) nu:*broadcast-automatically*))
 
     (array (unsigned-byte 8))
@@ -252,7 +252,7 @@
 
     ((name symbol) (x number) (y (array <type>)) &key
      ((out (array (unsigned-byte 8)))
-      (zeros (narray-dimensions y) :type '(unsigned-byte 8)))
+      (nu:zeros (narray-dimensions y) :type '(unsigned-byte 8)))
      ((broadcast (not null)) nu:*broadcast-automatically*))
 
     (array (unsigned-byte 8))

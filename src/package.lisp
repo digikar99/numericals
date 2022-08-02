@@ -197,6 +197,9 @@
 
 (5am:def-suite :numericals)
 
+(defun type-parameter-p (symbol) (member symbol '(<type>)))
+(pushnew 'type-parameter-p polymorphic-functions:*parametric-type-symbol-predicates*)
+
 (setq numericals.common:*compiler-package* :numericals.impl
       numericals.common:*suite-name* :numericals)
 

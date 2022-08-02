@@ -74,7 +74,7 @@
     ((name symbol) (initial-value-name symbol) (x (array <type>))
      &key ((axes integer))
      ((out (array <type>))
-      (full
+      (nu:full
        (let ((dim (narray-dimensions x)))
          (append (subseq dim 0 axes) (nthcdr (+ 1 axes) dim)))
        :type (array-element-type x)
@@ -118,7 +118,7 @@
     ((name symbol) (initial-value-name symbol) (x (simple-array <type>))
      &key ((axes integer))
      ((out (simple-array <type>))
-      (full
+      (nu:full
        (let ((dim (narray-dimensions x)))
          (append (subseq dim 0 axes) (nthcdr (+ 1 axes) dim)))
        :type (array-element-type x)
