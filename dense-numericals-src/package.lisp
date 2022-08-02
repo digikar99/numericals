@@ -177,7 +177,9 @@
                 :env
                 :optim-speed
                 :optim-debug
-                :defpolymorph-compiler-macro)
+                :defpolymorph-compiler-macro
+                #:pflet
+                #:pflet*)
   (:import-from :cl-form-types
                 #:constant-form-value)
   (:import-from :dense-arrays
@@ -239,6 +241,9 @@
 (pushnew (cons (find-package :dense-numericals.impl) 'single-float)
          *array-element-type-alist*
          :test #'equal)
+
+(defun type-parameter-p (symbol) (member symbol '(<type>)))
+(pushnew 'type-parameter-p polymorphic-functions:*parametric-type-symbol-predicates*)
 
 (setq numericals.common:*compiler-package* :dense-numericals.impl
       numericals.common:*suite-name* :dense-numericals)

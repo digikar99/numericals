@@ -31,149 +31,145 @@
   (one-arg-reduce-fn name initial-value-name (nu:asarray x)))
 
 
-(macrolet ((def (type c-type c-fn-retriever type-size)
-             (declare (ignorable c-type))
+;; parametric polymorphs
 
-             `(progn
+(defpolymorph one-arg-reduce-fn
+    ((name symbol) (initial-value-name symbol) (x (array <type>)) &key
+     ((axes null)) ((out null)))
+    t
+  (declare (ignore axes out)
+           (ignorable name))
+  (let ((acc (funcall initial-value-name <type>))
+        (cl-name (cl-name name))
+        (c-name  (c-name <type> name))
+        (c-size  (c-size <type>)))
+    (declare (type real acc))
+    (ptr-iterate-but-inner (narray-dimensions x)
+        n
+      ((ptr-x c-size inc-x x))
+      (setq acc
+            (funcall cl-name acc
+                     (funcall c-name n ptr-x inc-x))))
+    (if (typep acc <type>)
+        acc
+        (trivial-coerce:coerce acc <type>))))
 
-                (defpolymorph one-arg-reduce-fn ((name symbol)
-                                                 (initial-value-name symbol)
-                                                 (x (array ,type))
-                                                 &key ((axes null)) ((out null)))
-                    ,type
-                  (declare (ignore axes out)
-                           (ignorable name))
-                  (let ((acc             (funcall initial-value-name ',type))
-                        (cl-name         (cl-name name))
-                        (,c-fn-retriever (,c-fn-retriever name)))
-                    (declare (type real acc))
-                    (ptr-iterate-but-inner (narray-dimensions x) n
-                      ((ptr-x ,type-size inc-x x))
-                      (setq acc (funcall cl-name
-                                         acc
-                                         (funcall ,c-fn-retriever n ptr-x inc-x))))
-                    (if (typep acc ',type)
-                        acc
-                        (trivial-coerce:coerce acc ',type))))
+(defpolymorph (one-arg-reduce-fn :inline t)
+    ((name symbol) (initial-value-name symbol) (x (simple-array <type>))
+     &key ((axes null)) ((out null)))
+    t
+  (declare (ignore axes out initial-value-name)
+           (ignorable name))
+  (pflet ((svx (array-storage x))
+          (size (array-total-size x)))
+    (declare (type (common-lisp:simple-array <type> 1) svx)
+             (type size size))
+    (with-pointers-to-vectors-data ((ptr-x svx))
+      (funcall (c-name <type> name) size ptr-x 1))))
 
-                (defpolymorph (one-arg-reduce-fn :inline t)
-                    ((name symbol)
-                     (initial-value-name symbol)
-                     (x (simple-array ,type))
-                     &key ((axes null)) ((out null)))
-                    ,type
-                  (declare (ignore axes out initial-value-name)
-                           (ignorable name))
-                  (let ((svx             (array-storage x))
-                        (size            (array-total-size x)))
-                    (declare (type (cl:simple-array ,type 1) svx)
-                             (type size size))
-                    (with-pointers-to-vectors-data ((ptr-x svx))
-                      (funcall (,c-fn-retriever name) size ptr-x 1))))
 
-                (defpolymorph (one-arg-reduce-fn :inline t)
-                    ((name symbol)
-                     (initial-value-name symbol)
-                     (x (array ,type))
-                     &key ((axes integer))
-                     ((out (array ,type))
-                      (nu:full (let ((dim (narray-dimensions x)))
-                                 (append (subseq dim 0 axes)
-                                         (nthcdr (+ 1 axes) dim)))
-                               :type ',type
-                               :value (funcall initial-value-name ',type))))
-                    (or ,type (array ,type))
-                  (assert (< axes (array-rank x)))
-                  (let* ((rank (array-rank x))
-                         (perm (loop :for i :below rank
-                                     :collect (cond ((= i (1- rank))
-                                                     axes)
-                                                    ((= i axes)
-                                                     (1- rank))
-                                                    (t i))))
-                         (out (nu:transpose (nu:reshape out (let ((dim (array-dimensions
-                                                                        (the (array ,type) x))))
-                                                              (setf (nth axes dim) 1)
-                                                              dim))
-                                            :axes perm))
-                         (x   (nu:transpose x :axes perm))
-                         (c-fn (,c-fn-retriever name)))
-                    (declare (type (array ,type) x out))
-                    (ptr-iterate-but-inner (narray-dimensions x) n
-                      ((ptr-x   ,type-size inc-x x)
-                       (ptr-out ,type-size inc-out out))
-                      (setf (cffi:mem-ref ptr-out ,c-type)
-                            (funcall c-fn n ptr-x inc-x))))
-                  (if (zerop (array-rank out))
-                      (row-major-aref out 0)
-                      out))
 
-                (defpolymorph (one-arg-reduce-fn :inline t)
-                    ((name symbol)
-                     (initial-value-name symbol)
-                     (x (simple-array ,type))
-                     &key ((axes integer))
-                     ((out (simple-array ,type))
-                      (nu:full (let ((dim (narray-dimensions x)))
-                                 (append (subseq dim 0 axes)
-                                         (nthcdr (+ 1 axes) dim)))
-                               :type ',type
-                               :value (funcall initial-value-name ',type))))
-                    (or ,type (array ,type))
-                  (assert (< axes (array-rank x)))
-                  (if (= 1 (array-rank x))
-                      (one-arg-reduce-fn name initial-value-name
-                                         (the (array ,type 1) x)
-                                         :axes axes)
-                      (let ((svx    (array-storage x))
-                            (svo    (array-storage out))
-                            (stride (array-stride x axes))
-                            (outer-stride (if (zerop axes)
-                                              (array-total-size x)
-                                              (array-stride x (1- axes))))
-                            (axis-size (array-dimension x axes))
-                            (stride-step (apply #'* (subseq (narray-dimensions out) axes)))
-                            (c-fn (,c-fn-retriever name)))
-                        (declare (type (cl:simple-array ,type 1) svx svo)
-                                 (type size stride outer-stride stride-step axis-size))
-                        (with-pointers-to-vectors-data ((ptr-x svx))
-                          (dotimes (i (array-total-size svo))
-                            (setf (cl:row-major-aref svo i) (funcall c-fn axis-size ptr-x stride))
-                            (cffi:incf-pointer ptr-x ,type-size)
-                            (when (= 0 (the-size (rem (1+ i) stride-step)))
-                              (cffi:incf-pointer ptr-x
-                                  (the-size (* ,type-size (the-size (- outer-stride stride-step))))))))))
-                  (if (zerop (array-rank out))
-                      (row-major-aref out 0)
-                      out))
+(defpolymorph (one-arg-reduce-fn :inline t)
 
-                ;; FIXME: Better handle when OUT is supplied
-                (defpolymorph (one-arg-reduce-fn :inline nil)
-                    ((name symbol)
-                     (initial-value-name symbol)
-                     (x (array ,type))
-                     &key ((axes list))
-                     ((out null)))
-                    (or ,type (array ,type))
-                  (declare (ignore out))
-                  ;; Repeatedly reduce an array across each axis in AXES
-                  (loop :with out := x
-                        :for axis :in (sort (copy-list axes) #'>)
-                        :do (setq out (one-arg-reduce-fn name initial-value-name out :axes axis))
-                        :finally (return out))))))
+    ((name symbol) (initial-value-name symbol) (x (array <type>))
+     &key ((axes integer))
+     ((out (array <type>))
+      (full
+       (let ((dim (narray-dimensions x)))
+         (append (subseq dim 0 axes) (nthcdr (+ 1 axes) dim)))
+       :type (array-element-type x)
+       :value (funcall initial-value-name (array-element-type x)))))
 
-  (def single-float :float    single-float-c-name 4)
-  (def double-float :double    double-float-c-name 8)
-  (def (signed-byte 64) :int64 int64-c-name 8)
-  (def (signed-byte 32) :int32 int32-c-name 4)
-  (def (signed-byte 16) :int16 int16-c-name 2)
-  (def (signed-byte 08) :int8 int8-c-name  1)
-  (def (unsigned-byte 64) :uint64 uint64-c-name 8)
-  (def (unsigned-byte 32) :uint32 uint32-c-name 4)
-  (def (unsigned-byte 16) :uint16 uint16-c-name 2)
-  (def (unsigned-byte 08) :uint8 uint8-c-name  1)
-  ;; (def fixnum           fixnum-c-name 8)
-  )
+    t
+
+  (assert (< axes (array-rank x)))
+  (pflet* ((rank (array-rank x))
+           (perm
+            (loop :for i :below rank
+                  :collect (cond ((= i (1- rank)) axes) ((= i axes) (1- rank))
+                                 (t i))))
+           (out
+            (transpose
+             (reshape out
+                      (let ((dim
+                              (array-dimensions (the array x))))
+                        (setf (nth axes dim) 1)
+                        dim))
+             :axes perm))
+           (x (transpose x :axes perm))
+           (c-fn (c-name <type> name))
+           (c-size (c-size <type>))
+           (c-type (c-type <type>)))
+    (declare (type (array <type>) x out))
+    (ptr-iterate-but-inner (narray-dimensions x)
+        n
+      ((ptr-x c-size inc-x x)
+       (ptr-out c-size inc-out out))
+      (setf (cffi:mem-ref ptr-out c-type)
+            (funcall c-fn n ptr-x inc-x))))
+  (if (zerop (array-rank out))
+      (row-major-aref out 0)
+      out))
+
+
+
+(defpolymorph (one-arg-reduce-fn :inline t)
+
+    ((name symbol) (initial-value-name symbol) (x (simple-array <type>))
+     &key ((axes integer))
+     ((out (simple-array <type>))
+      (full
+       (let ((dim (narray-dimensions x)))
+         (append (subseq dim 0 axes) (nthcdr (+ 1 axes) dim)))
+       :type (array-element-type x)
+       :value (funcall initial-value-name (array-element-type x)))))
+
+    t
+
+  (assert (< axes (array-rank x)))
+  (if (= 1 (array-rank x))
+      (one-arg-reduce-fn name initial-value-name
+                         (the (array <type> 1) x) :axes axes)
+      (pflet ((svx (array-storage x))
+              (svo (array-storage out))
+              (stride (array-stride x axes))
+              (outer-stride
+               (if (zerop axes)
+                   (array-total-size x)
+                   (array-stride x (1- axes))))
+              (axis-size (array-dimension x axes))
+              (stride-step (apply #'* (subseq (narray-dimensions out) axes)))
+              (c-fn   (c-name <type> name))
+              (c-size (c-size <type>)))
+        (declare (type (common-lisp:simple-array <type> 1) svx svo)
+                 (type size stride outer-stride stride-step axis-size))
+        (with-pointers-to-vectors-data ((ptr-x svx))
+          (dotimes (i (array-total-size svo))
+            (setf (common-lisp:row-major-aref svo i)
+                  (funcall c-fn axis-size ptr-x stride))
+            (cffi:incf-pointer ptr-x c-size)
+            (when (= 0 (the-size (rem (1+ i) stride-step)))
+              (cffi:incf-pointer ptr-x
+                  (the-size
+                   (* c-size
+                      (the-size
+                       (- outer-stride stride-step))))))))))
+  (if (zerop (array-rank out))
+      (row-major-aref out 0)
+      out))
+
+(defpolymorph (one-arg-reduce-fn :inline nil)
+    ((name symbol) (initial-value-name symbol) (x (array <type>))
+     &key ((axes list)) ((out null)))
+    t
+  (declare (ignore out))
+  (loop :with out := x
+        :for axis :in (sort (copy-list axes) #'>)
+        :do (setq out
+                  (one-arg-reduce-fn name initial-value-name out :axes
+                                     axis))
+        :finally (return out)))
+
 
 (macrolet ((def (name initial-value-name)
              `(progn
