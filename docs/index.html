@@ -204,7 +204,7 @@
         <div id="goals-contents">
           <div class="col-md-8 offset-md-2">
             
-            <p>I think that numericals and dense-numericals as a separate project is justified because of the existence of several unachievable-without-significant-rewrite-or-change-of-goals-or-approach for numcl or magicl. These perhaps exist because of the numericals and dense-numericals and its dependencies depend on CLTL2 API, while numcl and magicl try to stick to ANSI CL. On the other hand, it also seems that Common Lisp without CLTL2 API would be terribly ill-suited for numerical computing. (See <a href="https://gist.github.com/digikar99/ba2f0bb34021bfdc086b9c1c712ca228">here</a> for my wishlist of features for a numerical computing library.)</p>
+            <p>I think that numericals / dense-numericals as projects separate from existing projects is justified because of the existence of several unachievable-without-significant-rewrite-or-change-of-goals-or-approach for numcl or magicl. These perhaps exist because numericals and dense-numericals and its dependencies depend on CLTL2 API, while numcl and magicl try to stick to ANSI CL. On the other hand, it also seems that Common Lisp without CLTL2 API would be terribly ill-suited for numerical computing. (See <a href="https://gist.github.com/digikar99/ba2f0bb34021bfdc086b9c1c712ca228">here</a> for my wishlist of features for a numerical computing library.)</p>
             <h5>Goals</h5>
             <ol>
               <li>Remain AOT, avoid JAOT. Like SBCL, a combination of <code>(optimize speed)</code> and appropriate type declarations should result in maximal inlining and minimal runtime spent on function calls.</li>
@@ -226,7 +226,7 @@
               <li>Needs a custom array class that provides multidimensional strides and offsets. This is provided through abstract-arrays, dense-arrays, and dense-numericals. (Goals 4 and 6)</li>
               <li>Wherever appropriate, functions should have an OUT parameter. (Goal 5)</li>
               <li>Provide inplace operators ending with '!' to avoid explicitly supplying an OUT parameter. For instance, <code>(numericals:sin array :out array :broadcast nil)</code> can be shortened to <code>(numericals:sin! array)</code>. (Goal 5)</li>
-              <li>Wherever appropriate, functions should have a BROADCAST parameter that determines whether the arrays should or should not be broadcasted. (Goal 7)</li>
+              <li>Wherever appropriate, functions should have a BROADCAST parameter that determines whether the arrays should or should not be broadcasted. Amongst the lisp libraries I know of, only numcl provides broadcasting, and even it makes it compulsory. (Goal 7)</li>
               <li>Arrays created with numcl should "just work". (Goal 8)</li>
               <li>Interoperability with magicl should be easy if not seamless. (Goal 8)</li>
             </ul>          
@@ -308,7 +308,6 @@
             <li>? - perhaps unachievable without significant rewrite or change of goals/approach</li>
             <li>&#xff0b; - can be improved, or is doable without much rewrite or change of goals</li>
           </ul>
-
         </div>
       </div>
 

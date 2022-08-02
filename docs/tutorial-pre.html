@@ -1,3 +1,33 @@
+<p>For the moment we stick to <a href="https://ultralisp.org/">Ultralisp</a> because we are moving faster than the stability of quicklisp.</p>
+<pre class="src src-lisp"><span style="color: #ff4500;">;;; </span><span style="color: #ff7f24; font-style: italic;">An attempt was made to include the enumeration function natively at</span>
+<span style="color: #ff4500;">;;;   </span><span style="color: #ff7f24; font-style: italic;">https://github.com/quicklisp/quicklisp-client/pull/206</span>
+<span style="color: #ff4500;">;;; </span><span style="color: #ff7f24; font-style: italic;">but it was rejected, so we do this:</span>
+(<span style="color: #00ffff;">defun</span> <span style="color: #00fa9a; font-weight: bold;">ql-dist::dist-name-pathname</span> (name)
+  <span style="color: #f08080; font-style: italic;">"Return the pathname that would be used for an installed dist with</span>
+<span style="color: #f08080; font-style: italic;"> the given NAME."</span>
+  (ql-dist::qmerge (make-pathname <span style="color: #b0c4de;">:directory</span> (list* <span style="color: #b0c4de;">:relative</span> <span style="color: #ffc1c1;">"dists"</span>
+                                                    (uiop:split-string name <span style="color: #b0c4de;">:separator</span> <span style="color: #ffc1c1;">"/"</span>)))))
+(<span style="color: #00ffff;">defun</span> <span style="color: #00fa9a; font-weight: bold;">digikar99-dist-enumeration-function</span> ()
+  <span style="color: #f08080; font-style: italic;">"The default function used for producing a list of dist objects."</span>
+  (<span style="color: #00ffff;">loop</span> for file in (directory (ql-dist::qmerge <span style="color: #ffc1c1;">"dists/digikar99/*/distinfo.txt"</span>))
+        collect (ql-dist::make-dist-from-file file)))
+(push 'digikar99-dist-enumeration-function ql::*dist-enumeration-functions*)
+</pre>
+
+<p>Once the function is pushed, install the dist:</p>
+
+<pre class="src src-lisp"><span style="color: #ff4500;">;;; </span><span style="color: #ff7f24; font-style: italic;">See https://ultralisp.org/dists/digikar99/specialized-array-dispatch for related projects</span>
+(ql-dist:install-dist <span style="color: #ffc1c1;">"http://dist.ultralisp.org/digikar99/specialized-array-dispatch.txt"</span>
+                      <span style="color: #b0c4de;">:prompt</span> nil)
+<span style="color: #ff4500;">;;; </span><span style="color: #ff7f24; font-style: italic;">If the install-dist step gives a "can't create directory" error, manually</span>
+<span style="color: #ff4500;">;;; </span><span style="color: #ff7f24; font-style: italic;">create the directory $QUICKLISP_HOME/dists/digikar99</span>
+(ql:update-dist <span style="color: #ffc1c1;">"digikar99/specialized-array-dispatch"</span>)
+(ql:quickload <span style="color: #ffc1c1;">"dense-numericals"</span>) <span style="color: #ff7f24; font-style: italic;">; or "numericals"</span>
+(asdf:test-system <span style="color: #ffc1c1;">"dense-numericals"</span>) <span style="color: #ff7f24; font-style: italic;">; or "numericals"</span>
+</pre>
+
+<p>Post that, we are ready to begin:</p>
+
 <pre class="src src-lisp"><span style="color: #00ffff;">CL-USER&gt;</span> (<span style="color: #00ffff;">uiop:define-package</span> <span style="color: #b0c4de;">:dn-user</span>
            (<span style="color: #b0c4de;">:mix</span> <span style="color: #b0c4de;">:dense-numericals</span> <span style="color: #b0c4de;">:dense-arrays-plus-lite</span> <span style="color: #b0c4de;">:cl</span>))
 #&lt;PACKAGE <span style="color: #ffc1c1;">"DN-USER"</span>&gt;
@@ -31,42 +61,6 @@ SINGLE-FLOAT
  {104502EE13}&gt;
 <span style="color: #00ffff;">DN-USER&gt;</span> (sin! (asarray '(1 2 3) <span style="color: #b0c4de;">:type</span> 'double-float)) <span style="color: #ff7f24; font-style: italic;">; in-place operator</span>
 #&lt;STANDARD-DENSE-ARRAY <span style="color: #b0c4de;">:ROW-MAJOR</span> 3 DOUBLE-FLOAT
-     0.841       0.909       0.141
- {1046626D73}&gt;
-</pre>
-<pre class="src src-lisp"><span style="color: #A52A2A; font-weight: bold;">CL-USER&gt;</span> (<span style="color: #A52A2A; font-weight: bold;">uiop:define-package</span> <span style="color: #A020F0;">:dn-user</span>
-           (<span style="color: #A020F0;">:mix</span> <span style="color: #A020F0;">:dense-numericals</span> <span style="color: #A020F0;">:dense-arrays-plus-lite</span> <span style="color: #A020F0;">:cl</span>))
-#&lt;PACKAGE <span style="color: #4E9A06;">"DN-USER"</span>&gt;
-<span style="color: #A52A2A; font-weight: bold;">CL-USER&gt;</span> (<span style="color: #A52A2A; font-weight: bold;">in-package</span> <span style="color: #A020F0;">:dn-user</span>)
-#&lt;PACKAGE <span style="color: #4E9A06;">"DN-USER"</span>&gt;
-<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (setq *array-element-type* 'single-float)
-SINGLE-FLOAT
-<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (setq *default-float-format* 'single-float)
-SINGLE-FLOAT
-<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (+ 2 3)
-5
-<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (+ 2 '(1 2 3))
-#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
-     3.000       4.000       5.000
- {10431597F3}&gt;
-<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (asarray '(1 2 3))
-#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
-     1.000       2.000       3.000
- {1046EA2653}&gt;
-<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (sin '(1 2 3))
-#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
-     0.841       0.909       0.141
- {10435CF5B3}&gt;
-<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (sin '(1 2 3) <span style="color: #A020F0;">:out</span> (zeros 3))
-#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 SINGLE-FLOAT
-     0.841       0.909       0.141
- {1044146793}&gt;
-<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (sin '(1 2 3) <span style="color: #A020F0;">:out</span> (zeros 3 <span style="color: #A020F0;">:type</span> 'double-float))
-#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 DOUBLE-FLOAT
-     0.841       0.909       0.141
- {104502EE13}&gt;
-<span style="color: #A52A2A; font-weight: bold;">DN-USER&gt;</span> (sin! (asarray '(1 2 3) <span style="color: #A020F0;">:type</span> 'double-float)) <span style="color: #204A87;">; in-place operator</span>
-#&lt;STANDARD-DENSE-ARRAY <span style="color: #A020F0;">:ROW-MAJOR</span> 3 DOUBLE-FLOAT
      0.841       0.909       0.141
  {1046626D73}&gt;
 </pre>
