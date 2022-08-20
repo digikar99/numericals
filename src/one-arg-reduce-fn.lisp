@@ -5,39 +5,45 @@
 ;;; FIXME: Optimize this: Within a factor of 2-3 of numpy for large arrays
 ;;; TODO: Better optimization notes
 
-(define-polymorphic-function one-arg-reduce-fn (name initial-value-name x &key axes out) :overwrite t)
+(define-polymorphic-function one-arg-reduce-fn
+    (name initial-value-name x &key axes out keep-dims)
+  :overwrite t)
 
 (defpolymorph (one-arg-reduce-fn :inline t) ((name symbol) (initial-value-name symbol)
-                                             (x list) &key ((axes (not null))) ((out (not null))))
+                                             (x list) &key ((axes (not null))) ((out (not null)))
+                                             keep-dims)
     t
-  (one-arg-reduce-fn name initial-value-name (nu:asarray x) :axes axes :out out))
+  (one-arg-reduce-fn name initial-value-name (nu:asarray x) :axes axes :out out :keep-dims keep-dims))
 
 (defpolymorph (one-arg-reduce-fn :inline t) ((name symbol) (initial-value-name symbol)
-                                             (x list) &key ((axes (not null))) ((out null)))
+                                             (x list) &key ((axes (not null))) ((out null))
+                                             keep-dims)
     t
   (declare (ignore out))
-  (one-arg-reduce-fn name initial-value-name (nu:asarray x) :axes axes))
+  (one-arg-reduce-fn name initial-value-name (nu:asarray x) :axes axes :keep-dims keep-dims))
 
 (defpolymorph (one-arg-reduce-fn :inline t) ((name symbol) (initial-value-name symbol)
-                                             (x list) &key ((axes null)) ((out (not null))))
+                                             (x list) &key ((axes null)) ((out (not null)))
+                                             keep-dims)
     t
   (declare (ignore axes))
-  (one-arg-reduce-fn name initial-value-name (nu:asarray x) :out out))
+  (one-arg-reduce-fn name initial-value-name (nu:asarray x) :out out :keep-dims keep-dims))
 
 (defpolymorph (one-arg-reduce-fn :inline t) ((name symbol) (initial-value-name symbol)
-                                             (x list) &key ((axes null)) ((out null)))
+                                             (x list) &key ((axes null)) ((out null))
+                                             keep-dims)
     t
   (declare (ignore out axes))
-  (one-arg-reduce-fn name initial-value-name (nu:asarray x)))
+  (one-arg-reduce-fn name initial-value-name (nu:asarray x) :keep-dims keep-dims))
 
 
 ;; parametric polymorphs
 
 (defpolymorph one-arg-reduce-fn
     ((name symbol) (initial-value-name symbol) (x (array <type>)) &key
-     ((axes null)) ((out null)))
-    t
-  (declare (ignore axes out)
+     ((axes null)) ((out null)) keep-dims)
+    <type>
+  (declare (ignore axes out keep-dims)
            (ignorable name))
   (let ((acc (funcall initial-value-name <type>))
         (cl-name (cl-name name))
@@ -56,9 +62,9 @@
 
 (defpolymorph (one-arg-reduce-fn :inline t)
     ((name symbol) (initial-value-name symbol) (x (simple-array <type>))
-     &key ((axes null)) ((out null)))
-    t
-  (declare (ignore axes out initial-value-name)
+     &key ((axes null)) ((out null)) keep-dims)
+    <type>
+  (declare (ignore axes out initial-value-name keep-dims)
            (ignorable name))
   (pflet ((svx (array-storage x))
           (size (array-total-size x)))
@@ -73,10 +79,13 @@
 
     ((name symbol) (initial-value-name symbol) (x (array <type>))
      &key ((axes integer))
+     keep-dims
      ((out (array <type>))
       (nu:full
        (let ((dim (narray-dimensions x)))
-         (append (subseq dim 0 axes) (nthcdr (+ 1 axes) dim)))
+         (append (subseq dim 0 axes)
+                 (if keep-dims (list 1) ())
+                 (nthcdr (+ 1 axes) dim)))
        :type (array-element-type x)
        :value (funcall initial-value-name (array-element-type x)))))
 
@@ -86,7 +95,8 @@
   (pflet* ((rank (array-rank x))
            (perm
             (loop :for i :below rank
-                  :collect (cond ((= i (1- rank)) axes) ((= i axes) (1- rank))
+                  :collect (cond ((= i (1- rank)) axes)
+                                 ((= i axes) (1- rank))
                                  (t i))))
            (out
             (transpose
@@ -117,10 +127,13 @@
 
     ((name symbol) (initial-value-name symbol) (x (simple-array <type>))
      &key ((axes integer))
+     keep-dims
      ((out (simple-array <type>))
       (nu:full
        (let ((dim (narray-dimensions x)))
-         (append (subseq dim 0 axes) (nthcdr (+ 1 axes) dim)))
+         (append (subseq dim 0 axes)
+                 (if keep-dims (list 1) ())
+                 (nthcdr (+ 1 axes) dim)))
        :type (array-element-type x)
        :value (funcall initial-value-name (array-element-type x)))))
 
@@ -160,30 +173,35 @@
 
 (defpolymorph (one-arg-reduce-fn :inline nil)
     ((name symbol) (initial-value-name symbol) (x (array <type>))
-     &key ((axes list)) ((out null)))
+     &key ((axes list)) ((out null)) keep-dims)
     t
   (declare (ignore out))
   (loop :with out := x
         :for axis :in (sort (copy-list axes) #'>)
         :do (setq out
-                  (one-arg-reduce-fn name initial-value-name out :axes
-                                     axis))
+                  (one-arg-reduce-fn name initial-value-name out
+                                     :axes axis
+                                     :keep-dims keep-dims))
         :finally (return out)))
 
 
 (macrolet ((def (name initial-value-name)
              `(progn
-                (define-polymorphic-function ,name (x &key axes out) :overwrite t)
-                (defpolymorph ,name (x &key ((axes (not null))) ((out (not null)))) t
-                  (one-arg-reduce-fn ',name ',initial-value-name x :axes axes :out out))
-                (defpolymorph ,name (x &key ((axes (not null))) ((out null))) t
+                (define-polymorphic-function ,name (x &key axes out keep-dims) :overwrite t)
+                (defpolymorph ,name (x &key ((axes (not null))) ((out (not null))) keep-dims) t
+                  (one-arg-reduce-fn ',name ',initial-value-name x
+                                     :axes axes :out out :keep-dims keep-dims))
+                (defpolymorph ,name (x &key ((axes (not null))) ((out null)) keep-dims) t
                   (declare (ignore out))
-                  (one-arg-reduce-fn ',name ',initial-value-name x :axes axes))
-                (defpolymorph ,name (x &key ((axes null)) ((out (not null)))) t
-                  (one-arg-reduce-fn ',name ',initial-value-name x :axes axes :out out))
-                (defpolymorph ,name (x &key ((axes null)) ((out null))) t
+                  (one-arg-reduce-fn ',name ',initial-value-name x
+                                     :axes axes :keep-dims keep-dims))
+                (defpolymorph ,name (x &key ((axes null)) ((out (not null))) keep-dims) t
+                  (one-arg-reduce-fn ',name ',initial-value-name x
+                                     :axes axes :out out :keep-dims keep-dims))
+                (defpolymorph ,name (x &key ((axes null)) ((out null)) keep-dims) t
                   (declare (ignore out))
-                  (one-arg-reduce-fn ',name ',initial-value-name x :axes axes)))))
+                  (one-arg-reduce-fn ',name ',initial-value-name x
+                                     :axes axes :keep-dims keep-dims)))))
   (def nu:sum type-zero)
   (def nu:maximum type-min)
   (def nu:minimum type-max))
@@ -217,6 +235,12 @@
                                                       (4 5 6)))
                                         :axes 0
                                         :out (nu:zeros 3))))
+             (5am:is (nu:array= (nu:asarray '((5 7 9)))
+                                (nu:sum (nu:asarray '((1 2 3)
+                                                      (4 5 6)))
+                                        :axes 0
+                                        :out (nu:zeros 1 3)
+                                        :keep-dims t)))
              (5am:is (nu:array= (nu:asarray '(6 15))
                                 (nu:sum (nu:asarray '((1 2 3)
                                                       (4 5 6)))
@@ -244,6 +268,13 @@
                                                       ((7 8 9)
                                                        (0 1 2))))
                                         :axes '(0 2))))
+             (5am:is (nu:array= (nu:asarray '(((30) (18))))
+                                (nu:sum (nu:asarray '(((1 2 3)
+                                                       (4 5 6))
+                                                      ((7 8 9)
+                                                       (0 1 2))))
+                                        :axes '(0 2)
+                                        :keep-dims t)))
 
              (let ((array (nu:rand 100)))
                (5am:is (float-close-p (nu:sum array)
@@ -282,6 +313,12 @@
                                                           (4 5 6)))
                                             :axes 0
                                             :out (nu:zeros 3))))
+             (5am:is (nu:array= (nu:asarray '((4 5 6)))
+                                (nu:maximum (nu:asarray '((1 2 3)
+                                                          (4 5 6)))
+                                            :axes 0
+                                            :out (nu:zeros 1 3)
+                                            :keep-dims t)))
              (5am:is (nu:array= (nu:asarray '(3 6))
                                 (nu:maximum (nu:asarray '((1 2 3)
                                                           (4 5 6)))
@@ -309,6 +346,13 @@
                                                           ((7 8 9)
                                                            (0 1 2))))
                                             :axes '(0 2))))
+             (5am:is (nu:array= (nu:asarray '(((9) (6))))
+                                (nu:maximum (nu:asarray '(((1 2 3)
+                                                           (4 5 6))
+                                                          ((7 8 9)
+                                                           (0 1 2))))
+                                            :axes '(0 2)
+                                            :keep-dims t)))
 
              (let ((array (nu:rand 100)))
                (5am:is (float-close-p (nu:maximum array)
@@ -351,6 +395,12 @@
                                                           (4 5 6)))
                                             :axes 1
                                             :out (nu:zeros 2))))
+             (5am:is (nu:array= (nu:asarray '((1) (4)))
+                                (nu:minimum (nu:asarray '((1 2 3)
+                                                          (4 5 6)))
+                                            :axes 1
+                                            :out (nu:zeros 2 1)
+                                            :keep-dims t)))
              (5am:is (nu:array= (nu:asarray '((1 2 3)
                                               (0 1 2)))
                                 (nu:minimum (nu:asarray '(((1 2 3)
@@ -373,6 +423,13 @@
                                                           ((7 8 9)
                                                            (0 1 2))))
                                             :axes '(0 2))))
+             (5am:is (nu:array= (nu:asarray '(((1) (0))))
+                                (nu:minimum (nu:asarray '(((1 2 3)
+                                                           (4 5 6))
+                                                          ((7 8 9)
+                                                           (0 1 2))))
+                                            :axes '(0 2)
+                                            :keep-dims t)))
 
              (let ((array (nu:rand 100)))
                (5am:is (float-close-p (nu:minimum array)
@@ -392,4 +449,3 @@
 ;;     (cblas:sdot (array-total-size x)
 ;;                          (ptr x) 1
 ;;                          ones 0)))
-
