@@ -9,7 +9,7 @@
         :do (incf sum o)
         :finally (return sum)))
 
-(defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings . expression)
+(defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings &rest expression)
                                  &environment env)
   "Each bindings is of the form (PTR-VAR ELT-SIZE INNER-STRIDE-VAR ARRAY-EXPR).
 The loop is necessary because different axes can have different strides and

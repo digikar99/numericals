@@ -1,6 +1,6 @@
 (in-package :numericals.impl)
 
-(defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings . expression))
+(defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings &rest expression))
   "Each bindings is of the form (PTR-VAR ELT-SIZE INNER-STRIDE-VAR ARRAY-EXPR)."
 
   (let* ((pointers      (mapcar #'first  bindings))
