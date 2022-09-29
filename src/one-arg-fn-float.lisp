@@ -13,8 +13,9 @@
 
 ;;; TODO: Use ARRAY or STATIC-ARRAY
 
-(define-constant +one-arg-fn-float-doc+
-  "
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-constant +one-arg-fn-float-doc+
+    "
 These functions have a single array as input and a single array as output.
 If the output array is not supplied, its element-type is given by *DEFAULT-FLOAT-FORMAT*
 
@@ -30,7 +31,7 @@ Optimization for small arrays essentially involves inlining, along with:
 
 TODO: Provide more details
   "
-  :test #'string=)
+    :test #'string=))
 
 (define-polymorphic-function one-arg-fn/float (name x &key out broadcast) :overwrite t
   :documentation +one-arg-fn-float-doc+)

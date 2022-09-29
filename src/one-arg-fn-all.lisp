@@ -2,9 +2,10 @@
 
 (5am:in-suite nu::array)
 
-(define-constant +one-arg-fn-all-doc+
-  ;; See the below non-array polymorphs for the element-type deduction procedure
-  "
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-constant +one-arg-fn-all-doc+
+    ;; See the below non-array polymorphs for the element-type deduction procedure
+    "
 These functions have a single array as input and a single array as output.
 If the output array is not supplied, its element-type is computed :AUTO-matically
 
@@ -20,7 +21,7 @@ Optimization for small arrays essentially involves inlining, along with:
 
 TODO: Provide more details
   "
-  :test #'string=)
+    :test #'string=))
 
 (define-polymorphic-function one-arg-fn/all (name x &key out broadcast) :overwrite t
   :documentation +one-arg-fn-all-doc+)
