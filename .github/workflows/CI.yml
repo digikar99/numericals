@@ -79,7 +79,7 @@ jobs:
                      (push "~/" ql:*local-project-directories*)
                      (print ql:*local-project-directories*)
                      (print (ql:where-is-system "dense-numericals"))
-                     (ql:quickload "'$LIBRARY'")
+                     (ql:quickload "'$LIBRARY'" :verbose t)
                      (uiop:quit 0))'
 
     # Testing it on the second load confirms that functionalities do not
