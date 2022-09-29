@@ -1,6 +1,9 @@
-(asdf:defsystem "numericals"
+(defsystem "numericals"
   :pathname "src/"
-  :version "0.1.0"
+  :version "2022.09.0" ; year, month, patch
+  :description "A high performance numerical computing library for Common Lisp (focus: basic math operations)"
+  :license "MIT"
+  :author "Shubhamkar B. Ayare (shubhamayare@yahoo.co.in)"
   :depends-on ("numericals.common"
                "polymorphic-functions"
                "cl-form-types"
