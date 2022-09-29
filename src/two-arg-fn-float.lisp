@@ -239,41 +239,44 @@
 
 (defpolymorph two-arg-fn/float
     ((name symbol) (x (array single-float)) (y number)
-     &key ((out (array single-float))
-           (nu:zeros (narray-dimensions x) :type 'single-float))
+     &key ((out (or null (array single-float))))
      ;; The very fact that we are allowing Y to be NUMBER implies
      ;; BROADCAST must be non-NIL
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array single-float)
   (declare (ignorable name broadcast))
-  (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-      (broadcast-compatible-p x out)
-    (assert broadcast-compatible-p (x out)
-            'incompatible-broadcast-dimensions
-            :dimensions (mapcar #'narray-dimensions (list x out))
-            :array-likes (list x out))
-    (cffi:with-foreign-pointer (ptr-y 4)
-      (setf (cffi:mem-ref ptr-y :float) (trivial-coerce:coerce y 'single-float))
-      (ptr-iterate-but-inner broadcast-dimensions n
-        ((ptr-x 4 ix x)
-         (ptr-o 4 io out))
-        (funcall (single-float-c-name name)
-                 n
-                 ptr-x ix
-                 ptr-y 0
-                 ptr-o io))))
-  out)
+  (let ((out (or out (nu:zeros (narray-dimensions x) :type 'single-float)))
+        (single-float-c-name (single-float-c-name name)))
+    (declare (type (array single-float) out))
+    (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+        (broadcast-compatible-p x out)
+      (assert broadcast-compatible-p (x out)
+              'incompatible-broadcast-dimensions
+              :dimensions (mapcar #'narray-dimensions (list x out))
+              :array-likes (list x out))
+      (cffi:with-foreign-pointer (ptr-y 4)
+        (setf (cffi:mem-ref ptr-y :float) (trivial-coerce:coerce y 'single-float))
+        (ptr-iterate-but-inner broadcast-dimensions n
+          ((ptr-x 4 ix x)
+           (ptr-o 4 io out))
+          (funcall single-float-c-name
+                   n
+                   ptr-x ix
+                   ptr-y 0
+                   ptr-o io))))
+    out))
 
 (defpolymorph two-arg-fn/float
     ((name symbol) (x number) (y (array single-float)) 
-     &key ((out (array single-float))
-           (nu:zeros (narray-dimensions y) :type 'single-float))
+     &key ((out (or null (array single-float))))
      ;; The very fact that we are allowing X to be NUMBER implies
      ;; BROADCAST must be non-NIL
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array single-float)
   (declare (ignorable name broadcast))
-  (let ((single-float-c-name (single-float-c-name name)))
+  (let ((out (or out (nu:zeros (narray-dimensions y) :type 'single-float)))
+        (single-float-c-name (single-float-c-name name)))
+    (declare (type (array single-float) out))
     (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
         (broadcast-compatible-p y out)
       (assert broadcast-compatible-p (y out)
@@ -289,8 +292,8 @@
                    n
                    ptr-x 0
                    ptr-y iy
-                   ptr-o io)))))
-  out)
+                   ptr-o io))))
+    out))
 
 ;;; double-float - 6 polymorphs
 
@@ -449,41 +452,44 @@
 
 (defpolymorph two-arg-fn/float
     ((name symbol) (x (array double-float)) (y number)
-     &key ((out (array double-float))
-           (nu:zeros (narray-dimensions x) :type 'double-float))
+     &key ((out (or null (array double-float))))
      ;; The very fact that we are allowing Y to be NUMBER implies
      ;; BROADCAST must be non-NIL
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array double-float)
   (declare (ignorable name broadcast))
-  (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-      (broadcast-compatible-p x out)
-    (assert broadcast-compatible-p (x out)
-            'incompatible-broadcast-dimensions
-            :dimensions (mapcar #'narray-dimensions (list x out))
-            :array-likes (list x out))
-    (cffi:with-foreign-pointer (ptr-y 8)
-      (setf (cffi:mem-ref ptr-y :float) (trivial-coerce:coerce y 'double-float))
-      (ptr-iterate-but-inner broadcast-dimensions n
-        ((ptr-x 8 ix x)
-         (ptr-o 8 io out))
-        (funcall (double-float-c-name name)
-                 n
-                 ptr-x ix
-                 ptr-y 0
-                 ptr-o io))))
-  out)
+  (let ((double-float-c-name (double-float-c-name name))
+        (out (or out (nu:zeros (narray-dimensions x) :type 'double-float))))
+    (declare (type (array double-float) out))
+    (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+        (broadcast-compatible-p x out)
+      (assert broadcast-compatible-p (x out)
+              'incompatible-broadcast-dimensions
+              :dimensions (mapcar #'narray-dimensions (list x out))
+              :array-likes (list x out))
+      (cffi:with-foreign-pointer (ptr-y 8)
+        (setf (cffi:mem-ref ptr-y :double) (trivial-coerce:coerce y 'double-float))
+        (ptr-iterate-but-inner broadcast-dimensions n
+          ((ptr-x 8 ix x)
+           (ptr-o 8 io out))
+          (funcall double-float-c-name
+                   n
+                   ptr-x ix
+                   ptr-y 0
+                   ptr-o io))))
+    out))
 
 (defpolymorph two-arg-fn/float
     ((name symbol) (x number) (y (array double-float)) 
-     &key ((out (array double-float))
-           (nu:zeros (narray-dimensions y) :type 'double-float))
+     &key ((out (or null (array double-float))))
      ;; The very fact that we are allowing X to be NUMBER implies
      ;; BROADCAST must be non-NIL
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array double-float)
   (declare (ignorable name broadcast))
-  (let ((double-float-c-name (double-float-c-name name)))
+  (let ((out (or out (nu:zeros (narray-dimensions y) :type 'double-float)))
+        (double-float-c-name (double-float-c-name name)))
+    (declare (type (array double-float) out))
     (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
         (broadcast-compatible-p y out)
       (assert broadcast-compatible-p (y out)
@@ -491,7 +497,7 @@
               :dimensions (mapcar #'narray-dimensions (list y out))
               :array-likes (list y out))
       (cffi:with-foreign-pointer (ptr-x 8)
-        (setf (cffi:mem-ref ptr-x :float) (trivial-coerce:coerce X 'double-float))
+        (setf (cffi:mem-ref ptr-x :double) (trivial-coerce:coerce X 'double-float))
         (ptr-iterate-but-inner broadcast-dimensions n
           ((ptr-y 8 iy y)
            (ptr-o 8 io out))
@@ -499,8 +505,8 @@
                    n
                    ptr-x 0
                    ptr-y iy
-                   ptr-o io)))))
-  out)
+                   ptr-o io))))
+    out))
 
 
 

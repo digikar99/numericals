@@ -41,8 +41,8 @@
 
 (defpolymorph one-arg-reduce-fn
     ((name symbol) (initial-value-name symbol) (x (array <type>)) &key
-     ((axes null)) ((out null)) keep-dims)
-    <type>
+     ((axes null)) ((out null)) ((keep-dims null)))
+    real
   (declare (ignore axes out keep-dims)
            (ignorable name))
   (let ((acc (funcall initial-value-name <type>))
@@ -56,23 +56,22 @@
       (setq acc
             (funcall cl-name acc
                      (funcall c-name n ptr-x inc-x))))
-    (if (typep acc <type>)
-        acc
-        (trivial-coerce:coerce acc <type>))))
+    (let ((result (if (typep acc <type>)
+                      acc
+                      (locally (declare (notinline trivial-coerce:coerce))
+                        (trivial-coerce:coerce acc <type>)))))
+      result)))
 
 (defpolymorph (one-arg-reduce-fn :inline t)
-    ((name symbol) (initial-value-name symbol) (x (simple-array <type>))
-     &key ((axes null)) ((out null)) keep-dims)
-    <type>
-  (declare (ignore axes out initial-value-name keep-dims)
+    ((name symbol) (initial-value-name symbol) (x (array <type>)) &key
+     ((axes null)) ((out null)) ((keep-dims (not null))))
+    (array <type>)
+  (declare (ignore axes out keep-dims)
            (ignorable name))
-  (pflet ((svx (array-storage x))
-          (size (array-total-size x)))
-    (declare (type (common-lisp:simple-array <type> 1) svx)
-             (type size size))
-    (with-pointers-to-vectors-data ((ptr-x svx))
-      (funcall (c-name <type> name) size ptr-x 1))))
-
+  (let ((result (one-arg-reduce-fn name initial-value-name x
+                                   :axes nil :out nil :keep-dims nil)))
+    (make-array (make-list (array-rank x) :initial-element 1)
+                :initial-element result)))
 
 
 (defpolymorph (one-arg-reduce-fn :inline t)
@@ -99,14 +98,14 @@
                                  ((= i axes) (1- rank))
                                  (t i))))
            (out
-            (transpose
-             (reshape out
-                      (let ((dim
-                              (array-dimensions (the array x))))
-                        (setf (nth axes dim) 1)
-                        dim))
+            (nu:transpose
+             (nu:reshape out
+                         (let ((dim
+                                 (array-dimensions (the array x))))
+                           (setf (nth axes dim) 1)
+                           dim))
              :axes perm))
-           (x (transpose x :axes perm))
+           (x (nu:transpose x :axes perm))
            (c-fn (c-name <type> name))
            (c-size (c-size <type>))
            (c-type (c-type <type>)))
@@ -141,8 +140,9 @@
 
   (assert (< axes (array-rank x)))
   (if (= 1 (array-rank x))
-      (one-arg-reduce-fn name initial-value-name
-                         (the (array <type> 1) x) :axes axes)
+      (pflet ((x x))
+        (declare (type (array <type> 1) x))
+        (one-arg-reduce-fn name initial-value-name x :axes axes))
       (pflet ((svx (array-storage x))
               (svo (array-storage out))
               (stride (array-stride x axes))
@@ -198,10 +198,13 @@
                 (defpolymorph ,name (x &key ((axes null)) ((out (not null))) keep-dims) t
                   (one-arg-reduce-fn ',name ',initial-value-name x
                                      :axes axes :out out :keep-dims keep-dims))
-                (defpolymorph ,name (x &key ((axes null)) ((out null)) keep-dims) t
-                  (declare (ignore out))
+                (defpolymorph ,name (x &key ((axes null)) ((out null)) ((keep-dims null))) t
+                  (declare (ignore out keep-dims))
+                  (one-arg-reduce-fn ',name ',initial-value-name x :axes axes))
+                (defpolymorph ,name (x &key ((axes null)) ((out null)) ((keep-dims (not null)))) t
+                  (declare (ignore out keep-dims))
                   (one-arg-reduce-fn ',name ',initial-value-name x
-                                     :axes axes :keep-dims keep-dims)))))
+                                     :axes axes :keep-dims t)))))
   (def nu:sum type-zero)
   (def nu:maximum type-min)
   (def nu:minimum type-max))

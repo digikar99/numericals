@@ -81,7 +81,8 @@
             (and (equalp (narray-dimensions x) (narray-dimensions y))
                  (equalp (narray-dimensions x) (narray-dimensions out))))))
     (pflet ((c-name (c-name <type> name))
-            (svx (array-storage x)) (svy (array-storage y))
+            (svx (array-storage x))
+            (svy (array-storage y))
             (svo (array-storage out))
             (c-size (c-size <type>)))
       (declare (type (cl:array <type> 1) svx svy svo))
@@ -107,23 +108,9 @@
   (policy-cond:with-expectations (= safety 0)
       ((assertion
         (or broadcast (equalp (narray-dimensions x) (narray-dimensions y)))))
-    (pflet* ((out (nu:zeros (narray-dimensions x) :type <type>))
-             (c-name (c-name <type> name))
-             (svx (array-storage x)) (svy (array-storage y))
-             (svo (array-storage out))
-             (c-size (c-size <type>)))
-      (declare (type (cl:array <type> 1) svx svy svo))
-      (with-thresholded-multithreading/cl (array-total-size svo)
-          (svx svy svo)
-        (with-pointers-to-vectors-data ((ptr-x (array-storage svx))
-                                        (ptr-y (array-storage svy))
-                                        (ptr-o (array-storage svo)))
-          (cffi:incf-pointer ptr-x (* c-size (cl-array-offset svx)))
-          (cffi:incf-pointer ptr-y (* c-size (cl-array-offset svy)))
-          (cffi:incf-pointer ptr-o (* c-size (cl-array-offset svo)))
-          (funcall c-name (array-total-size svo) ptr-x 1 ptr-y 1
-                   ptr-o 1)))
-      out)))
+    (pflet ((out (nu:zeros (narray-dimensions x) :type <type>)))
+      (declare (type (simple-array <type>) out))
+      (two-arg-fn/non-comparison name x y :out out :broadcast nil))))
 
 (defpolymorph (two-arg-fn/non-comparison :inline :maybe
                                          :more-optimal-type-list
@@ -140,9 +127,11 @@
         (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
             (broadcast-compatible-p x y out)
           (assert broadcast-compatible-p (x y out)
-                  'incompatible-broadcast-dimensions :dimensions
-                  (mapcar #'narray-dimensions (list x y out)) :array-likes
-                  (list x y out))
+                  'incompatible-broadcast-dimensions
+                  :dimensions (list (narray-dimensions x)
+                                    (narray-dimensions y)
+                                    (narray-dimensions out))
+                  :array-likes (list x y out))
           (let ((c-name (c-name <type> name)))
             (ptr-iterate-but-inner broadcast-dimensions
                 n
@@ -166,50 +155,39 @@
      ((out null)) (broadcast nu:*broadcast-automatically*))
     (array <type>)
   (declare (ignorable name out broadcast))
-  (let ((c-size (c-size <type>)))
-    (if broadcast
-        (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-            (broadcast-compatible-p x y)
-          (assert broadcast-compatible-p (x y)
-                  'incompatible-broadcast-dimensions :dimensions
-                  (mapcar #'narray-dimensions (list x y)) :array-likes
-                  (list x y))
-          (pflet ((out (nu:zeros broadcast-dimensions :type <type>)))
-            (declare (type (array <type>) out))
-            (let ((c-name (c-name <type> name)))
-              (ptr-iterate-but-inner broadcast-dimensions
-                  n
-                ((ptr-x c-size ix x) (ptr-y c-size iy y) (ptr-o c-size io out))
-                (funcall c-name n ptr-x ix ptr-y iy ptr-o io)))
-            out))
-        (policy-cond:with-expectations (= safety 0)
-            ((assertion
-              (or broadcast
-                  (equalp (narray-dimensions x) (narray-dimensions y)))))
-          (pflet ((out (nu:zeros (narray-dimensions x) :type <type>)))
-            (declare (type (array <type>) out))
-            (let ((c-name (c-name <type> name)))
-              (ptr-iterate-but-inner (narray-dimensions x)
-                  n
-                ((ptr-x c-size ix x) (ptr-y c-size iy y) (ptr-o c-size io out))
-                (funcall c-name n ptr-x ix ptr-y iy ptr-o io)))
-            out)))))
+  (if broadcast
+      (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
+          (broadcast-compatible-p x y)
+        (assert broadcast-compatible-p (x y)
+                'incompatible-broadcast-dimensions
+                :dimensions (list (narray-dimensions x)
+                                  (narray-dimensions y))
+                :array-likes (list x y))
+        (pflet ((out (nu:zeros broadcast-dimensions :type <type>)))
+          (declare (type (array <type>) out))
+          (two-arg-fn/non-comparison name x y :out out :broadcast t)))
+      (policy-cond:with-expectations (= safety 0)
+          ((assertion
+            (or broadcast
+                (equalp (narray-dimensions x) (narray-dimensions y)))))
+        (pflet ((out (nu:zeros (narray-dimensions x) :type <type>)))
+          (declare (type (array <type>) out))
+          (two-arg-fn/non-comparison name x y :out out :broadcast nil)))))
 
 (defpolymorph two-arg-fn/non-comparison
     ((name symbol) (x (array <type>)) (y number) &key
-     ((out (array <type>))
-      (nu:zeros (narray-dimensions x) :type (array-element-type x)))
+     ((out (array <type>)))
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array <type>)
   (declare (ignorable name broadcast))
   (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
       (broadcast-compatible-p x out)
     (assert broadcast-compatible-p (x out) 'incompatible-broadcast-dimensions
-            :dimensions (mapcar #'narray-dimensions (list x out)) :array-likes
-            (list x out))
+            :dimensions (list (narray-dimensions x) (narray-dimensions out))
+            :array-likes (list x out))
     (let ((c-size (c-size <type>)))
       (cffi-sys:with-foreign-pointer (ptr-y c-size)
-        (setf (cffi:mem-ref ptr-y :float)
+        (setf (cffi:mem-ref ptr-y (c-type <type>))
               (trivial-coerce:coerce y <type>))
         (ptr-iterate-but-inner broadcast-dimensions
             n
@@ -217,10 +195,21 @@
           (funcall (c-name <type> name) n ptr-x ix ptr-y 0 ptr-o io)))))
   out)
 
+(defpolymorph (two-arg-fn/non-comparison :suboptimal-note runtime-array-allocation
+                                         :inline t)
+    ((name symbol) (x (array <type>)) (y number) &key
+     ((out null))
+     ((broadcast (not null)) nu:*broadcast-automatically*))
+    (array <type>)
+  (declare (ignorable name out broadcast))
+  (pflet ((out (nu:zeros (narray-dimensions x) :type (array-element-type x))))
+    (declare (type (array <type>) out))
+    (two-arg-fn/non-comparison name x y :out out :broadcast t)
+    out))
+
 (defpolymorph two-arg-fn/non-comparison
     ((name symbol) (x number) (y (array <type>)) &key
-     ((out (array <type>))
-      (nu:zeros (narray-dimensions y) :type (array-element-type y)))
+     ((out (array <type>)))
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array <type>)
   (declare (ignorable name broadcast))
@@ -229,17 +218,30 @@
     (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
         (broadcast-compatible-p y out)
       (assert broadcast-compatible-p (y out)
-              'incompatible-broadcast-dimensions :dimensions
-              (mapcar #'narray-dimensions (list y out)) :array-likes
-              (list y out))
+              'incompatible-broadcast-dimensions
+              :dimensions (list (narray-dimensions y)
+                                (narray-dimensions out))
+              :array-likes (list y out))
       (cffi-sys:with-foreign-pointer (ptr-x c-size)
-        (setf (cffi:mem-ref ptr-x :float)
+        (setf (cffi:mem-ref ptr-x (c-type <type>))
               (trivial-coerce:coerce x <type>))
         (ptr-iterate-but-inner broadcast-dimensions
             n
           ((ptr-y c-size iy y) (ptr-o c-size io out))
-          (funcall c-name n ptr-x 0 ptr-y iy ptr-o io)))))
-  out)
+          (funcall c-name n ptr-x 0 ptr-y iy ptr-o io))))
+    out))
+
+(defpolymorph (two-arg-fn/non-comparison :suboptimal-note runtime-array-allocation
+                                         :inline t)
+    ((name symbol) (x number) (y (array <type>)) &key
+     ((out null))
+     ((broadcast (not null)) nu:*broadcast-automatically*))
+    (array <type>)
+  (declare (ignorable name out broadcast))
+  (pflet ((out (nu:zeros (narray-dimensions y) :type (array-element-type y))))
+    (declare (type (array <type>) out))
+    (two-arg-fn/non-comparison name x y :out out :broadcast t)
+    out))
 
 ;;; Actual definitions
 
