@@ -28,6 +28,10 @@
                (:file "primitives"            :depends-on ("utils"))
                (:file "broadcast"             :depends-on ("primitives"
                                                            "utils"))
+               ;; FIXME: Do we really want a "good" AREF? Because that was one of the
+               ;; main points of DENSE-ARRAYS; besides, NUMCL and SELECT already provide
+               ;; the "good" aref
+               (:file "transpose"             :depends-on ("package"))
                (:file "aref"                  :depends-on ("primitives"
                                                            "utils"))
 
@@ -76,10 +80,6 @@
                (:file "n-arg-fn-tests"          :depends-on ("n-arg-fn-compiler-macros"))
                ;; (:file "outer")
                ;; (:file "concatenate")
-               ;; FIXME: Do we really want a "good" AREF? Because that was one of the
-               ;; main points of DENSE-ARRAYS; besides, NUMCL and SELECT already provide
-               ;; the "good" aref
-               (:file "transpose")
                (:file "blas"                    :depends-on ("primitives"
                                                              "ptr-iterate-but-inner"))
                ;; (:file "misc")
