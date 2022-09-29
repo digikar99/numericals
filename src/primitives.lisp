@@ -213,8 +213,9 @@ Examples:
   ;; TODO: Define the predicate array-like-p.
   (ensure-row-major-layout)
   (etypecase array-like
-    (atom (make-array 1 :element-type type
-                        :initial-element (trivial-coerce:coerce array-like type)))
+    (array
+     (nu:copy array-like :out (nu:zeros (narray-dimensions array-like)
+                                        :type type)))
     (sequence
      (let* ((result-array (nu:zeros (nu:shape array-like) :type type))
             (index 0)
@@ -241,9 +242,8 @@ Examples:
                      (incf index)))))
          (%asarray array-like))
        result-array))
-    (array
-     (nu:copy array-like :out (nu:zeros (narray-dimensions array-like)
-                                        :type type)))))
+    (atom (make-array 1 :element-type type
+                        :initial-element (trivial-coerce:coerce array-like type)))))
 
 (defmacro nu:macro-map-array (result-array function &rest arrays)
   (alexandria:with-gensyms (result i result-type)
