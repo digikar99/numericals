@@ -26,19 +26,19 @@
   #-sbcl
   (bmas:i64sum n x incx))
 
-(declaim (inline fixnum-max))
-(defun fixnum-max (n x incx)
+(declaim (inline fixnum-hmax))
+(defun fixnum-hmax (n x incx)
   #+sbcl
-  (nth-value 0 (floor (bmas:i64max n x incx) 2))
+  (nth-value 0 (floor (bmas:i64hmax n x incx) 2))
   #-sbcl
-  (bmas:i64max n x incx))
+  (bmas:i64hmax n x incx))
 
-(declaim (inline fixnum-min))
-(defun fixnum-min (n x incx)
+(declaim (inline fixnum-hmin))
+(defun fixnum-hmin (n x incx)
   #+sbcl
-  (nth-value 0 (floor (bmas:i64min n x incx) 2))
+  (nth-value 0 (floor (bmas:i64hmin n x incx) 2))
   #-sbcl
-  (bmas:i64max n x incx))
+  (bmas:i64hmax n x incx))
 
 (declaim (inline fixnum-dot))
 (defun fixnum-dot (n x incx y incy)
@@ -91,12 +91,12 @@
                                            fixnum-mul)
      (nu:divide   bmas:sdiv bmas:ddiv cl:/)
 
-     (nu:two-arg-max bmas:smax bmas:dmax cl:+ bmas:i64max bmas:i32max bmas:i16max bmas:i8max
-                                              bmas:i64max bmas:i32max bmas:i16max bmas:i8max
-                                              fixnum-max)
-     (nu:two-arg-min bmas:smin bmas:dmin cl:+ bmas:i64min bmas:i32min bmas:i16min bmas:i8min
-                                              bmas:i64min bmas:i32min bmas:i16min bmas:i8min
-                                              fixnum-min)
+     (nu:two-arg-max bmas:smax bmas:dmax cl:max bmas:i64max bmas:i32max bmas:i16max bmas:i8max
+                                                bmas:i64max bmas:i32max bmas:i16max bmas:i8max
+                                                fixnum-max)
+     (nu:two-arg-min bmas:smin bmas:dmin cl:max bmas:i64min bmas:i32min bmas:i16min bmas:i8min
+                                                bmas:i64min bmas:i32min bmas:i16min bmas:i8min
+                                                fixnum-min)
 
      (nu:sum bmas:ssum bmas:dsum cl:+ bmas:i64sum bmas:i32sum bmas:i16sum bmas:i8sum
                                       bmas:i64sum bmas:i32sum bmas:i16sum bmas:i8sum
