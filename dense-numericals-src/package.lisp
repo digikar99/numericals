@@ -201,40 +201,41 @@
                 #:dimensions
                 #:element-type))
 
-(defpackage :dense-numericals.linalg
-  (:export #:multidot
-           #:matrix-power
+;; (defpackage :dense-numericals.linalg
+;;   (:export #:multidot
+;;            #:matrix-power
 
-           #:cholesky
-           #:qr
-           #:svd
+;;            #:cholesky
+;;            #:qr
+;;            #:svd
 
-           #:eig
-           #:eigh
-           #:eigvals
-           #:eigvalsh
+;;            #:eig
+;;            #:eigh
+;;            #:eigvals
+;;            #:eigvalsh
 
-           #:norm
-           #:cond
-           #:det
-           #:matrix-rank
-           #:slogdet
+;;            #:norm
+;;            #:cond
+;;            #:det
+;;            #:matrix-rank
+;;            #:slogdet
 
-           #:solve
-           #:tensorsolve
-           #:lstsq
-           #:inv
-           #:pinv
-           #:tensorinv
+;;            #:solve
+;;            #:tensorsolve
+;;            #:lstsq
+;;            #:inv
+;;            #:pinv
+;;            #:tensorinv
 
-           #:axpy))
+;;            #:axpy))
 
 (in-package :dense-numericals.impl)
 
 ;; FIXME: Avoid TPLN
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (trivial-package-local-nicknames:add-package-local-nickname :nu :dense-numericals)
-  (trivial-package-local-nicknames:add-package-local-nickname :la :dense-numericals.linalg))
+  ;; (trivial-package-local-nicknames:add-package-local-nickname :la :dense-numericals.linalg)
+  )
 
 (5am:def-suite :dense-numericals)
 
