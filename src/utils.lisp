@@ -114,13 +114,16 @@ can be helpful to locate bugs.")
 (defun array-storage (array)
   (declare (ignorable array)
            (optimize speed))
-  #+sbcl (loop :with array := array
-               :do (locally (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
-                     (typecase array
-                       ((cl:simple-array * (*)) (return array))
-                       (cl:simple-array (return (sb-ext:array-storage-vector array)))
-                       (t (setq array (cl:array-displacement array))))))
-  #-sbcl (error "ARRAY-STORAGE not implemented for CL:ARRAY!"))
+  (loop :with array := array
+        :do (locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note))
+              (typecase array
+                ((cl:simple-array * (*)) (return array))
+                (cl:simple-array (return #+sbcl (sb-ext:array-storage-vector array)
+                                         #+ccl (ccl::%array-header-data-and-offset array)
+                                         #-(or sbcl ccl)
+                                         (error "Don't know how to obtain ARRAY-STORAGE on ~S"
+                                                (lisp-implementation-type))))
+                (t (setq array (cl:array-displacement array)))))))
 
 (defpolymorph nu:array= ((array1 cl:array) (array2 cl:array) &key (test #'equalp)) boolean
   (and (equalp (array-dimensions array1)
