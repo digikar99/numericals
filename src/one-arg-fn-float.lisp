@@ -326,7 +326,7 @@ TODO: Provide more details
                     :out out :broadcast broadcast))
 
 ;; non-float arrays - these two are recursive
-(defpolymorph (one-arg-fn/float :inline nil :suboptimal-note runtime-array-allocation)
+(defpolymorph (one-arg-fn/float :inline t :suboptimal-note runtime-array-allocation)
     ((name symbol) (x array)
      &key ((out null))
      (broadcast nu:*broadcast-automatically*))
@@ -337,7 +337,7 @@ TODO: Provide more details
     (nu:copy x :out out)
     (one-arg-fn/float name out :out out :broadcast broadcast)))
 
-(defpolymorph (one-arg-fn/float :inline nil)
+(defpolymorph (one-arg-fn/float :inline t)
     ((name symbol) (x array)
      &key ((out (or (array single-float) (array double-float))))
      (broadcast nu:*broadcast-automatically*))

@@ -140,7 +140,8 @@ Examples:
       ;; A good use of specialized function :)
       (specialized-function:specializing (asv min range) ()
         (dotimes (index (array-total-size a))
-          (funcall #'(setf row-major-aref) (+ min (random range)) asv index)))
+          (setf (row-major-aref asv index)
+                (+ min (random range)))))
       a)))
 
 (defun nu:full (&rest args)
@@ -259,12 +260,11 @@ Examples:
          (let* ((,result (or ,result-array (nu:zeros-like ,(first array-syms))))
                 (,result-type (array-element-type ,result)))
            (dotimes (,i (array-total-size ,(first array-syms)))
-             (funcall #'(setf row-major-aref)
-                      (trivial-coerce:coerce
-                       (,function ,@(mapcar (lm array-sym `(row-major-aref ,array-sym ,i))
-                                            array-syms))
-                       ,result-type)
-                      ,result ,i))
+             (setf (row-major-aref ,result ,i)
+                   (trivial-coerce:coerce
+                    (,function ,@(mapcar (lm array-sym `(row-major-aref ,array-sym ,i))
+                                         array-syms))
+                    ,result-type)))
            ,result)))))
 
 (defmacro nu:do-arrays (bindings &body body)

@@ -164,14 +164,16 @@
                                   (narray-dimensions y))
                 :array-likes (list x y))
         (pflet ((out (nu:zeros broadcast-dimensions :type <type>)))
-          (declare (type (array <type>) out))
+          (declare (type (simple-array <type>) out)
+                   (compiler-macro-notes:muffle
+                    polymorphic-functions:more-optimal-polymorph-inapplicable))
           (two-arg-fn/non-comparison name x y :out out :broadcast t)))
       (policy-cond:with-expectations (= safety 0)
           ((assertion
             (or broadcast
                 (equalp (narray-dimensions x) (narray-dimensions y)))))
         (pflet ((out (nu:zeros (narray-dimensions x) :type <type>)))
-          (declare (type (array <type>) out))
+          (declare (type (simple-array <type>) out))
           (two-arg-fn/non-comparison name x y :out out :broadcast nil)))))
 
 (defpolymorph two-arg-fn/non-comparison

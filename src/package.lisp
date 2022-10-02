@@ -1,6 +1,7 @@
 (cl:in-package :cl)
 
 (defpackage :numericals
+  (:use)
   (:import-from :trivial-coerce #:coerce)
   (:export
 
@@ -35,8 +36,8 @@
    
    #:astype
    #:asarray
-   :aref
-   :concatenate
+   #:aref
+   #:concatenate
    #:array=
    #:zeros
    #:zeros-like
