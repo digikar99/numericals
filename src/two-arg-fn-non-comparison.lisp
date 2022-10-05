@@ -67,6 +67,44 @@
   (let ((x (nu:asarray x)))
     (two-arg-fn/non-comparison name x y :out x :broadcast broadcast)))
 
+;; arbitrary arrays
+
+(defpolymorph (two-arg-fn/non-comparison :suboptimal-note runtime-array-allocation
+                                         :inline t)
+    ((name symbol) (x array) (y array)
+     &key ((out null)) (broadcast numericals:*broadcast-automatically*))
+    (values array &optional)
+  (declare (ignore out))
+  (let* ((xtype (array-element-type x))
+         (ytype (array-element-type y)))
+    (let* ((max-type (max-type xtype ytype))
+           (x (if (type= xtype max-type)
+                  x
+                  (nu:copy x :out (nu:zeros (array-dimensions x) :type max-type))))
+           (y (if (type= ytype max-type)
+                  y
+                  (nu:copy y :out (nu:zeros (array-dimensions y) :type max-type)))))
+      ;; TODO: Add type declarations?
+      (two-arg-fn/non-comparison name x y :broadcast broadcast :out nil))))
+
+(defpolymorph (two-arg-fn/non-comparison :suboptimal-note runtime-array-allocation
+                                         :inline t)
+    ((name symbol) (x array) (y array)
+     &key ((out array)) (broadcast numericals:*broadcast-automatically*))
+    (values array &optional)
+  (let* ((xtype (array-element-type x))
+         (ytype (array-element-type y))
+         (otype (array-element-type out)))
+    (let* ((x (if (type= xtype otype)
+                  x
+                  (nu:copy x :out (nu:zeros (array-dimensions x) :type otype))))
+           (y (if (type= ytype otype)
+                  y
+                  (nu:copy y :out (nu:zeros (array-dimensions y) :type otype)))))
+      ;; TODO: Add type declarations?
+      (two-arg-fn/non-comparison name x y :broadcast broadcast :out nil))))
+
+
 ;; 6 parametric polymorphs
 
 (defpolymorph (two-arg-fn/non-comparison :inline t)
