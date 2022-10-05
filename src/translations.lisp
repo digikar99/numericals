@@ -80,9 +80,19 @@
      (nu::atan2 bmas:satan2 bmas::datan2 cl:atan)
      (nu:expt   bmas:spow   bmas:dpow    cl:expt)
 
+     (nu:copy bmas:scopy bmas:dcopy cl:identity
+                                    bmas:i64copy bmas:i32copy bmas:i16copy bmas:i8copy
+                                    bmas:i64copy bmas:i32copy bmas:i16copy bmas:i8copy)
+     (nu::to-single-float bmas:scopy bmas:cast-ds cl:identity
+                          bmas:cast-i64s bmas:cast-i32s bmas:cast-i16s bmas:cast-i8s
+                          bmas:cast-u64s bmas:cast-u32s bmas:cast-u16s bmas:cast-u8s)
+     (nu::to-double-float bmas:cast-sd bmas:dcopy cl:identity
+                          bmas:cast-i64d bmas:cast-i32d bmas:cast-i16d bmas:cast-i8d
+                          bmas:cast-u64d bmas:cast-u32d bmas:cast-u16d bmas:cast-u8d)
+
      (nu:add      bmas:sadd bmas:dadd cl:+ bmas:i64add bmas:i32add bmas:i16add bmas:i8add
-                                           bmas:i64add bmas:i32add bmas:i16add bmas:i8add
-                                           bmas:i64add)
+      bmas:i64add bmas:i32add bmas:i16add bmas:i8add
+      bmas:i64add)
      (nu:subtract bmas:ssub bmas:dsub cl:- bmas:i64sub bmas:i32sub bmas:i16sub bmas:i8sub
                                            bmas:i64sub bmas:i32sub bmas:i16sub bmas:i8sub
                                            bmas:i64sub)
