@@ -231,14 +231,15 @@
     (array (unsigned-byte 8))
 
   (declare (ignorable name broadcast))
-  (let ((c-size (c-size <type>)))
+  (let ((c-size (c-size <type>))
+        (c-type (c-type <type>)))
     (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
         (broadcast-compatible-p x out)
       (assert broadcast-compatible-p (x out) 'incompatible-broadcast-dimensions
               :dimensions (mapcar #'narray-dimensions (list x out))
               :array-likes (list x out))
       (cffi-sys:with-foreign-pointer (ptr-y c-size)
-        (setf (cffi:mem-ref ptr-y :float)
+        (setf (cffi:mem-ref ptr-y c-type)
               (trivial-coerce:coerce y <type>))
         (ptr-iterate-but-inner broadcast-dimensions
             n
@@ -259,7 +260,8 @@
 
   (declare (ignorable name broadcast))
   (let ((c-name (c-name <type> name))
-        (c-size (c-size <type>)))
+        (c-size (c-size <type>))
+        (c-type (c-type <type>)))
     (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
         (broadcast-compatible-p y out)
       (assert broadcast-compatible-p (y out)
@@ -267,11 +269,12 @@
               :dimensions (mapcar #'narray-dimensions (list y out))
               :array-likes (list y out))
       (cffi-sys:with-foreign-pointer (ptr-x c-size)
-        (setf (cffi:mem-ref ptr-x :float)
+        (setf (cffi:mem-ref ptr-x c-type)
               (trivial-coerce:coerce x <type>))
         (ptr-iterate-but-inner broadcast-dimensions
             n
-          ((ptr-y c-size iy y) (ptr-o 1 io out))
+          ((ptr-y c-size iy y)
+           (ptr-o 1 io out))
           (funcall c-name n ptr-x 0 ptr-y iy ptr-o io)))))
   out)
 
