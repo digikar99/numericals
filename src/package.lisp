@@ -3,6 +3,7 @@
 (defpackage :numericals
   (:use)
   (:import-from :trivial-coerce #:coerce)
+  (:import-from :cl #:aref)
   (:export
 
    #:*multithreaded-threshold*
@@ -37,6 +38,7 @@
    #:astype
    #:asarray
    #:aref
+   #:aref*
    #:concatenate
    #:array=
    #:zeros

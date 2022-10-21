@@ -81,7 +81,7 @@ will be concatenated.
                        :for axis-length :of-type size
                          := (* inner-most-stride
                                (array-dimension array axis))
-                       :collect (apply #'nu:aref
+                       :collect (apply #'nu:aref*
                                        result
                                        (nconc (make-list axis :initial-element nil)
                                               (list (list axis-offset

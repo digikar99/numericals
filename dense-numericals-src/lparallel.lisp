@@ -64,7 +64,7 @@ NOTE: It is not defined if this bound is inclusive or exclusive.")
                                                                                   max-work-size)))))))
                                   ,@(loop :for var :in vars
                                           :collect `(,var
-                                                     (apply #'aref
+                                                     (apply #'nu:aref*
                                                             ,(if simple-p
                                                                  `(reshape ,var
                                                                            (array-total-size

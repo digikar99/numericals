@@ -302,8 +302,8 @@
                                 :out (nu:zeros 3 3 :type to-type)))
             "Simplest broadcast")
 
-    (let ((rand (nu:aref (nu:rand 100 100 :type from-type :min min :max max)
-                         '(10 :step 2) '(10 :step 2))))
+    (let ((rand (nu:aref* (nu:rand 100 100 :type from-type :min min :max max)
+                          '(10 :step 2) '(10 :step 2))))
       (5am:is (nu:array= rand
                          (nu:copy rand
                                   :out (nu:zeros 45 45 :type to-type))
@@ -312,8 +312,8 @@
                                      (< (/ (abs (- x y)) (+ (abs x) (abs y)))
                                         single-float-epsilon))))
               "Non-simple"))
-    (let ((rand (nu:aref (nu:rand 100 100 :type from-type :min min :max max)
-                         '(10 :step 2) '(10 :step 2))))
+    (let ((rand (nu:aref* (nu:rand 100 100 :type from-type :min min :max max)
+                          '(10 :step 2) '(10 :step 2))))
       (5am:is (nu:array= (nu:broadcast-array rand '(10 45 45))
                          (nu:copy rand
                                   :out (nu:zeros 10 45 45 :type to-type))
@@ -323,8 +323,8 @@
                                         single-float-epsilon))))
               "Non-simple broadcast"))
     (let ((nu:*multithreaded-threshold* 100)
-          (rand (nu:aref (nu:rand 100 100 :type from-type :min min :max max)
-                         '(10 :step 2) '(10 :step 2))))
+          (rand (nu:aref* (nu:rand 100 100 :type from-type :min min :max max)
+                          '(10 :step 2) '(10 :step 2))))
       (5am:is (nu:array= (nu:broadcast-array rand '(10 45 45))
                          (nu:copy rand
                                   :out (nu:zeros 10 45 45 :type to-type))

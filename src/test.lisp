@@ -41,43 +41,43 @@
                                             (,name rand)
                                             :test #'float-close-p))
                                "Simple multithreaded outers")
-                  (5am:is-true (let* ((rand (nu:aref (nu:rand '(100 10) :type ',type
-                                                                        :min ,min :max ,max)
-                                                     '(10 :step 2))))
+                  (5am:is-true (let* ((rand (nu:aref* (nu:rand '(100 10) :type ',type
+                                                                         :min ,min :max ,max)
+                                                      '(10 :step 2))))
                                  (nu:array= (nu:macro-map-array nil ',name rand)
                                             (,name rand :out rand)
                                             :test #'float-close-p))
                                "Non-simple arrays 1")
-                  (5am:is-true (let ((rand (nu:aref (nu:rand '(100 100) :type ',type
-                                                                        :min ,min :max ,max)
-                                                    '(10 :step 2)
-                                                    '(10 :step 2))))
+                  (5am:is-true (let ((rand (nu:aref* (nu:rand '(100 100) :type ',type
+                                                                         :min ,min :max ,max)
+                                                     '(10 :step 2)
+                                                     '(10 :step 2))))
                                  (nu:array= (nu:macro-map-array nil ',name rand)
                                             (,name rand :out rand)
                                             :test #'float-close-p))
                                "Non-simple arrays 2")
-                  (5am:is-true (let ((rand (nu:aref (nu:rand '(10 100) :type ',type
-                                                                       :min ,min :max ,max)
-                                                    nil
-                                                    '(10 :step -2))))
+                  (5am:is-true (let ((rand (nu:aref* (nu:rand '(10 100) :type ',type
+                                                                        :min ,min :max ,max)
+                                                     nil
+                                                     '(10 :step -2))))
                                  (nu:array= (nu:macro-map-array nil ',name rand)
                                             (,name rand :out rand)
                                             :test #'float-close-p))
                                "Non-simple arrays 3")
                   (5am:is-true (let* ((nu:*multithreaded-threshold* 1000)
-                                      (rand (nu:aref (nu:rand '(100 100) :type ',type
-                                                                         :min ,min :max ,max)
-                                                     '(10 :step 2)
-                                                     '(10 :step 2))))
+                                      (rand (nu:aref* (nu:rand '(100 100) :type ',type
+                                                                          :min ,min :max ,max)
+                                                      '(10 :step 2)
+                                                      '(10 :step 2))))
                                  (nu:array= (nu:macro-map-array nil ',name rand)
                                             (,name rand :out rand)
                                             :test #'float-close-p))
                                "Non-simple multithreaded")
                   (5am:is-true (let* ((nu:*multithreaded-threshold* 1000)
-                                      (rand (nu:aref (nu:rand '(100 100) :type ',type
-                                                                         :min ,min :max ,max)
-                                                     '(10 :step 2)
-                                                     '(10 :step 2))))
+                                      (rand (nu:aref* (nu:rand '(100 100) :type ',type
+                                                                          :min ,min :max ,max)
+                                                      '(10 :step 2)
+                                                      '(10 :step 2))))
                                  (nu:array= (nu:broadcast-array (nu:macro-map-array nil ',name rand)
                                                                 '(10 45 45))
                                             (,name rand :out (nu:zeros '(10 45 45) :type ',type))
@@ -89,8 +89,8 @@
                                                    (nu:aref array 0 2)
                                                    (nu:aref array 1 0)
                                                    (nu:aref array 1 2))))
-                                 (,name (nu:aref array nil 1)
-                                        :out (nu:aref array nil 1))
+                                 (,name (nu:aref* array nil 1)
+                                        :out (nu:aref* array nil 1))
                                  (equalp orig
                                          (list (nu:aref array 0 0)
                                                (nu:aref array 0 2)
@@ -133,37 +133,37 @@
                                (nu:array= (nu:macro-map-array return-array ',name rand)
                                           (,name rand)))
                              "Simple Multithreaded outsides")
-                (5am:is-true (let* ((rand (nu:aref (nu:rand '(100 10) :type ',type
-                                                                      :min ,min :max ,max)
-                                                   '(10 :step 2)))
+                (5am:is-true (let* ((rand (nu:aref* (nu:rand '(100 10) :type ',type
+                                                                       :min ,min :max ,max)
+                                                    '(10 :step 2)))
                                     (return-array (nu:zeros (array-dimensions rand)
                                                             :type ',return-type)))
                                (nu:array= (nu:macro-map-array return-array ',name rand)
                                           (,name rand :out return-array)))
                              "Non-simple arrays 1")
-                (5am:is-true (let* ((rand (nu:aref (nu:rand '(100 100) :type ',type
-                                                                       :min ,min :max ,max)
-                                                   '(10 :step 2)
-                                                   '(10 :step 2)))
+                (5am:is-true (let* ((rand (nu:aref* (nu:rand '(100 100) :type ',type
+                                                                        :min ,min :max ,max)
+                                                    '(10 :step 2)
+                                                    '(10 :step 2)))
                                     (return-array (nu:zeros (array-dimensions rand)
                                                             :type ',return-type)))
                                (nu:array= (nu:macro-map-array return-array ',name rand)
                                           (,name rand :out return-array)
                                           :test #'=)))
                 (5am:is-true (let* ((nu:*multithreaded-threshold* 1000)
-                                    (rand (nu:aref (nu:rand '(100 100) :type ',type
-                                                                       :min ,min :max ,max)
-                                                   '(10 :step 2)))
-                                    (return-array (nu:aref (nu:zeros '(100 100)
-                                                                     :type ',return-type)
-                                                           '(10 :step 2))))
+                                    (rand (nu:aref* (nu:rand '(100 100) :type ',type
+                                                                        :min ,min :max ,max)
+                                                    '(10 :step 2)))
+                                    (return-array (nu:aref* (nu:zeros '(100 100)
+                                                                      :type ',return-type)
+                                                            '(10 :step 2))))
                                (nu:array= (nu:macro-map-array return-array ',name rand)
                                           (,name rand :out return-array)))
                              "Non-simple multithreaded")
-                (5am:is-true (let* ((rand (nu:aref (nu:rand '(10 100) :type ',type
-                                                                      :min ,min :max ,max)
-                                                   nil
-                                                   '(10 :step -2)))
+                (5am:is-true (let* ((rand (nu:aref* (nu:rand '(10 100) :type ',type
+                                                                       :min ,min :max ,max)
+                                                    nil
+                                                    '(10 :step -2)))
                                     (return-array (nu:zeros (array-dimensions rand)
                                                             :type ',return-type)))
                                (nu:array= (nu:macro-map-array return-array ',name rand)
@@ -177,8 +177,8 @@
                                ;; This tests that it is potentially only
                                ;; the VIEW elements that have changed and the
                                ;; "other" elements have remained the same
-                               (,name (nu:aref array nil 1)
-                                      :out (nu:aref array nil 1))
+                               (,name (nu:aref* array nil 1)
+                                      :out (nu:aref* array nil 1))
                                (equalp orig
                                        (list (nu:aref array 0 0)
                                              (nu:aref array 0 2)
@@ -320,40 +320,40 @@
                                             (,name rand1 rand2)
                                             :test #'close-p))
                                "Simple Multithreaded outsides")
-                  (5am:is-true (let* ((rand1 (nu:aref (nu:rand '(100 10) :type ',type
-                                                                         :min ,min :max ,max)
-                                                      '(10 :step 2)))
-                                      (rand2 (nu:aref (nu:rand '(200 10) :type ',type
-                                                                         :min ,min :max ,max)
-                                                      '(20 :step 4)))
+                  (5am:is-true (let* ((rand1 (nu:aref* (nu:rand '(100 10) :type ',type
+                                                                          :min ,min :max ,max)
+                                                       '(10 :step 2)))
+                                      (rand2 (nu:aref* (nu:rand '(200 10) :type ',type
+                                                                          :min ,min :max ,max)
+                                                       '(20 :step 4)))
                                       (return-array (nu:zeros (array-dimensions rand1)
                                                               :type ',return-type)))
                                  (nu:array= (nu:macro-map-array return-array ',name rand1 rand2)
                                             (,name rand1 rand2 :out return-array)
                                             :test #'close-p))
                                "Non-simple arrays 1")
-                  (5am:is-true (let* ((rand1 (nu:aref (nu:rand '(100 100) :type ',type
-                                                                          :min ,min :max ,max)
-                                                      '(10 :step 2)
-                                                      '(10 :step 2)))
-                                      (rand2 (nu:aref (nu:rand '(100 200) :type ',type
-                                                                          :min ,min :max ,max)
-                                                      '(10 :step 2)
-                                                      '(20 :step 4)))
+                  (5am:is-true (let* ((rand1 (nu:aref* (nu:rand '(100 100) :type ',type
+                                                                           :min ,min :max ,max)
+                                                       '(10 :step 2)
+                                                       '(10 :step 2)))
+                                      (rand2 (nu:aref* (nu:rand '(100 200) :type ',type
+                                                                           :min ,min :max ,max)
+                                                       '(10 :step 2)
+                                                       '(20 :step 4)))
                                       (return-array (nu:zeros (array-dimensions rand1)
                                                               :type ',return-type)))
                                  (nu:array= (nu:macro-map-array return-array ',name rand1 rand2)
                                             (,name rand1 rand2 :out return-array)
                                             :test #'close-p))
                                "Non-simple arrays 2")
-                  (5am:is-true (let* ((rand1 (nu:aref (nu:rand '(10 100) :type ',type
-                                                                         :min ,min :max ,max)
-                                                      nil
-                                                      '(10 :step -2)))
-                                      (rand2 (nu:aref (nu:rand '(10 200) :type ',type
-                                                                         :min ,min :max ,max)
-                                                      nil
-                                                      '(20 :step -4)))
+                  (5am:is-true (let* ((rand1 (nu:aref* (nu:rand '(10 100) :type ',type
+                                                                          :min ,min :max ,max)
+                                                       nil
+                                                       '(10 :step -2)))
+                                      (rand2 (nu:aref* (nu:rand '(10 200) :type ',type
+                                                                          :min ,min :max ,max)
+                                                       nil
+                                                       '(20 :step -4)))
                                       (return-array (nu:zeros (array-dimensions rand1)
                                                               :type ',return-type)))
                                  (nu:array= (nu:macro-map-array return-array ',name rand1 rand2)
@@ -361,33 +361,33 @@
                                             :test #'close-p))
                                "Non-simple arrays 3")
                   (5am:is-true (let* ((nu:*multithreaded-threshold* 1000)
-                                      (rand1 (nu:aref (nu:rand '(100 100) :type ',type
-                                                                          :min ,min :max ,max)
-                                                      '(10 :step 2)))
-                                      (rand2 (nu:aref (nu:rand '(200 100) :type ',type
-                                                                          :min ,min :max ,max)
-                                                      '(20 :step 4)))
-                                      (return-array (nu:aref (nu:zeros '(100 100)
-                                                                       :type ',return-type)
-                                                             '(10 :step 2))))
+                                      (rand1 (nu:aref* (nu:rand '(100 100) :type ',type
+                                                                           :min ,min :max ,max)
+                                                       '(10 :step 2)))
+                                      (rand2 (nu:aref* (nu:rand '(200 100) :type ',type
+                                                                           :min ,min :max ,max)
+                                                       '(20 :step 4)))
+                                      (return-array (nu:aref* (nu:zeros '(100 100)
+                                                                        :type ',return-type)
+                                                              '(10 :step 2))))
                                  (nu:array= (nu:macro-map-array return-array ',name rand1 rand2)
                                             (,name rand1 rand2 :out return-array)
                                             :test #'close-p))
                                "Non-simple multithreaded")
                   ,(when broadcast-p
                      `(5am:is-true (let* ((nu:*multithreaded-threshold* 1000)
-                                          (rand1 (nu:aref (nu:rand '(100 10) :type ',type
-                                                                             :min ,min :max ,max)
-                                                          '(10 :step 2)))
-                                          (rand2 (nu:aref (nu:rand '(10 200 10) :type ',type
-                                                                                :min ,min :max ,max)
-                                                          nil
-                                                          '(20 :step 4)))
-                                          (return-array (nu:aref (nu:zeros '(2 10 100 10)
-                                                                           :type ',return-type)
-                                                                 nil
-                                                                 nil
-                                                                 '(10 :step 2))))
+                                          (rand1 (nu:aref* (nu:rand '(100 10) :type ',type
+                                                                              :min ,min :max ,max)
+                                                           '(10 :step 2)))
+                                          (rand2 (nu:aref* (nu:rand '(10 200 10) :type ',type
+                                                                                 :min ,min :max ,max)
+                                                           nil
+                                                           '(20 :step 4)))
+                                          (return-array (nu:aref* (nu:zeros '(2 10 100 10)
+                                                                            :type ',return-type)
+                                                                  nil
+                                                                  nil
+                                                                  '(10 :step 2))))
                                      (nu:array= (nu:broadcast-array
                                                  (nu:macro-map-array
                                                   nil
@@ -405,9 +405,9 @@
                                                    (nu:aref array 0 2)
                                                    (nu:aref array 1 0)
                                                    (nu:aref array 1 2))))
-                                 (,name (nu:aref array nil 1)
-                                        (nu:aref array nil 1)
-                                        :out (nu:aref return-array nil 1))
+                                 (,name (nu:aref* array nil 1)
+                                        (nu:aref* array nil 1)
+                                        :out (nu:aref* return-array nil 1))
                                  (equalp orig
                                          (list (nu:aref array 0 0)
                                                (nu:aref array 0 2)
@@ -455,51 +455,51 @@
                                (nu:array= (nu:macro-map-array return-array ',name rand1 rand2)
                                           (,name rand1 rand2)))
                              "Simple Multithreaded outsides")
-                (5am:is-true (let* ((rand1 (nu:aref (nu:rand '(100 10) :type ',type
-                                                                       :min ,min :max ,max)
-                                                    '(10 :step 2)))
-                                    (rand2 (nu:aref (nu:rand '(200 10) :type ',type
-                                                                       :min ,min :max ,max)
-                                                    '(20 :step 4)))
+                (5am:is-true (let* ((rand1 (nu:aref* (nu:rand '(100 10) :type ',type
+                                                                        :min ,min :max ,max)
+                                                     '(10 :step 2)))
+                                    (rand2 (nu:aref* (nu:rand '(200 10) :type ',type
+                                                                        :min ,min :max ,max)
+                                                     '(20 :step 4)))
                                     (return-array (nu:zeros (array-dimensions rand1)
                                                             :type ',return-type)))
                                (nu:array= (nu:macro-map-array return-array ',name rand1 rand2)
                                           (,name rand1 rand2 :out return-array)))
                              "Non-simple arrays 1")
-                (5am:is-true (let* ((rand1 (nu:aref (nu:rand '(100 100) :type ',type
-                                                                        :min ,min :max ,max)
-                                                    '(10 :step 2)
-                                                    '(10 :step 2)))
-                                    (rand2 (nu:aref (nu:rand '(100 200) :type ',type
-                                                                        :min ,min :max ,max)
-                                                    '(10 :step 2)
-                                                    '(20 :step 4)))
+                (5am:is-true (let* ((rand1 (nu:aref* (nu:rand '(100 100) :type ',type
+                                                                         :min ,min :max ,max)
+                                                     '(10 :step 2)
+                                                     '(10 :step 2)))
+                                    (rand2 (nu:aref* (nu:rand '(100 200) :type ',type
+                                                                         :min ,min :max ,max)
+                                                     '(10 :step 2)
+                                                     '(20 :step 4)))
                                     (return-array (nu:zeros (array-dimensions rand1)
                                                             :type ',return-type)))
                                (nu:array= (nu:macro-map-array return-array ',name rand1 rand2)
                                           (,name rand1 rand2 :out return-array)
                                           :test #'=)))
                 (5am:is-true (let* ((nu:*multithreaded-threshold* 1000)
-                                    (rand1 (nu:aref (nu:rand '(100 100) :type ',type
-                                                                        :min ,min :max ,max)
-                                                    '(10 :step 2)))
-                                    (rand2 (nu:aref (nu:rand '(200 100) :type ',type
-                                                                        :min ,min :max ,max)
-                                                    '(20 :step 4)))
-                                    (return-array (nu:aref (nu:zeros '(100 100)
-                                                                     :type ',return-type)
-                                                           '(10 :step 2))))
+                                    (rand1 (nu:aref* (nu:rand '(100 100) :type ',type
+                                                                         :min ,min :max ,max)
+                                                     '(10 :step 2)))
+                                    (rand2 (nu:aref* (nu:rand '(200 100) :type ',type
+                                                                         :min ,min :max ,max)
+                                                     '(20 :step 4)))
+                                    (return-array (nu:aref* (nu:zeros '(100 100)
+                                                                      :type ',return-type)
+                                                            '(10 :step 2))))
                                (nu:array= (nu:macro-map-array return-array ',name rand1 rand2)
                                           (,name rand1 rand2 :out return-array)))
                              "Non-simple multithreaded")
-                (5am:is-true (let* ((rand1 (nu:aref (nu:rand '(10 100) :type ',type
-                                                                       :min ,min :max ,max)
-                                                    nil
-                                                    '(10 :step -2)))
-                                    (rand2 (nu:aref (nu:rand '(10 200) :type ',type
-                                                                       :min ,min :max ,max)
-                                                    nil
-                                                    '(20 :step -4)))
+                (5am:is-true (let* ((rand1 (nu:aref* (nu:rand '(10 100) :type ',type
+                                                                        :min ,min :max ,max)
+                                                     nil
+                                                     '(10 :step -2)))
+                                    (rand2 (nu:aref* (nu:rand '(10 200) :type ',type
+                                                                        :min ,min :max ,max)
+                                                     nil
+                                                     '(20 :step -4)))
                                     (return-array (nu:zeros (array-dimensions rand1)
                                                             :type ',return-type)))
                                (nu:array= (nu:macro-map-array return-array ',name rand1 rand2)
@@ -510,8 +510,8 @@
                                                  (nu:aref array 0 2)
                                                  (nu:aref array 1 0)
                                                  (nu:aref array 1 2))))
-                               (,name (nu:aref array nil 1)
-                                      (nu:aref array nil 1))
+                               (,name (nu:aref* array nil 1)
+                                      (nu:aref* array nil 1))
                                (equalp orig
                                        (list (nu:aref array 0 0)
                                              (nu:aref array 0 2)
