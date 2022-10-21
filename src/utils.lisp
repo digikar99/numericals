@@ -50,6 +50,7 @@ can be helpful to locate bugs.")
   (if invertedp "N" "T"))
 
 (declaim (inline narray-dimensions))
+(declaim (cl:ftype (cl:function (cl:array) list) narray-dimensions))
 (defun narray-dimensions (array)
   (declare (type cl:array array)
            (optimize speed))
