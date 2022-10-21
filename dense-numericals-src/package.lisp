@@ -1,42 +1,9 @@
 (cl:in-package :cl)
 
-(defpackage :dense-numericals-lite
+(uiop:define-package :dense-numericals-lite
   (:documentation "Functionality in this package is available with pure lisp.")
   (:use :dense-arrays-plus-lite)
-  (:export #:array
-           #:array=
-           #:simple-array
-
-           #:aref
-           #:row-major-aref
-           #:do-arrays
-           #:broadcast-array
-           #:macro-map-array
-
-           #:array-dimension
-           #:array-dimensions
-
-           #:array-element-type
-
-           #:asarray
-           #:zeros
-           #:ones
-           #:eye
-           #:rand
-           #:full
-           #:zeros-like
-           #:ones-like
-           #:rand-like
-           #:full-like
-           #:reshape
-           #:transpose
-
-           #:*dense-array-class*
-           #:*array-element-type*
-           #:*array-element-type-alist*
-
-           ;; TODO
-           ))
+  (:reexport :dense-arrays-plus-lite))
 
 (uiop:define-package :dense-numericals
   (:use)
@@ -113,6 +80,9 @@
 
            #:vdot
            #:sum
+           #:mean
+           #:variance
+           #:std
            #:maximum
            #:minimum
 
@@ -172,6 +142,7 @@
   (:use :numericals.common :abstract-arrays)
   (:import-from :polymorphic-functions
                 :define-polymorphic-function
+                :undefine-polymorphic-function
                 :defpolymorph
                 :suboptimal-polymorph-note
                 :env
@@ -179,7 +150,8 @@
                 :optim-debug
                 :defpolymorph-compiler-macro
                 #:pflet
-                #:pflet*)
+                #:pflet*
+                #:traverse-tree)
   (:import-from :cl-form-types
                 #:constant-form-value)
   (:import-from :dense-arrays
