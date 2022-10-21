@@ -72,7 +72,7 @@
 (defpolymorph (two-arg-fn/non-comparison :suboptimal-note runtime-array-allocation
                                          :inline t)
     ((name symbol) (x array) (y array)
-     &key ((out null)) (broadcast numericals:*broadcast-automatically*))
+     &key ((out null)) (broadcast nu:*broadcast-automatically*))
     (values array &optional)
   (declare (ignore out))
   (let* ((xtype (array-element-type x))
@@ -90,7 +90,7 @@
 (defpolymorph (two-arg-fn/non-comparison :suboptimal-note runtime-array-allocation
                                          :inline t)
     ((name symbol) (x array) (y array)
-     &key ((out array)) (broadcast numericals:*broadcast-automatically*))
+     &key ((out array)) (broadcast nu:*broadcast-automatically*))
     (values array &optional)
   (let* ((xtype (array-element-type x))
          (ytype (array-element-type y))
