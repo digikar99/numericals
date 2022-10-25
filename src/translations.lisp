@@ -189,7 +189,6 @@
 
   (def fixnum-c-name   11))
 
-(declaim (inline c-name))
 (defun c-name (type name)
   (declare (optimize speed))
   (let ((idx (switch (type :test #'type=)
@@ -238,8 +237,7 @@
                            (second name-form-type) (second type-form-type)))))
         form)))
 
-(declaim (inline c-size)
-         (ftype (function ((or list symbol)) (unsigned-byte 4)) c-size))
+(declaim (ftype (function ((or list symbol)) (unsigned-byte 4)) c-size))
 (defun c-size (type)
   (declare (optimize speed))
   (eswitch (type :test #'type=)
@@ -277,8 +275,7 @@
           (t form))
         form)))
 
-(declaim (inline c-type)
-         (ftype (function ((or list symbol)) keyword) c-type))
+(declaim (ftype (function ((or list symbol)) keyword) c-type))
 (defun c-type (type)
   (declare (optimize speed))
   (eswitch (type :test #'type=)
