@@ -198,70 +198,6 @@
           (funcall c-name n ptr-x 1 ptr-out 1)))
       out)))
 
-;; Doesn't make sense to broadcast OUT to dimensions of X?
-(defpolymorph (nu:copy) ((x (array t))
-                         &key ((out (array single-float)))
-                         (broadcast nu:*broadcast-automatically*))
-    (array single-float)
-  (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-      (broadcast-compatible-p x out)
-    ;; FIXME: Error signalling when BROADCAST is NIL could be better
-    (assert broadcast-compatible-p (x out)
-            'incompatible-broadcast-dimensions
-            :dimensions (mapcar #'narray-dimensions (list x out))
-            :array-likes (list x out))
-    ;; FIXME? Why depend on (= SAFETY 0)
-    (policy-cond:with-expectations (= safety 0)
-        ((assertion (or broadcast
-                        (equalp (narray-dimensions x)
-                                (narray-dimensions out)))))
-      (do-with-broadcasting broadcast-dimensions ((x-elt x)
-                                                  (o-elt out))
-        (setf o-elt (trivial-coerce:coerce (the real x-elt) 'single-float)))))
-  out)
-
-(defpolymorph nu:copy ((x (array t))
-                       &key ((out (array double-float)))
-                       (broadcast nu:*broadcast-automatically*))
-    (array double-float)
-  (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-      (broadcast-compatible-p x out)
-    ;; FIXME: Error signalling when BROADCAST is NIL could be better
-    (assert broadcast-compatible-p (x out)
-            'incompatible-broadcast-dimensions
-            :dimensions (mapcar #'narray-dimensions (list x out))
-            :array-likes (list x out))
-    ;; FIXME? Why depend on (= SAFETY 0)
-    (policy-cond:with-expectations (= safety 0)
-        ((assertion (or broadcast
-                        (equalp (narray-dimensions x)
-                                (narray-dimensions out)))))
-      (do-with-broadcasting broadcast-dimensions ((x-elt x)
-                                                  (o-elt out))
-        (setf o-elt (trivial-coerce:coerce (the real x-elt) 'double-float)))))
-  out)
-
-(defpolymorph nu:copy ((x (array t))
-                       &key ((out (array t)) (nu:zeros-like x))
-                       (broadcast nu:*broadcast-automatically*))
-    (array t)
-  (multiple-value-bind (broadcast-compatible-p broadcast-dimensions)
-      (broadcast-compatible-p x out)
-    ;; FIXME: Error signalling when BROADCAST is NIL could be better
-    (assert broadcast-compatible-p (x out)
-            'incompatible-broadcast-dimensions
-            :dimensions (mapcar #'narray-dimensions (list x out))
-            :array-likes (list x out))
-    ;; FIXME? Why depend on (= SAFETY 0)
-    (policy-cond:with-expectations (= safety 0)
-        ((assertion (or broadcast
-                        (equalp (narray-dimensions x)
-                                (narray-dimensions out)))))
-      (do-with-broadcasting broadcast-dimensions ((x-elt x)
-                                                  (o-elt out))
-        (setf o-elt x-elt))))
-  out)
-
 (macrolet ((def (from to)
              `(trivial-coerce:define-coercion (a :from (array ,from) :to (simple-array ,to))
                 (let ((out (nu:zeros (narray-dimensions a) :type ',to)))
@@ -381,6 +317,3 @@
   (test-copy '(unsigned-byte 16) '(unsigned-byte 16) 0 (1- (expt 2 16)))
   (test-copy '(unsigned-byte 32) '(unsigned-byte 32) 0 (1- (expt 2 32)))
   (test-copy '(unsigned-byte 64) '(unsigned-byte 64) 0 (1- (expt 2 64))))
-
-
-

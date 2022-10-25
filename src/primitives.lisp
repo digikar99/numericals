@@ -215,8 +215,11 @@ Examples:
   (ensure-row-major-layout)
   (etypecase array-like
     (array
-     (nu:copy array-like :out (nu:zeros (narray-dimensions array-like)
-                                        :type type)))
+     (let ((array (nu:zeros (narray-dimensions array-like) :type type)))
+       (loop :for index :below (array-total-size array-like)
+             :do (setf (row-major-aref array index)
+                       (trivial-coerce:coerce (row-major-aref array-like index) type)))
+       array))
     (sequence
      (let* ((result-array (nu:zeros (nu:shape array-like) :type type))
             (index 0)
