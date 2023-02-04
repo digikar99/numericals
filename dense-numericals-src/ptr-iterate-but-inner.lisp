@@ -23,7 +23,8 @@ the arrays were SIMPLE with same strides and offsets."
          (elt-sizes     (mapcar #'second bindings))
          (inner-strides (mapcar #'third bindings))
          (array-exprs   (mapcar #'fourth  bindings))
-         (num-arrays    (length bindings)))
+         (num-arrays    (length bindings))
+         (expr-types    (mapcar (lm expr (cl-form-types:nth-form-type expr env 0)) array-exprs)))
 
     (let ((array-vars   (make-gensym-list num-arrays "ARRAY"))
           (offsets      (make-gensym-list num-arrays "OFFSETS"))
@@ -34,10 +35,16 @@ the arrays were SIMPLE with same strides and offsets."
           (broadcast-dimensions (gensym "BROADCAST-DIMENSIONS")))
 
       `(let* ((,broadcast-dimensions ,broadcast-dimensions-expr)
-              ,@(mapcar (lm var expr `(,var (broadcast-array ,expr ,broadcast-dimensions)))
-                        array-vars array-exprs))
-         (declare ,@(mapcar (lm var expr `(type ,(cl-form-types:nth-form-type expr env 0) ,var))
-                            array-vars array-exprs))
+              ,@(mappend (lambda (var expr expr-type)
+                           `((,var ,expr)
+                             (,var (locally (declare (type ,expr-type ,var))
+                                     (if (equal (the list ,broadcast-dimensions)
+                                                (narray-dimensions ,var))
+                                         ,var
+                                         (broadcast-array ,expr ,broadcast-dimensions))))))
+                        array-vars array-exprs expr-types))
+         (declare ,@(mapcar (lm var expr-type `(type ,expr-type ,var))
+                            array-vars expr-types))
          (with-thresholded-multithreading (array-total-size ,(lastcar array-vars))
              ,array-vars
            (with-pointers-to-vectors-data

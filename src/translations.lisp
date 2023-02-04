@@ -143,7 +143,9 @@
                                               bmas:u64gt  bmas:u32gt  bmas:u16gt  bmas:u8gt
                                               bmas:i64gt)
 
-     (nu:vdot magicl.blas-cffi::%%sdot magicl.blas-cffi::%%ddot cl:*
+     ;; Use bmas for consistency
+     (nu:vdot bmas:sdot bmas:ddot ;; magicl.blas-cffi:%sdot magicl.blas-cffi:%ddot
+              cl:*
               bmas:i64dot bmas:i32dot bmas:i16dot bmas:i8dot
               bmas:i64dot bmas:i32dot bmas:i16dot bmas:i8dot
               fixnum-dot)
@@ -209,16 +211,23 @@
 (define-compiler-macro c-name (&whole form type name &environment env)
   (let* ((type-form-type (cl-form-types:form-type type env))
          (name-form-type (cl-form-types:form-type name env)))
-    ;; TODO: Use CTYPE to normalize types?
-    (if (and (and (listp type-form-type)
-                  (null (cddr type-form-type))
-                  (or (eq 'eql (first type-form-type))
-                      (eq 'member (first type-form-type))))
-             (and (listp name-form-type)
-                  (null (cddr name-form-type))
-                  (or (eq 'eql (first name-form-type))
-                      (eq 'member (first name-form-type)))))
-        (let ((idx (switch ((second type-form-type) :test #'type=)
+    (if (and (optima:match type-form-type
+               ((or (list 'eql _)
+                    (list 'member _))
+                t)
+               (_
+                nil))
+             (optima:match name-form-type
+               ((or (list 'eql _)
+                    (list 'member _))
+                t)
+               (_
+                nil)))
+        (let ((idx (switch ((second type-form-type)
+                            :test (cl:lambda (x y)
+                                    (and (cl-type-specifier-p x)
+                                         (cl-type-specifier-p y)
+                                         (type= x y))))
                      ('single-float 0)
                      ('double-float 1)
                      ('(signed-byte 64) 3)

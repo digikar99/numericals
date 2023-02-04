@@ -41,6 +41,8 @@
    #:aref*
    #:concatenate
    #:array=
+   #:empty
+   #:empty-like
    #:zeros
    #:zeros-like
    #:ones
@@ -181,10 +183,13 @@
   (:import-from :numericals.common
                 #:type-zero
                 #:type-min
-                #:type-max)
+                #:type-max
+                #:inline-or-funcall)
   (:import-from :polymorphic-functions
                 #:optim-speed
-                #:env))
+                #:env
+                #:traverse-tree
+                #:cl-type-specifier-p))
 
 
 (cl:in-package :numericals.impl)
@@ -200,7 +205,7 @@
 
 (5am:def-suite :numericals)
 
-(defun type-parameter-p (symbol) (member symbol '(<type>)))
+(defun type-parameter-p (symbol) (member symbol '(<type> <m> <n> <k>)))
 (pushnew 'type-parameter-p polymorphic-functions:*parametric-type-symbol-predicates*)
 
 (setq numericals.common:*compiler-package* :numericals.impl

@@ -80,10 +80,10 @@
     (let* ((max-type (max-type xtype ytype))
            (x (if (type= xtype max-type)
                   x
-                  (nu:copy x :out (nu:zeros (array-dimensions x) :type max-type))))
+                  (nu:copy x :out (nu:empty (array-dimensions x) :type max-type))))
            (y (if (type= ytype max-type)
                   y
-                  (nu:copy y :out (nu:zeros (array-dimensions y) :type max-type)))))
+                  (nu:copy y :out (nu:empty (array-dimensions y) :type max-type)))))
       ;; TODO: Add type declarations?
       (two-arg-fn/non-comparison name x y :broadcast broadcast :out nil))))
 
@@ -97,10 +97,10 @@
          (otype (array-element-type out)))
     (let* ((x (if (type= xtype otype)
                   x
-                  (nu:copy x :out (nu:zeros (array-dimensions x) :type otype))))
+                  (nu:copy x :out (nu:empty (array-dimensions x) :type otype))))
            (y (if (type= ytype otype)
                   y
-                  (nu:copy y :out (nu:zeros (array-dimensions y) :type otype)))))
+                  (nu:copy y :out (nu:empty (array-dimensions y) :type otype)))))
       ;; TODO: Add type declarations?
       (two-arg-fn/non-comparison name x y :broadcast broadcast :out nil))))
 
@@ -146,7 +146,7 @@
   (policy-cond:with-expectations (= safety 0)
       ((assertion
         (or broadcast (equalp (narray-dimensions x) (narray-dimensions y)))))
-    (pflet ((out (nu:zeros (narray-dimensions x) :type <type>)))
+    (pflet ((out (nu:empty (narray-dimensions x) :type <type>)))
       (declare (type (simple-array <type>) out))
       (two-arg-fn/non-comparison name x y :out out :broadcast nil))))
 
@@ -201,7 +201,7 @@
                 :dimensions (list (narray-dimensions x)
                                   (narray-dimensions y))
                 :array-likes (list x y))
-        (pflet ((out (nu:zeros broadcast-dimensions :type <type>)))
+        (pflet ((out (nu:empty broadcast-dimensions :type <type>)))
           (declare (type (simple-array <type>) out)
                    (compiler-macro-notes:muffle
                     polymorphic-functions:more-optimal-polymorph-inapplicable))
@@ -210,7 +210,7 @@
           ((assertion
             (or broadcast
                 (equalp (narray-dimensions x) (narray-dimensions y)))))
-        (pflet ((out (nu:zeros (narray-dimensions x) :type <type>)))
+        (pflet ((out (nu:empty (narray-dimensions x) :type <type>)))
           (declare (type (simple-array <type>) out))
           (two-arg-fn/non-comparison name x y :out out :broadcast nil)))))
 
@@ -242,7 +242,7 @@
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array <type>)
   (declare (ignorable name out broadcast))
-  (pflet ((out (nu:zeros (narray-dimensions x) :type (array-element-type x))))
+  (pflet ((out (nu:empty (narray-dimensions x) :type (array-element-type x))))
     (declare (type (array <type>) out))
     (two-arg-fn/non-comparison name x y :out out :broadcast t)
     out))
@@ -278,7 +278,7 @@
      ((broadcast (not null)) nu:*broadcast-automatically*))
     (array <type>)
   (declare (ignorable name out broadcast))
-  (pflet ((out (nu:zeros (narray-dimensions y) :type (array-element-type y))))
+  (pflet ((out (nu:empty (narray-dimensions y) :type (array-element-type y))))
     (declare (type (array <type>) out))
     (two-arg-fn/non-comparison name x y :out out :broadcast t)
     out))

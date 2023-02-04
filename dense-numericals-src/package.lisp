@@ -3,7 +3,19 @@
 (uiop:define-package :dense-numericals-lite
   (:documentation "Functionality in this package is available with pure lisp.")
   (:use :dense-arrays-plus-lite)
-  (:reexport :dense-arrays-plus-lite))
+  (:reexport :dense-arrays-plus-lite)
+  (:export #:empty
+           #:empty-like)
+  (:shadow #:full
+           #:full-like
+           #:zeros
+           #:zeros-like
+           #:ones
+           #:ones-like
+           #:rand
+           #:rand-like
+           #:empty
+           #:empty-like))
 
 (uiop:define-package :dense-numericals
   (:use)
@@ -151,10 +163,12 @@
                 :defpolymorph-compiler-macro
                 #:pflet
                 #:pflet*
-                #:traverse-tree)
+                #:traverse-tree
+                #:cl-type-specifier-p)
   (:import-from :cl-form-types
                 #:constant-form-value)
   (:import-from :dense-arrays
+                #:dimensions->strides
                 #:lm
                 #:array-strides
                 #:array-offsets

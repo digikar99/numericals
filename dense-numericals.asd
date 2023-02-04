@@ -1,6 +1,6 @@
 (defsystem "dense-numericals"
   :pathname "dense-numericals-src/"
-  :version "2022.09.0" ; year, month, patch
+  :version "2023.02.0" ; year, month, patch
   :description "A high performance numerical computing library for Common Lisp (focus: basic math operations)"
   :license "MIT"
   :author "Shubhamkar B. Ayare (shubhamayare@yahoo.co.in)"
@@ -25,6 +25,7 @@
   ;; TODO: Use CFFI-GROVEL or something to manage shared library / c files
   :components ((:file "package")
                (:file "utils"                 :depends-on ("package"))
+               (:file "primitives"            :depends-on ("utils"))
                (:file "ptr-iterate-but-inner" :depends-on ("utils"))
                (:file "lparallel"             :depends-on ("ptr-iterate-but-inner"))
                (:file "test"                  :depends-on ("package"))

@@ -40,12 +40,28 @@
 ;; parametric polymorphs
 
 (defpolymorph one-arg-reduce-fn
+    ((name symbol) (initial-value-name symbol) (x (simple-array <type>)) &key
+     ((axes null)) ((out null)) ((keep-dims null)))
+    real
+  (declare (ignore axes out keep-dims)
+           (ignorable initial-value-name name))
+  (let ((c-name  (c-name <type> name)))
+    (let* ((result (with-pointers-to-vectors-data ((ptr-x (array-storage x)))
+                     (inline-or-funcall c-name (array-total-size x) ptr-x 1)))
+           (result (locally (declare (type real result))
+                     (if (typep result <type>)
+                         result
+                         (locally (declare (notinline trivial-coerce:coerce))
+                           (trivial-coerce:coerce result <type>))))))
+      result)))
+
+(defpolymorph one-arg-reduce-fn
     ((name symbol) (initial-value-name symbol) (x (array <type>)) &key
      ((axes null)) ((out null)) ((keep-dims null)))
     real
   (declare (ignore axes out keep-dims)
            (ignorable name))
-  (let ((acc (funcall initial-value-name <type>))
+  (let ((acc (inline-or-funcall initial-value-name <type>))
         (cl-name (cl-name name))
         (c-name  (c-name <type> name))
         (c-size  (c-size <type>)))
@@ -54,8 +70,8 @@
         n
       ((ptr-x c-size inc-x x))
       (setq acc
-            (funcall cl-name acc
-                     (funcall c-name n ptr-x inc-x))))
+            (inline-or-funcall cl-name acc
+                               (inline-or-funcall c-name n ptr-x inc-x))))
     (let ((result (if (typep acc <type>)
                       acc
                       (locally (declare (notinline trivial-coerce:coerce))

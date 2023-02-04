@@ -120,7 +120,8 @@ Examples:
                       (t
                        form))))))))
   (def nu:zeros 0)
-  (def nu:ones 1))
+  (def nu:ones 1)
+  (def nu:empty 0))
 
 (defun nu:rand (&rest args)
   "Lambda List: (shape &key (type default-element-type) (min 0) (max 1))"
@@ -155,7 +156,11 @@ Examples:
     (ensure-row-major-layout)
     (make-array shape :element-type type :initial-element (coerce value type))))
 
-(declaim (inline nu:zeros-like nu:ones-like nu:rand-like nu:full-like))
+(declaim (inline nu:empty-like nu:zeros-like nu:ones-like nu:rand-like nu:full-like))
+(defun nu:empty-like (array)
+  ;; FIXME: Expand this to array-like
+  (declare (type cl:array array))
+  (nu:empty (array-dimensions array) :type (array-element-type array)))
 (defun nu:zeros-like (array)
   ;; FIXME: Expand this to array-like
   (declare (type cl:array array))
@@ -204,11 +209,7 @@ Examples:
   (nu:asarray array-like :type (element-type array-like)))
 
 (define-polymorphic-function nu:copy (x &key out broadcast))
-(defpolymorph nu:asarray (array-like &key (#-extensible-compound-types
-                                           (type (polymorphic-functions.extended-types:subtypep real))
-                                           #+extensible-compound-types
-                                           (type (extensible-compound-types:subtypep real))
-                                           default-element-type)
+(defpolymorph nu:asarray (array-like &key (type default-element-type)
                                      (layout :row-major))
     (values cl:array &optional)
   ;; TODO: Define the predicate array-like-p.
