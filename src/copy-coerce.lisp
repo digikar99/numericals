@@ -198,33 +198,6 @@
           (funcall c-name n ptr-x 1 ptr-out 1)))
       out)))
 
-(macrolet ((def (from to)
-             `(trivial-coerce:define-coercion (a :from (array ,from) :to (simple-array ,to))
-                (let ((out (nu:zeros (narray-dimensions a) :type ',to)))
-                  (nu:copy a :out (the (array ,to) out))
-                  out))))
-
-  (def single-float double-float)
-  (def double-float single-float)
-
-  (def (unsigned-byte 08) single-float)
-  (def (unsigned-byte 16) single-float)
-  (def (unsigned-byte 32) single-float)
-  (def (unsigned-byte 64) single-float)
-  (def (signed-byte 08) single-float)
-  (def (signed-byte 16) single-float)
-  (def (signed-byte 32) single-float)
-  (def (signed-byte 64) single-float)
-
-  (def (unsigned-byte 08) double-float)
-  (def (unsigned-byte 16) double-float)
-  (def (unsigned-byte 32) double-float)
-  (def (unsigned-byte 64) double-float)
-  (def (signed-byte 08) double-float)
-  (def (signed-byte 16) double-float)
-  (def (signed-byte 32) double-float)
-  (def (signed-byte 64) double-float))
-
 (5am:def-suite nu:copy :in nu::array)
 
 (defun test-copy (to-type from-type min max)
