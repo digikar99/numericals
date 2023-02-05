@@ -67,7 +67,9 @@
 
     (eval `(locally (declare (optimize speed)
                              #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note)
-                             (notinline nu:array=))
+                             (notinline nu:array=)
+                             (compiler-macro-notes:muffle
+                              compiler-macro-notes:optimization-failure-note))
              ,optimizable-tests))))
 
 
@@ -134,7 +136,9 @@
 
     (eval `(locally (declare (optimize speed)
                              #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note)
-                             (notinline nu:array=))
+                             (notinline nu:array=)
+                             (compiler-macro-notes:muffle
+                              compiler-macro-notes:optimization-failure-note))
              ,optimizable-tests))))
 
 (5am:def-test nu:* (:suite nu::array)
@@ -200,7 +204,9 @@
 
     (eval `(locally (declare (optimize speed)
                              #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note)
-                             (notinline nu:array=))
+                             (notinline nu:array=)
+                             (compiler-macro-notes:muffle
+                              compiler-macro-notes:optimization-failure-note))
              ,optimizable-tests))))
 
 
@@ -268,5 +274,7 @@
 
     (eval `(locally (declare (optimize speed)
                              #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note)
-                             (notinline nu:array=))
+                             (notinline nu:array=)
+                             (compiler-macro-notes:muffle
+                              compiler-macro-notes:optimization-failure-note))
              ,optimizable-tests))))
