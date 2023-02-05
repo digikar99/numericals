@@ -117,45 +117,17 @@
 
 ;;; CBLAS is faster than BMAS (obviously)
 
-(macrolet ((def (type c-fn type-size)
-
-             `(defpolymorph nu:vdot ((x (array ,type)) (y (array ,type)))
-                  ,type
-                (let ((sum ,(coerce 0 type)))
-                  (declare (type real sum))
-                  (ptr-iterate-but-inner (narray-dimensions x) n
-                    ((ptr-x ,type-size inc-x x)
-                     (ptr-y ,type-size inc-y y))
-                    ,(if (starts-with-subseq "%%" (symbol-name c-fn))
-                         `(with-foreign-objects ((n :int n)
-                                                 (inc-x :int inc-x)
-                                                 (inc-y :int inc-y))
-                            (incf sum (,c-fn n ptr-x inc-x ptr-y inc-y)))
-                         `(incf sum (,c-fn n ptr-x inc-x ptr-y inc-y))))
-                  (nth-value 0 (trivial-coerce:coerce
-                                (trivial-coerce:coerce (the real sum) 'integer)
-                                ',type))))))
-
-  ;; For verification purposes
-  ;; (def single-float     bmas:sdot 4)
-  ;; (def double-float     bmas:ddot 8)
-
-  ;; These are faster
-  (def single-float     magicl.blas-cffi::%%sdot 4)
-  (def double-float     magicl.blas-cffi::%%ddot 8)
-
-  (def (signed-byte 64) bmas:i64dot 8)
-  (def (signed-byte 32) bmas:i32dot 4)
-  (def (signed-byte 16) bmas:i16dot 2)
-  (def (signed-byte 08) bmas:i8dot  1)
-
-  ;; FIXME: Why does this work?
-  (def (unsigned-byte 64) bmas:i64dot 8)
-  (def (unsigned-byte 32) bmas:i32dot 4)
-  (def (unsigned-byte 16) bmas:i16dot 2)
-  (def (unsigned-byte 08) bmas:i8dot  1)
-
-  (def fixnum fixnum-dot 8))
+(defpolymorph nu:vdot ((x (array <type>)) (y (array <type>))) t
+  (let ((sum (coerce 0 <type>))
+        (c-size (c-size <type>))
+        (c-name (c-name <type> 'nu:vdot)))
+    (declare (type real sum))
+    (ptr-iterate-but-inner (narray-dimensions x) n
+      ((ptr-x c-size inc-x x)
+       (ptr-y c-size inc-y y))
+      (incf sum (funcall c-name n ptr-x inc-x ptr-y inc-y)))
+    (nth-value 0
+               (trivial-coerce:coerce (the real sum) <type>))))
 
 (5am:def-test nu:vdot ()
   (flet ((float-close-p (x y)
