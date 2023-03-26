@@ -139,6 +139,7 @@
                   body))
     `(progn
        (declaim (inline ,name))
+       (declaim (ftype (function * simple-array) ,name))
        (defun ,name (&rest args)
          ,doc
          (destructuring-bind ,args (split-at-keywords args)

@@ -105,24 +105,53 @@
          (with-gensyms (out-sym broadcast-compatible-p dimensions)
            (let* ((array-like-syms (make-gensym-list (length array-likes) "ARRAY-LIKE"))
                   (element-type    (array-type-element-type out-type))
-                  (main-code       (cond ((null array-like-syms)
-                                          `(,',reduce-fn (the ,element-type
-                                                              (coerce ,,initial-value ',element-type))
-                                                         ,out-sym
-                                                         :out ,out-sym))
-                                         ((null (rest array-like-syms))
-                                          `(,',reduce-fn (the ,element-type
-                                                              (coerce ,,initial-value ',element-type))
-                                                         ,(first array-like-syms)
-                                                         :out ,out-sym))
-                                         (t
-                                          `(progn
-                                             (,',reduce-fn ,(first array-like-syms)
-                                                           ,(second array-like-syms)
-                                                           :out ,out-sym)
-                                             ,@(mapcar (lm sym `(,',reduce-fn ,out-sym ,sym
-                                                                              :out ,out-sym))
-                                                       (cddr array-like-syms)))))))
+                  (main-code
+                    (cond ((null array-like-syms)
+                           `(,',reduce-fn
+                             (the ,element-type
+                                  (coerce ,,initial-value ',element-type))
+                             ,out-sym
+                             :out ,out-sym))
+                          ((null (rest array-like-syms))
+                           `(,',reduce-fn
+                             (the ,element-type
+                                  (coerce ,,initial-value ',element-type))
+                             ,(first array-like-syms)
+                             :out ,out-sym))
+                          (t
+                           `(progn
+                              (,',reduce-fn ,(first array-like-syms)
+                                            ,(second array-like-syms)
+                                            :out ,out-sym)
+                              ,@(mapcar
+                                 (lm sym `(,',reduce-fn ,out-sym ,sym
+                                                        :out ,out-sym))
+                                 (cddr array-like-syms))))))
+                  (main-code-no-broadcast
+                    (cond ((null array-like-syms)
+                           `(,',reduce-fn
+                             (the ,element-type
+                                  (coerce ,,initial-value ',element-type))
+                             ,out-sym
+                             :out ,out-sym
+                             :broadcast nil))
+                          ((null (rest array-like-syms))
+                           `(,',reduce-fn
+                             (the ,element-type
+                                  (coerce ,,initial-value ',element-type))
+                             ,(first array-like-syms)
+                             :out ,out-sym
+                             :broadcast nil))
+                          (t
+                           `(progn
+                              (,',reduce-fn ,(first array-like-syms)
+                                            ,(second array-like-syms)
+                                            :out ,out-sym :broadcast nil)
+                              ,@(mapcar
+                                 (lm sym `(,',reduce-fn ,out-sym ,sym
+                                                        :out ,out-sym
+                                                        :broadcast nil))
+                                 (cddr array-like-syms)))))))
              (unless (member element-type nu:+optimized-types+
                              :test (lambda (a b)
                                      (and #+extensible-compound-types
@@ -148,7 +177,7 @@
                                                         (narray-dimensions ,sym)))
                                         array-like-syms))
                          (locally ;; (declare (optimize (safety 0)))
-                             ,main-code)
+                             ,main-code-no-broadcast)
                          (multiple-value-bind (,broadcast-compatible-p ,dimensions)
                              (broadcast-compatible-p ,out-sym ,@array-like-syms)
                            (declare (ignorable ,dimensions))
