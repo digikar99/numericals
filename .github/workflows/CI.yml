@@ -85,7 +85,7 @@ jobs:
     - name: Load magicl
       env:
         LIBRARY: ${{ matrix.library }}
-      run:
+      run: |
         cl --eval '(progn
                      (defun ql-dist::dist-name-pathname (name)
                        "Return the pathname that would be used for an installed dist with
