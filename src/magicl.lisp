@@ -29,26 +29,14 @@
   :array-parameters (source1 source2 target)
   :returns-magicl-array t)
 
-(defun nu.magicl:block-diag (blocks)
-  (from-magicl-tensor (magicl:block-diag (mapcar #'to-magicl-tensor blocks))))
-
-(defun nu.magicl:block-matrix (blocks shape)
-  (from-magicl-tensor (magicl:block-matrix (mapcar #'to-magicl-tensor blocks)
-                                           shape)))
-
 (define-simple-magicl-wrapper cast (tensor class) (tensor))
 (define-simple-magicl-wrapper column (matrix index) (matrix))
-(define-simple-magicl-wrapper column-matrix->vector (matrix) (matrix))
 (define-simple-magicl-wrapper conjugate-transpose  (matrix) (matrix))
 (define-simple-magicl-wrapper conjugate-transpose! (matrix) (matrix))
 (define-simple-magicl-wrapper const (const shape &key type layout) ())
 (define-simple-magicl-wrapper copy-tensor (tensor &rest args) (tensor))
 
 (define-magicl-wrapper csd (matrix p q)
-  :array-parameters (matrix)
-  :returns-magicl-array (t t t))
-
-(define-magicl-wrapper csd-blocks (matrix p q)
   :array-parameters (matrix)
   :returns-magicl-array (t t t))
 
@@ -88,7 +76,6 @@
   (apply #'magicl:every predicate (to-magicl-tensor tensor)
          (mapcar #'to-magicl-tensor more-tensors)))
 
-(define-simple-magicl-wrapper expih (h) (h))
 (define-simple-magicl-wrapper expm (matrix) (matrix))
 
 (define-simple-magicl-wrapper eye
@@ -116,10 +103,6 @@
   :array-parameters (matrix)
   :returns-magicl-array nil)
 
-(defun nu.magicl:hstack (matrices)
-  (from-magicl-tensor
-   (magicl:hstack (mapcar #'to-magicl-tensor matrices))))
-
 (define-magicl-wrapper identity-matrix-p
     (matrix &optional (epsilon magicl::*double-comparison-threshold*))
   :array-parameters (matrix)
@@ -127,7 +110,6 @@
 
 (define-simple-magicl-wrapper kron (a b &rest rest) (a b))
 (define-simple-magicl-wrapper layout (a) (a))
-(define-simple-magicl-wrapper linear-solve (a b) (a b))
 
 (define-magicl-wrapper lisp-array (tensor &optional target)
   :array-parameters (tensor)
@@ -137,8 +119,6 @@
 (define-simple-magicl-wrapper lower-triangular (matrix &key (square nil)) (matrix))
 (define-simple-magicl-wrapper lq (matrix) (matrix))
 (define-simple-magicl-wrapper lu (matrix) (matrix))
-(define-simple-magicl-wrapper lu-solve (lu ipiv b) (lu ipiv b))
-(define-simple-magicl-wrapper make-array (dimensions &rest args &key &allow-other-keys) ())
 
 (define-simple-magicl-wrapper make-tensor
     (class shape &key initial-element layout storage)
@@ -155,9 +135,6 @@
 (define-magicl-wrapper norm (vector &optional (p 2))
   :array-parameters (vector)
   :returns-magicl-array nil)
-
-(define-simple-magicl-wrapper normalize  (vector &optional (p 2)) (vector))
-(define-simple-magicl-wrapper normalize! (vector &optional (p 2)) (vector))
 
 (defun nu.magicl:notany (predicate tensor &rest more-tensors)
   (apply #'magicl:notany predicate (to-magicl-tensor tensor)
@@ -179,28 +156,15 @@
 (define-magicl-wrapper qr (matrix)
   :array-parameters (matrix)
   :returns-magicl-array (t t))
-(define-magicl-wrapper qz (matrix1 matrix2)
-  :array-parameters (matrix1 matrix2)
-  :returns-magicl-array (t t t t))
 
 (define-simple-magicl-wrapper rand
     (shape &key (type magicl::*default-tensor-type*) layout distribution)
-  ())
-(define-simple-magicl-wrapper random-hermitian
-    (n &key (type magicl::*default-tensor-type*))
-  ())
-(define-simple-magicl-wrapper random-normal
-    (shape &key (type magicl::*default-tensor-type*))
-  ())
-(define-simple-magicl-wrapper random-special-unitary
-    (n &key (type `(complex ,magicl::*default-tensor-type*)))
   ())
 (define-simple-magicl-wrapper random-unitary
     (n &key (type `(complex ,magicl::*default-tensor-type*)))
   ())
 (define-simple-magicl-wrapper reshape (tensor shape) (tensor))
 (define-simple-magicl-wrapper row (matrix index) (matrix))
-(define-simple-magicl-wrapper row-matrix->vector (matrix) (matrix))
 
 (define-magicl-wrapper rq (matrix)
   :array-parameters (matrix)
@@ -208,13 +172,9 @@
 (define-simple-magicl-wrapper scale  (tensor factor) (tensor))
 (define-simple-magicl-wrapper scale! (tensor factor) (tensor))
 
-(define-magicl-wrapper schur (matrix)
-  :array-parameters (matrix)
-  :returns-magicl-array (t t))
 (define-magicl-wrapper shape (tensor) :array-parameters (tensor))
 (define-magicl-wrapper size  (tensor) :array-parameters (tensor))
 (define-simple-magicl-wrapper slice    (tensor from to) (tensor))
-(define-simple-magicl-wrapper slice-to (source from to target offset) (source target))
 
 (defun nu.magicl:some (predicate tensor &rest more-tensors)
   (apply #'magicl:some predicate (to-magicl-tensor tensor)
@@ -230,20 +190,13 @@
 (define-magicl-wrapper tref (tensor &rest pos) :array-parameters (tensor))
 (define-simple-magicl-wrapper tril (matrix &key square) (matrix))
 (define-simple-magicl-wrapper triu (matrix &key square) (matrix))
-(define-simple-magicl-wrapper unary-operator (function source &optional target)
-  (source target))
 
 (define-magicl-wrapper unitary-matrix-p
     (matrix &optional (epsilon magicl::*double-comparison-threshold*))
   :array-parameters (matrix))
 
 (define-simple-magicl-wrapper upper-triangular (matrix &key square) (matrix))
-(define-simple-magicl-wrapper vector->column-matrix (vector) (vector))
-(define-simple-magicl-wrapper vector->row-matrix    (vector) (vector))
 
-(defun nu.magicl:vstack (matrices)
-  (from-magicl-tensor
-   (magicl:vstack (mapcar #'to-magicl-tensor matrices))))
 (define-simple-magicl-wrapper zeros
     (shape &key (type magicl::*default-tensor-type*) layout)
   ())
