@@ -85,7 +85,7 @@ jobs:
     - name: Load magicl
       env:
         LIBRARY: ${{ matrix.library }}
-      run: |
+      run: >
         cl --eval '(progn
                      (defun ql-dist::dist-name-pathname (name)
                        "Return the pathname that would be used for an installed dist with
@@ -104,7 +104,7 @@ jobs:
                      (print ql:*local-project-directories*)
                      (print (ql:where-is-system "'$LIBRARY'/magicl"))
                      (ql:quickload "'$LIBRARY'/magicl" :verbose t)
-                     (uiop:quit 0))' \
+                     (uiop:quit 0))'
            -- eval '(print
                       (multiple-value-list
                         ('$LIBRARY'/magicl:svd
