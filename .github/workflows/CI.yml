@@ -104,11 +104,12 @@ jobs:
                      (print ql:*local-project-directories*)
                      (print (ql:where-is-system "'$LIBRARY'/magicl"))
                      (ql:quickload "'$LIBRARY'/magicl" :verbose t)
-                     (uiop:quit 0))'
-           -- eval '(print
-                      (multiple-value-list
-                        ('$LIBRARY'/magicl:svd
-                          ('$LIBRARY':rand 3 3 :type (quote cl:single-float)))))'
+                     (uiop:quit 0))' \
+           --eval '(print
+                     (multiple-value-list
+                       ('$LIBRARY'.magicl:svd
+                         ('$LIBRARY':rand 3 3 :type (quote cl:single-float)))))' \
+           --eval '(print :done)'
 
 
 
