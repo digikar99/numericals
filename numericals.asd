@@ -93,6 +93,14 @@
                                             (5AM:*ON-FAILURE* :DEBUG))
                                        (5AM:RUN! :NUMERICALS))"))))
 
+(defsystem "numericals/magicl"
+  :pathname "src/"
+  :depends-on ("numericals"
+               "magicl"
+               "swank")
+  :components ((:file "magicl-wrapper")
+               (:file "magicl")))
+
 (defsystem "numericals/benchmarks"
   :pathname "benchmarks/"
   :version "0.1.0"

@@ -72,6 +72,14 @@
                                                'DENSE-ARRAYS:STANDARD-DENSE-ARRAY))
                                         (5AM:RUN! 'DENSE-NUMERICALS.IMPL::ARRAY))"))))
 
+(defsystem "dense-numericals/magicl"
+  :pathname "dense-numericals-src/"
+  :depends-on ("dense-numericals"
+               "magicl"
+               "swank")
+  :components ((:file "magicl-wrapper")
+               (:file "magicl")))
+
 (defsystem "dense-numericals/benchmarks"
   :pathname "benchmarks/"
   :version "0.1.0"
