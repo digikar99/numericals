@@ -203,6 +203,7 @@ that CALL-FORM requires."
                                    returns-magicl-array)
   (let ((magicl-name    (find-symbol (symbol-name name) :magicl))
         (nu-magicl-name (find-symbol (symbol-name name) :nu.magicl)))
+    (assert magicl-name () "~A not found in package MAGICL" name)
     (multiple-value-bind (call-form augmented-lambda-list decl)
         (magicl-call-form-from-lambda-list magicl-name lambda-list array-parameters)
       `(defun ,nu-magicl-name ,augmented-lambda-list
