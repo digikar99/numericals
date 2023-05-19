@@ -51,8 +51,8 @@
            (result (locally (declare (type real result))
                      (if (typep result <type>)
                          result
-                         (locally (declare (notinline trivial-coerce:coerce))
-                           (trivial-coerce:coerce result <type>))))))
+                         (locally (declare (notinline nu:coerce))
+                           (nu:coerce result <type>))))))
       result)))
 
 (defpolymorph one-arg-reduce-fn
@@ -74,8 +74,8 @@
                                (inline-or-funcall c-name n ptr-x inc-x))))
     (let ((result (if (typep acc <type>)
                       acc
-                      (locally (declare (notinline trivial-coerce:coerce))
-                        (trivial-coerce:coerce acc <type>)))))
+                      (locally (declare (notinline nu:coerce))
+                        (nu:coerce acc <type>)))))
       result)))
 
 (defpolymorph (one-arg-reduce-fn :inline t)

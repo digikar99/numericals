@@ -138,7 +138,7 @@ TODO: Provide more details
   (let ((c-size (c-size <type>))
         (c-name (c-name <type> name)))
     (cffi-sys:with-foreign-pointer (ptr-x c-size)
-      (setf (cffi:mem-ref ptr-x :float) (trivial-coerce:coerce x <type>))
+      (setf (cffi:mem-ref ptr-x :float) (nu:coerce x <type>))
       (pflet ((svo (array-storage out)))
         (declare (type (common-lisp:simple-array <type> 1) svo))
         (with-thresholded-multithreading/cl (common-lisp:array-total-size svo)

@@ -219,7 +219,7 @@ Examples:
      (let ((array (nu:zeros (narray-dimensions array-like) :type type)))
        (loop :for index :below (array-total-size array-like)
              :do (setf (row-major-aref array index)
-                       (trivial-coerce:coerce (row-major-aref array-like index) type)))
+                       (nu:coerce (row-major-aref array-like index) type)))
        array))
     (sequence
      (let* ((result-array (nu:zeros (nu:shape array-like) :type type))
@@ -237,18 +237,18 @@ Examples:
                              :do (setf (cl:aref rsv index)
                                        ;; We will leave the optimization for this
                                        ;; to cl-form-types
-                                       (trivial-coerce:coerce
+                                       (nu:coerce
                                         (cl:aref asv i)
                                         type))
                                  (incf index))))
                     (real
                      (setf (cl:aref rsv index)
-                           (trivial-coerce:coerce (the real array-like) type))
+                           (nu:coerce (the real array-like) type))
                      (incf index)))))
          (%asarray array-like))
        result-array))
     (atom (make-array 1 :element-type type
-                        :initial-element (trivial-coerce:coerce array-like type)))))
+                        :initial-element (nu:coerce array-like type)))))
 
 (defmacro nu:macro-map-array (result-array function &rest arrays)
   (alexandria:with-gensyms (result i result-type)
@@ -265,7 +265,7 @@ Examples:
                 (,result-type (array-element-type ,result)))
            (dotimes (,i (array-total-size ,(first array-syms)))
              (setf (row-major-aref ,result ,i)
-                   (trivial-coerce:coerce
+                   (nu:coerce
                     (,function ,@(mapcar (lm array-sym `(row-major-aref ,array-sym ,i))
                                          array-syms))
                     ,result-type)))

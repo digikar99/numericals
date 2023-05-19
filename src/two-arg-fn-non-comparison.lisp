@@ -228,7 +228,7 @@
     (let ((c-size (c-size <type>)))
       (cffi-sys:with-foreign-pointer (ptr-y c-size)
         (setf (cffi:mem-ref ptr-y (c-type <type>))
-              (trivial-coerce:coerce y <type>))
+              (nu:coerce y <type>))
         (ptr-iterate-but-inner broadcast-dimensions
             n
           ((ptr-x c-size ix x) (ptr-o c-size io out))
@@ -264,7 +264,7 @@
               :array-likes (list y out))
       (cffi-sys:with-foreign-pointer (ptr-x c-size)
         (setf (cffi:mem-ref ptr-x (c-type <type>))
-              (trivial-coerce:coerce x <type>))
+              (nu:coerce x <type>))
         (ptr-iterate-but-inner broadcast-dimensions
             n
           ((ptr-y c-size iy y) (ptr-o c-size io out))

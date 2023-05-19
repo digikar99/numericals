@@ -21,7 +21,7 @@
   (:use)
   (:documentation "Depends on foreign-functions")
   (:mix :dense-numericals-lite)
-  (:import-from :trivial-coerce
+  (:import-from :extensible-optimizing-coerce
                 #:coerce)
   (:reexport :dense-numericals-lite)
   (:export #:astype

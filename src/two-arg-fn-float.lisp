@@ -255,7 +255,7 @@
               :dimensions (mapcar #'narray-dimensions (list x out))
               :array-likes (list x out))
       (cffi:with-foreign-pointer (ptr-y 4)
-        (setf (cffi:mem-ref ptr-y :float) (trivial-coerce:coerce y 'single-float))
+        (setf (cffi:mem-ref ptr-y :float) (nu:coerce y 'single-float))
         (ptr-iterate-but-inner broadcast-dimensions n
           ((ptr-x 4 ix x)
            (ptr-o 4 io out))
@@ -284,7 +284,7 @@
               :dimensions (mapcar #'narray-dimensions (list y out))
               :array-likes (list y out))
       (cffi:with-foreign-pointer (ptr-x 4)
-        (setf (cffi:mem-ref ptr-x :float) (trivial-coerce:coerce X 'single-float))
+        (setf (cffi:mem-ref ptr-x :float) (nu:coerce X 'single-float))
         (ptr-iterate-but-inner broadcast-dimensions n
           ((ptr-y 4 iy y)
            (ptr-o 4 io out))
@@ -468,7 +468,7 @@
               :dimensions (mapcar #'narray-dimensions (list x out))
               :array-likes (list x out))
       (cffi:with-foreign-pointer (ptr-y 8)
-        (setf (cffi:mem-ref ptr-y :double) (trivial-coerce:coerce y 'double-float))
+        (setf (cffi:mem-ref ptr-y :double) (nu:coerce y 'double-float))
         (ptr-iterate-but-inner broadcast-dimensions n
           ((ptr-x 8 ix x)
            (ptr-o 8 io out))
@@ -497,7 +497,7 @@
               :dimensions (mapcar #'narray-dimensions (list y out))
               :array-likes (list y out))
       (cffi:with-foreign-pointer (ptr-x 8)
-        (setf (cffi:mem-ref ptr-x :double) (trivial-coerce:coerce X 'double-float))
+        (setf (cffi:mem-ref ptr-x :double) (nu:coerce X 'double-float))
         (ptr-iterate-but-inner broadcast-dimensions n
           ((ptr-y 8 iy y)
            (ptr-o 8 io out))

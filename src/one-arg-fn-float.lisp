@@ -162,7 +162,7 @@ TODO: Provide more details
   (declare (ignore broadcast))
   (cffi:with-foreign-pointer (ptr-x 4)
     (setf (cffi:mem-ref ptr-x :float)
-          (trivial-coerce:coerce x 'single-float))
+          (nu:coerce x 'single-float))
     (let ((svo (array-storage out)))
       (declare (type (cl:simple-array single-float 1) svo))
       (with-thresholded-multithreading/cl
@@ -278,7 +278,7 @@ TODO: Provide more details
   (declare (ignore broadcast))
   (cffi:with-foreign-pointer (ptr-x 8)
     (setf (cffi:mem-ref ptr-x :double)
-          (trivial-coerce:coerce x 'double-float))
+          (nu:coerce x 'double-float))
     (let ((svo (array-storage out)))
       (declare (type (cl:simple-array double-float 1) svo))
       (with-thresholded-multithreading/cl

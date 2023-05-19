@@ -2,7 +2,7 @@
 
 (defpackage :numericals
   (:use)
-  (:import-from :trivial-coerce #:coerce)
+  (:import-from :extensible-optimizing-coerce #:coerce)
   (:import-from :cl #:aref)
   (:export
 

@@ -127,7 +127,7 @@
        (ptr-y c-size inc-y y))
       (incf sum (funcall c-name n ptr-x inc-x ptr-y inc-y)))
     (nth-value 0
-               (trivial-coerce:coerce (the real sum) <type>))))
+               (nu:coerce (the real sum) <type>))))
 
 (5am:def-test nu:vdot ()
   (flet ((float-close-p (x y)
@@ -173,7 +173,7 @@
                                      '(88 :step -2)
                                      '(200 :step 40))))
                (5am:is (float-close-p (nu:vdot rand-1 rand-2)
-                                      (trivial-coerce:coerce
+                                      (nu:coerce
                                        (let ((sum 0))
                                          (nu:do-arrays ((x rand-1)
                                                         (y rand-2))
