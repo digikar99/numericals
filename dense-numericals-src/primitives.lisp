@@ -104,3 +104,16 @@
 
 (defun nu:full-like (array-like value)
   (nu:full (dimensions array-like) :value value :type (element-type array-like)))
+
+(declaim (inline nu:fill))
+(defun nu:fill (array value)
+  (declare (type nu:array array))
+  (let* ((type  (nu:array-element-type array))
+         (value (nu:coerce value type)))
+    (if (typep array 'simple-array)
+        (let* ((size    (nu:array-total-size array))
+               (storage (array-storage array)))
+          (cl:fill storage value :start 0 :end size))
+        (nu:do-arrays ((elt array))
+          (setf elt value)))
+    array))

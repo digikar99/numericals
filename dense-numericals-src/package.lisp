@@ -25,6 +25,7 @@
                 #:coerce)
   (:reexport :dense-numericals-lite)
   (:export #:astype
+           #:fill
            
            #:*multithreaded-threshold*
            #:+optimized-types+

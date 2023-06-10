@@ -156,6 +156,16 @@ Examples:
     (ensure-row-major-layout)
     (make-array shape :element-type type :initial-element (coerce value type))))
 
+(declaim (inline nu:fill))
+(defun nu:fill (array value)
+  (let* ((type  (nu:array-element-type array))
+         (value (nu:coerce value type))
+         (size  (nu:array-total-size array))
+         (storage (array-storage array))
+         (offset  (cl-array-offset array)))
+    (cl:fill storage value :start offset :end (+ offset size))
+    array))
+
 (declaim (inline nu:empty-like nu:zeros-like nu:ones-like nu:rand-like nu:full-like))
 (defun nu:empty-like (array)
   ;; FIXME: Expand this to array-like

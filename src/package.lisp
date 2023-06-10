@@ -51,6 +51,7 @@
    #:rand-like
    #:full
    #:full-like
+   #:fill
    #:shape
    #:eye
    :transpose
