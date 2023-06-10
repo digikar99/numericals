@@ -267,7 +267,7 @@
     out))
 
 (defpolymorph two-arg-fn/float
-    ((name symbol) (x number) (y (array single-float)) 
+    ((name symbol) (x number) (y (array single-float))
      &key ((out (or null (array single-float))))
      ;; The very fact that we are allowing X to be NUMBER implies
      ;; BROADCAST must be non-NIL
@@ -480,7 +480,7 @@
     out))
 
 (defpolymorph two-arg-fn/float
-    ((name symbol) (x number) (y (array double-float)) 
+    ((name symbol) (x number) (y (array double-float))
      &key ((out (or null (array double-float))))
      ;; The very fact that we are allowing X to be NUMBER implies
      ;; BROADCAST must be non-NIL

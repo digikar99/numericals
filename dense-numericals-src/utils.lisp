@@ -17,12 +17,13 @@ arrays of appropriate types."))))
 (defvar nu:*default-float-format* 'single-float
   "Used for converting non-float arrays to float arrays for floating-point
 operations like trigonometric functions.")
-(declaim (type (member single-float double-float) nu:*default-float-format*))
+(declaim (cl:type (member single-float double-float) nu:*default-float-format*))
 
 (defvar nu:*broadcast-automatically* t
   "If non-NIL, operations automatically perform broadcasting as necessary.
 If NIL, broadcasting is expected to be performed by the user. Such strictness
 can be helpful to locate bugs.")
+(declaim (cl:type (member t nil) nu:*broadcast-automatically*))
 
 (defmacro with-pointers-to-vectors-data (bindings &body body)
   "Each entry of BINDINGS is of the form (POINTER-VAR VECTOR)."

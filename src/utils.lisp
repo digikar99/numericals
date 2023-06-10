@@ -1,6 +1,21 @@
 (in-package :numericals.impl)
 ;; (numericals.common:compiler-in-package numericals.common:*compiler-package*)
 
+(deftype size () `(unsigned-byte 62))
+(defmacro the-size (form)
+  #+sbcl `(sb-ext:truly-the size ,form)
+  #-sbcl `(the size ,form))
+
+(deftype int-index () `(signed-byte 62))
+(defmacro the-int-index (form)
+  `(#+sbcl sb-ext:truly-the
+    #-sbcl the
+    int-index ,form))
+
+(defmacro lm (&rest var-body)
+  `(lambda ,(butlast var-body)
+     ,@(last var-body)))
+
 (define-condition runtime-array-allocation (suboptimal-polymorph-note)
   ()
   (:report (lambda (c s)
@@ -81,21 +96,6 @@ can be helpful to locate bugs.")
                              (single-float :float)
                              (double-float :double))
                            ,arg)))))
-
-(deftype size () `(unsigned-byte 62))
-(defmacro the-size (form)
-  #+sbcl `(sb-ext:truly-the size ,form)
-  #-sbcl `(the size ,form))
-
-(deftype int-index () `(signed-byte 62))
-(defmacro the-int-index (form)
-  `(#+sbcl sb-ext:truly-the
-    #-sbcl the
-    int-index ,form))
-
-(defmacro lm (&rest var-body)
-  `(lambda ,(butlast var-body)
-     ,@(last var-body)))
 
 (declaim (inline cl-array-offset))
 (declaim (ftype (function (cl:array) size) cl-array-offset))

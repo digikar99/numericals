@@ -3,7 +3,15 @@
 (defpackage :numericals
   (:use)
   (:import-from :extensible-optimizing-coerce #:coerce)
-  (:import-from :cl #:aref)
+  (:import-from :cl
+                #:aref
+                #:array-rank
+                #:array
+                #:simple-array
+                #:array-total-size
+                #:array-element-type
+                #:array-dimensions
+                #:array-dimension)
   (:export
 
    #:*multithreaded-threshold*
@@ -37,8 +45,17 @@
    
    #:astype
    #:asarray
+
    #:aref
+   #:array-rank
+   #:array-total-size
+   #:array-element-type
+   #:array-dimensions
+   #:array-dimension
+   #:array
+   #:simple-array
    #:aref*
+
    #:concatenate
    #:array=
    #:empty
