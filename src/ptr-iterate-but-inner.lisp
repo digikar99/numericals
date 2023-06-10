@@ -37,7 +37,8 @@
                               ,@(mapcar (lm ss strides `(,ss (first ,strides)))
                                         ss strides))
                           (declare (cl:type int-index ,@ss)
-                                   (cl:type size ,n-var))
+                                   (cl:type size ,n-var)
+                                   (ignorable ,n-var ,@ss))
                           ;; (mapc #'print (list ,dimensions ,@pointers))
                           (if (null (rest ,dimensions))
                               (progn
@@ -48,18 +49,23 @@
                                          (rest ,dimensions)
                                          ,@(mapcar (lm strides `(rest ,strides)) strides))
                                     ,@(mapcar (lm ptr s elt-size
-                                                `(cffi:incf-pointer
-                                                     ,ptr (the-int-index (* ,elt-size ,s))))
+                                                  `(cffi:incf-pointer
+                                                       ,ptr (the-int-index (* ,elt-size ,s))))
                                               pointers ss elt-sizes)
                                     :finally
                                     ,@(mapcar (lm ptr s elt-size
-                                                `(cffi:incf-pointer
-                                                     ,ptr
-                                                     (the-int-index
-                                                      (* ,elt-size
-                                                         (the-int-index
-                                                          (- (the-int-index
-                                                              (* ,n-var ,s))))))))
+                                                  `(cffi:incf-pointer
+                                                       ,ptr
+                                                       (the-int-index
+                                                        (* ,elt-size
+                                                           (the-int-index
+                                                            (- (the-int-index
+                                                                (* ,n-var ,s))))))))
                                               pointers ss elt-sizes))))))
-               (nest-loop ,broadcast-dimensions
-                          ,@strides))))))))
+               (if (null ,broadcast-dimensions)
+                   (let ((,n-var 1)
+                         ,@(mapcar (lm ss `(,ss 0)) ss))
+                     (declare (ignorable ,n-var ,@ss))
+                     ,@expression
+                     nil)
+                   (nest-loop ,broadcast-dimensions ,@strides)))))))))
