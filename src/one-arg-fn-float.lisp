@@ -405,6 +405,7 @@ TODO: Provide more details
                   (one-arg-fn/float ',name x :out out :broadcast broadcast))
                 (define-numericals-one-arg-test ,name nu::array
                     (,single-float-error) (,double-float-error)))))
+  (def nu:sqrt      (2f-7)  (1d-15))
   (def nu:abs       (2f-7)  (1d-15))
   (def nu:fround    (0.0f0) (0.0d0))
   (def nu:ftruncate (0.0f0) (0.0d0))

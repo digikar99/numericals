@@ -79,6 +79,7 @@
 
      (nu::atan2 bmas:satan2 bmas::datan2 cl:atan)
      (nu:expt   bmas:spow   bmas:dpow    cl:expt)
+     (nu:sqrt   bmas:ssqrt  bmas:dsqrt   cl:sqrt)
 
      (nu:copy bmas:scopy bmas:dcopy cl:identity
                                     bmas:i64copy bmas:i32copy bmas:i16copy bmas:i8copy
