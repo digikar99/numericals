@@ -58,8 +58,10 @@ can be helpful to locate bugs.")
 
 (declaim (inline array-stride))
 (defun array-stride (array axis)
-  (loop :for d :in (subseq (narray-dimensions array) (1+ axis))
-        :with stride := 1
+  (declare (optimize speed)
+           (type size axis))
+  (loop :for d :of-type size :in (subseq (narray-dimensions array) (1+ axis))
+        :with stride :of-type size := 1
         :do (setq stride (* d stride))
         :finally (return stride)))
 
