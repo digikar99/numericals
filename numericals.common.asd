@@ -4,5 +4,6 @@
   :version "0.1.0"
   :depends-on ("alexandria"
                "fiveam"
-               "cl-form-types")
+               "cl-form-types"
+               "polymorphic-functions")
   :components ((:file "common")))

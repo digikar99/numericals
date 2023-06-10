@@ -103,10 +103,10 @@
      (nu:divide   bmas:sdiv bmas:ddiv cl:/)
 
      (nu:two-arg-max bmas:smax bmas:dmax cl:max bmas:i64max bmas:i32max bmas:i16max bmas:i8max
-                                                bmas:i64max bmas:i32max bmas:i16max bmas:i8max
+                                                bmas:u64max bmas:u32max bmas:u16max bmas:u8max
                                                 fixnum-max)
-     (nu:two-arg-min bmas:smin bmas:dmin cl:max bmas:i64min bmas:i32min bmas:i16min bmas:i8min
-                                                bmas:i64min bmas:i32min bmas:i16min bmas:i8min
+     (nu:two-arg-min bmas:smin bmas:dmin cl:min bmas:i64min bmas:i32min bmas:i16min bmas:i8min
+                                                bmas:u64min bmas:u32min bmas:u16min bmas:u8min
                                                 fixnum-min)
 
      (nu:sum bmas:ssum bmas:dsum cl:+ bmas:i64sum bmas:i32sum bmas:i16sum bmas:i8sum
@@ -150,6 +150,35 @@
               bmas:i64dot bmas:i32dot bmas:i16dot bmas:i8dot
               bmas:i64dot bmas:i32dot bmas:i16dot bmas:i8dot
               fixnum-dot)
+
+     (nu:matmul ceigen-lite:smatmul ceigen-lite:dmatmul)
+     ;; FIXME: partial-piv-lu is only valid for square matrices
+     (la:solve ceigen-lite:shouseholder-qr
+               ceigen-lite:dhouseholder-qr)
+     (la::solve/square ceigen-lite:spartial-piv-lu
+                       ceigen-lite:dpartial-piv-lu)
+
+     (la::norm2/vector ceigen-lite:snorm2v
+                       ceigen-lite:dnorm2v)
+     (la::norm2/matrix ceigen-lite:snorm2m
+                       ceigen-lite:dnorm2m)
+     (la:rank ceigen-lite:srank ceigen-lite:drank)
+     (la:det ceigen-lite:sdeterminant
+             ceigen-lite:ddeterminant)
+     (la:inv ceigen-lite:sinverse
+             ceigen-lite:dinverse)
+     (la:pinv ceigen-lite:spinverse
+              ceigen-lite:dpinverse)
+     (la:cholesky ceigen-lite:scholesky
+                  ceigen-lite:dcholesky)
+
+     (la:qr ceigen-lite:sqr ceigen-lite:dqr)
+     (la:lu ceigen-lite:slu ceigen-lite:dlu)
+     (la:svd ceigen-lite:ssvd ceigen-lite:dsvd)
+
+     (rand:gaussian  ceigen-lite:snormal ceigen-lite:dnormal)
+     (rand:beta      ceigen-lite:sbeta   ceigen-lite:dbeta)
+     (rand:chisquare ceigen-lite:schi-squared   ceigen-lite:dchi-squared)
 
      ;; (nu:ash-right nil nil nil bmas:i64sra bmas:i32sra bmas:i16sra bmas:i8sra
      ;;                           bmas:u64srl bmas:u32srl bmas:u16srl bmas:u8srl)

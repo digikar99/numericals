@@ -1,18 +1,19 @@
 (defsystem "dense-numericals"
   :pathname "dense-numericals-src/"
-  :version "2023.05.0" ; year, month, patch
+  :version "2023.06.0" ; year, month, patch
   :description "A high performance numerical computing library for Common Lisp (focus: basic math operations)"
   :license "MIT"
   :author "Shubhamkar B. Ayare (shubhamayare@yahoo.co.in)"
   :depends-on ("numericals.common"
                "dense-arrays-plus-lite"
-               "magicl/ext-blas"
                "bmas"
                "cl-autowrap"
+               "ceigen-lite"
                "alexandria"
                "iterate"
                "uiop"
                "cffi"
+               "gsll"
                (:feature :extensible-compound-types "extensible-compound-types-cl")
                "fiveam"
                "lparallel"
@@ -58,10 +59,41 @@
                                                               "two-arg-fn-comparison"
                                                               "two-arg-fn-non-comparison"))
                (:file "n-arg-fn-tests"        :depends-on ("n-arg-fn-compiler-macros"))
+               (:module "ranked-functions" :depends-on ("translations"
+                                                        "ptr-iterate-but-inner"
+                                                        "primitives")
+                :components
+                ((:file "simple-array-broadcast")
+                 (:file "sum")
+                 (:file "maximum")
+                 (:file "minimum")
+                 (:file "mean")
+                 (:file "variance")
+                 (:file "std")
+                 (:file "matmul")
+                 (:file "concat")
+                 (:module "linear-algebra"
+                  :components ((:file "eigen")
+                               (:file "det")
+                               (:file "inv")
+                               (:file "pinv")
+                               (:file "norm2")
+                               (:file "solve")
+                               (:file "rank")
+                               (:file "qr")
+                               (:file "lu")
+                               (:file "svd")
+                               (:file "cholesky")
+                               (:file "eig")))))
                (:file "blas"                  :depends-on ("utils"
                                                            "ptr-iterate-but-inner"))
-               (:file "concatenate"           :depends-on ("blas"))
-               (:file "one-arg-reduce-fn"     :depends-on ("translations"))
+               (:module "random"  :depends-on ("translations"
+                                               "ptr-iterate-but-inner"
+                                               "primitives")
+                :components ((:file "gsll")
+                             (:file "gaussian")
+                             (:file "beta")
+                             (:file "chisquare")))
                (:file "misc"                  :depends-on ("package")))
   :perform (test-op (o c)
              (declare (ignore o c))

@@ -147,6 +147,28 @@
            #:>=
            #:two-arg->=))
 
+(defpackage :dense-numericals.random
+  (:use)
+  (:export ;; real / float types
+   #:gaussian
+   #:normal
+   #:beta
+   #:chisquare
+   #:exponential
+   #:fisher-f
+   #:gamma
+   #:log-normal
+   #:student-t
+   #:uniform
+   #:weibull
+
+   ;; integer types
+   #:bernoulli
+   #:binomial
+   #:discrete
+   #:geometric
+   #:poisson))
+
 (uiop:define-package :dense-numericals.impl
   #+extensible-compound-types
   (:mix :dense-arrays-plus-lite :extensible-compound-types-cl :cl :alexandria :iterate)
@@ -188,40 +210,56 @@
                 #:dimensions
                 #:element-type))
 
-;; (defpackage :dense-numericals.linalg
-;;   (:export #:multidot
-;;            #:matrix-power
+(defpackage :dense-numericals.linalg
+  (:use)
+  (:import-from :dense-numericals
+                #:matmul
+                #:vdot)
+  (:export #:matmul
+           #:vdot
+           #:inner
+           #:outer
+           #:copy-matrix
+           #:lower
+           #:upper
+           #:rotate-2d
+           #:minimize-lls
 
-;;            #:cholesky
-;;            #:qr
-;;            #:svd
+           #:multidot
+           #:matrix-power
 
-;;            #:eig
-;;            #:eigh
-;;            #:eigvals
-;;            #:eigvalsh
+           #:cholesky
+           #:svd
+           #:lu
+           #:qr
 
-;;            #:norm
-;;            #:cond
-;;            #:det
-;;            #:matrix-rank
-;;            #:slogdet
+           #:eigvals
+           #:eigvecs
 
-;;            #:solve
-;;            #:tensorsolve
-;;            #:lstsq
-;;            #:inv
-;;            #:pinv
-;;            #:tensorinv
 
-;;            #:axpy))
+           #:norm2
+           #:cond
+           #:det
+           #:rank
+           ;; #:slogdet ; unimplemented by eigen
+
+           #:solve
+           ;; #:tensorsolve
+           ;; #:lstsq ; This is subsumed by #:SOLVE
+           #:inv
+           #:pinv
+           ;; #:tensorinv
+
+           #:axpy))
 
 (in-package :dense-numericals.impl)
 
 ;; FIXME: Avoid TPLN
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (trivial-package-local-nicknames:add-package-local-nickname :nu :dense-numericals)
-  ;; (trivial-package-local-nicknames:add-package-local-nickname :la :dense-numericals.linalg)
+  (trivial-package-local-nicknames:add-package-local-nickname :rand
+                                                              :dense-numericals.random)
+  (trivial-package-local-nicknames:add-package-local-nickname :la :dense-numericals.linalg)
   )
 
 (5am:def-suite :dense-numericals)

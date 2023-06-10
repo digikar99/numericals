@@ -1,6 +1,6 @@
 (defsystem "numericals"
   :pathname "src/"
-  :version "2023.05.0" ; year, month, patch
+  :version "2023.06.0" ; year, month, patch
   :description "A high performance numerical computing library for Common Lisp (focus: basic math operations)"
   :license "MIT"
   :author "Shubhamkar B. Ayare (shubhamayare@yahoo.co.in)"
@@ -10,7 +10,8 @@
                "compiler-macro-notes"
                "ctype"
                "bmas"
-               "magicl/ext-blas"
+               "ceigen-lite"
+               "gsll"
                (:feature :extensible-compound-types "extensible-compound-types-cl")
                "fiveam"
                ;; #+sbcl "numericals/sbcl"
@@ -54,9 +55,6 @@
                (:file "one-arg-fn-all"        :depends-on ("copy-coerce"
                                                            "test"
                                                            "translations"))
-               (:file "one-arg-reduce-fn"     :depends-on ("translations"
-                                                           "primitives"))
-
                (:file "two-arg-fn-float"      :depends-on ("copy-coerce"
                                                            "test"
                                                            "translations"))
@@ -83,6 +81,39 @@
                (:file "n-arg-fn-tests"          :depends-on ("n-arg-fn-compiler-macros"))
                ;; (:file "outer")
                ;; (:file "concatenate")
+               (:module "ranked-functions" :depends-on ("translations"
+                                                        "ptr-iterate-but-inner"
+                                                        "primitives")
+                :components
+                ((:file "simple-array-broadcast")
+                 (:file "sum")
+                 (:file "maximum")
+                 (:file "minimum")
+                 (:file "mean")
+                 (:file "variance")
+                 (:file "std")
+                 (:file "matmul")
+                 (:file "concat")
+                 (:module "linear-algebra"
+                  :components ((:file "eigen")
+                               (:file "det")
+                               (:file "inv")
+                               (:file "pinv")
+                               (:file "norm2")
+                               (:file "solve")
+                               (:file "rank")
+                               (:file "qr")
+                               (:file "lu")
+                               (:file "svd")
+                               (:file "cholesky")
+                               (:file "eig")))))
+               (:module "random"  :depends-on ("translations"
+                                               "ptr-iterate-but-inner"
+                                               "primitives")
+                :components ((:file "gsll")
+                             (:file "gaussian")
+                             (:file "beta")
+                             (:file "chisquare")))
                (:file "blas"                    :depends-on ("primitives"
                                                              "ptr-iterate-but-inner"))
                ;; (:file "misc")

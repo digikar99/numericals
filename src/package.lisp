@@ -137,7 +137,11 @@
    #:minimum
    #:vdot
    #:reshape
-   
+   #:mean
+   #:variance
+   #:std
+   #:stan
+
    #:shape
 
    #:+
@@ -186,13 +190,79 @@
 
    ))
 
+(defpackage :numericals.random
+  (:use)
+  (:export ;; real / float types
+   #:gaussian
+   #:normal
+   #:beta
+   #:chisquare
+   #:exponential
+   #:fisher-f
+   #:gamma
+   #:log-normal
+   #:student-t
+   #:uniform
+   #:weibull
+
+   ;; integer types
+   #:bernoulli
+   #:binomial
+   #:discrete
+   #:geometric
+   #:poisson))
+
+(defpackage :numericals.linalg
+  (:use)
+  (:import-from :numericals
+                #:matmul
+                #:vdot)
+  (:export #:matmul
+           #:vdot
+           #:inner
+           #:outer
+           #:copy-matrix
+           #:lower
+           #:upper
+           #:rotate-2d
+           #:minimize-lls
+
+           #:multidot
+           #:matrix-power
+
+           #:cholesky
+           #:svd
+           #:lu
+           #:qr
+
+           #:eigvals
+           #:eigvecs
+
+
+           #:norm2
+           #:cond
+           #:det
+           #:rank
+           ;; #:slogdet ; unimplemented by eigen
+
+           #:solve
+           ;; #:tensorsolve
+           ;; #:lstsq ; This is subsumed by #:SOLVE
+           #:inv
+           #:pinv
+           ;; #:tensorinv
+
+           #:axpy))
+
 (uiop:define-package :numericals.impl
   #-extensible-compound-types
   (:mix :cl :alexandria :iterate :introspect-environment
         :polymorphic-functions)
   #+extensible-compound-types
   (:mix :extensible-compound-types-cl :cl :alexandria :iterate :introspect-environment
-        :polymorphic-functions)
+   :polymorphic-functions)
+  (:import-from :extensible-compound-types.impl
+                #:with-eval-always)
   (:import-from :numericals
                 #:maybe-form-not-constant-error
                 #:*type*
@@ -202,7 +272,8 @@
                 #:type-zero
                 #:type-min
                 #:type-max
-                #:inline-or-funcall)
+                #:inline-or-funcall
+                #:fref)
   (:import-from :polymorphic-functions
                 #:optim-speed
                 #:env
@@ -219,7 +290,9 @@
 
 ;; FIXME: Avoid TPLN
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (trivial-package-local-nicknames:add-package-local-nickname :nu :numericals))
+  (trivial-package-local-nicknames:add-package-local-nickname :nu :numericals)
+  (trivial-package-local-nicknames:add-package-local-nickname :rand :numericals.random)
+  (trivial-package-local-nicknames:add-package-local-nickname :la :numericals.linalg))
 
 (5am:def-suite :numericals)
 

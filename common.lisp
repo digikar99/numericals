@@ -1,6 +1,6 @@
 
 (defpackage :numericals.common
-  (:use :cl :alexandria)
+  (:use :cl :alexandria :polymorphic-functions)
   (:export #:compiler-in-package
            #:*compiler-package*
 
@@ -11,7 +11,8 @@
            #:type-max
            #:type-zero
 
-           #:inline-or-funcall))
+           #:inline-or-funcall
+           #:fref))
 
 (in-package :numericals.common)
 
@@ -56,7 +57,7 @@
     ('(unsigned-byte 08) 0)))
 (define-compiler-macro type-zero (&whole form type-form &environment env)
   (let ((type-form-type (cl-form-types:nth-form-type type-form env 0 t t)))
-    (print (cons type-form type-form-type))
+    ;; (print (cons type-form type-form-type))
     (if (and (listp type-form-type)
              (null (cddr type-form-type))
              (or (eq 'eql (first type-form-type))
@@ -126,3 +127,41 @@
             `(,(second form-type) ,@arguments)
             `(funcall (fdefinition ,function-designator-form) ,@arguments))
         `(funcall ,function-designator-form ,@arguments))))
+
+(define-polymorphic-function fref (ptr type)
+  :documentation "A type-inferencing alternative to CFFI:MEM-REF"
+  :overwrite t)
+
+(macrolet ((def (lisp-type ctype)
+             `(defpolymorph fref (ptr (type (eql ,ctype))) ,lisp-type
+                (declare (ignore type))
+                (cffi:mem-ref ptr ,ctype))))
+  (def single-float :float)
+  (def double-float :double)
+  (def (signed-byte 64) :int64)
+  (def (signed-byte 32) :int32)
+  (def (signed-byte 16) :int16)
+  (def (signed-byte 08) :int8)
+  (def (unsigned-byte 64) :uint64)
+  (def (unsigned-byte 32) :uint32)
+  (def (unsigned-byte 16) :uint16)
+  (def (unsigned-byte 08) :uint8))
+
+(define-polymorphic-function (setf fref) (value ptr type)
+  :documentation "A type-inferencing alternative to CFFI:MEM-REF"
+  :overwrite t)
+
+(macrolet ((def (lisp-type ctype)
+             `(defpolymorph (setf fref) (value ptr (type (eql ,ctype))) ,lisp-type
+                (declare (ignore type))
+                (setf (cffi:mem-ref ptr ,ctype) value))))
+  (def single-float :float)
+  (def double-float :double)
+  (def (signed-byte 64) :int64)
+  (def (signed-byte 32) :int32)
+  (def (signed-byte 16) :int16)
+  (def (signed-byte 08) :int8)
+  (def (unsigned-byte 64) :uint64)
+  (def (unsigned-byte 32) :uint32)
+  (def (unsigned-byte 16) :uint16)
+  (def (unsigned-byte 08) :uint8))
