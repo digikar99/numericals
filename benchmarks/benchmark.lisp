@@ -17,9 +17,9 @@
   ;; Layers: library > element-type > function-name > sizes > framework
   (let*
       ((library (string-downcase (package-name (find-package :nu))))
-       (filename (trivial-coerce:coerce
+       (filename (nu:coerce
                   (uiop:strcat
-                   (trivial-coerce:coerce
+                   (nu:coerce
                     (uiop:pathname-parent-directory-pathname
                      (asdf:component-pathname (asdf:find-system "numericals")))
                     'cl:string)
