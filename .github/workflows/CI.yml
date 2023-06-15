@@ -36,47 +36,27 @@ jobs:
         sudo apt install libopenblas-base
         dpkg -L libopenblas-base
 
-    - name: Install repositories
+    - name: Download download-dependencies
       run: |
-        cd ~/quicklisp/local-projects/
-        git clone --depth 1 https://github.com/s-expressionists/ctype/
-        git clone --depth 1 https://github.com/digikar99/compiler-macro-notes/
-        git clone --depth 1 https://github.com/digikar99/polymorphic-functions/
-        git clone --depth 1 https://github.com/digikar99/trivial-types/
-        git clone --depth 1 https://github.com/digikar99/trivial-coerce/
+        git clone https://github.com/digikar99/download-dependencies $HOME/quicklisp/local-projects/download-dependencies
 
-        git clone --depth 1 https://github.com/digikar99/abstract-arrays/
-        git clone --depth 1 https://github.com/digikar99/dense-arrays/
-
-        git clone --depth 1 https://github.com/digikar99/cl-bmas/
-        git clone --depth 1 https://github.com/digikar99/cl-cblas/
-
-        mkdir -p ~/quicklisp/dists/digikar99
-        ls -l ~/quicklisp/dists
+    - name: Download dependencies
+      env:
+        LIBRARY: ${{ matrix.library }}
+      run: >
+        cl --eval '(ql:quickload "download-dependencies")' \
+           --eval '(in-package :download-dependencies)' \
+           --eval '(push #P"./" ql:*local-project-directories*)' \
+           --eval '(let ((*dependencies-home* (second ql:*local-project-directories*))) (ensure-system "'$LIBRARY'"))'
+        ls $HOME/quicklisp/local-projects/
 
     - name: Compile Tests
       env:
         LIBRARY: ${{ matrix.library }}
       run: |
         cl --eval '(progn
-                     (defun ql-dist::dist-name-pathname (name)
-                       "Return the pathname that would be used for an installed dist with
-                        the given NAME."
-                      (ql-dist::qmerge
-                       (make-pathname :directory (list* :relative "dists"
-                                                        (uiop:split-string name :separator "/")))))
-                     (defun digikar99-dist-enumeration-function ()
-                       "The default function used for producing a list of dist objects."
-                       (loop for file
-                           in (directory (ql-dist::qmerge "dists/digikar99/*/distinfo.txt"))
-                         collect (ql-dist::make-dist-from-file file)))
-                     (push (quote digikar99-dist-enumeration-function)
-                           ql::*dist-enumeration-functions*)
-                     (ql-dist:install-dist
-                      "http://dist.ultralisp.org/digikar99/specialized-array-dispatch.txt"
-                      :prompt nil)
+                     (push #P"./" ql:*local-project-directories*)
                      (push :travis *features*)
-                     (push "~/" ql:*local-project-directories*)
                      (print ql:*local-project-directories*)
                      (print (ql:where-is-system "'$LIBRARY'"))
                      (ql:quickload "'$LIBRARY'" :verbose t)
@@ -87,20 +67,7 @@ jobs:
         LIBRARY: ${{ matrix.library }}
       run: |
         cl --eval '(progn
-                     (defun ql-dist::dist-name-pathname (name)
-                       "Return the pathname that would be used for an installed dist with
-                        the given NAME."
-                      (ql-dist::qmerge
-                       (make-pathname :directory (list* :relative "dists"
-                                                        (uiop:split-string name :separator "/")))))
-                     (defun digikar99-dist-enumeration-function ()
-                       "The default function used for producing a list of dist objects."
-                       (loop for file
-                           in (directory (ql-dist::qmerge "dists/digikar99/*/distinfo.txt"))
-                         collect (ql-dist::make-dist-from-file file)))
-                     (push (quote digikar99-dist-enumeration-function)
-                           ql::*dist-enumeration-functions*)
-                     (push "~/" ql:*local-project-directories*)
+                     (push #P"./" ql:*local-project-directories*)
                      (print ql:*local-project-directories*)
                      (print (ql:where-is-system "'$LIBRARY'/magicl"))
                      (ql:quickload "'$LIBRARY'/magicl" :verbose t)
@@ -122,20 +89,7 @@ jobs:
         LIBRARY: ${{ matrix.library }}
       run: |
         cl --eval '(progn
-                     (defun ql-dist::dist-name-pathname (name)
-                       "Return the pathname that would be used for an installed dist with
-                        the given NAME."
-                      (ql-dist::qmerge
-                       (make-pathname :directory (list* :relative "dists"
-                                                        (uiop:split-string name :separator "/")))))
-                     (defun digikar99-dist-enumeration-function ()
-                       "The default function used for producing a list of dist objects."
-                       (loop for file
-                           in (directory (ql-dist::qmerge "dists/digikar99/*/distinfo.txt"))
-                         collect (ql-dist::make-dist-from-file file)))
-                     (push (quote digikar99-dist-enumeration-function)
-                           ql::*dist-enumeration-functions*)
-                     (push "~/" ql:*local-project-directories*)
+                     (push #P"./" ql:*local-project-directories*)
                      (push :travis *features*)
                      (time (ql:quickload "'$LIBRARY'"))
                      (eval (read-from-string "(SETQ LPARALLEL:*KERNEL* (LPARALLEL:MAKE-KERNEL 2))"))
