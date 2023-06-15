@@ -12,7 +12,7 @@
                "bmas"
                "ceigen-lite"
                "gsll"
-               (:feature :extensible-compound-types "extensible-compound-types-cl")
+               "extensible-compound-types-cl"
                "fiveam"
                ;; #+sbcl "numericals/sbcl"
                "alexandria"

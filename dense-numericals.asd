@@ -14,12 +14,11 @@
                "uiop"
                "cffi"
                "gsll"
-               (:feature :extensible-compound-types "extensible-compound-types-cl")
+               "extensible-compound-types-cl"
                "fiveam"
                "lparallel"
                "policy-cond"
                "polymorphic-functions"
-               "dense-arrays+static-vectors"
                "swank"
                "extensible-optimizing-coerce"
                "trivial-package-local-nicknames")

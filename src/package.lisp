@@ -263,6 +263,8 @@
    :polymorphic-functions)
   (:import-from :extensible-compound-types.impl
                 #:with-eval-always)
+  (:import-from :extensible-compound-types-cl
+                #:imlet)
   (:import-from :numericals
                 #:maybe-form-not-constant-error
                 #:*type*

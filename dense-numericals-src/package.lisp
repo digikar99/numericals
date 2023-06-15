@@ -175,6 +175,8 @@
   #-extensible-compound-types
   (:mix :dense-arrays-plus-lite :cl :alexandria :iterate)
   (:use :numericals.common :abstract-arrays)
+  (:import-from :extensible-compound-types-cl
+                #:imlet)
   (:import-from :polymorphic-functions
                 :define-polymorphic-function
                 :undefine-polymorphic-function
