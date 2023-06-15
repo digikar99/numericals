@@ -150,14 +150,6 @@ eigvectors of the 2D square matrix given by ARRAY-LIKE.")
   (def ceigen-lite:seigvecs single-float 4)
   (def ceigen-lite:deigvecs double-float 8))
 
-(defun float-type-from-complex-type (complex-type)
-  (declare (optimize speed))
-  (cond ((cl:subtypep complex-type '(complex single-float))
-         'single-float)
-        ((cl:subtypep complex-type '(complex double-float))
-         'double-float)
-        (t (error "Expected COMPLEX type to be a COMPLEX SINGLE-FLOAT or COMPLEX DOUBLE-FLOAT"))))
-
 (defpolymorph (la:eigvecs :inline t) ((a list) &key ((eigvecs null)) ((eigvals null)))
     simple-array
   (declare (ignore eigvecs eigvals))
