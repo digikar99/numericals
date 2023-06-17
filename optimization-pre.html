@@ -1,0 +1,587 @@
+<pre class="src src-lisp"><span style="color: #00ffff;">DN-USER&gt;</span> (<span style="color: #00ffff;">lambda</span> (x)
+           (<span style="color: #00ffff;">declare</span> (optimize speed))
+           (sin x))
+
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">(Compiler) Macro of</span>
+<span style="color: #ff4500;">;    </span><span style="color: #ff7f24; font-style: italic;">#&lt;POLYMORPHIC-FUNCTIONS:POLYMORPHIC-FUNCTION DENSE-NUMERICALS.IMPL::ONE-ARG-FN/FLOAT (15)&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">is unable to optimize</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">(DENSE-NUMERICALS.IMPL::ONE-ARG-FN/FLOAT 'SIN DENSE-NUMERICALS.IMPL::X</span>
+<span style="color: #ff4500;">;                                            </span><span style="color: #ff7f24; font-style: italic;">:BROADCAST</span>
+<span style="color: #ff4500;">;                                            </span><span style="color: #ff7f24; font-style: italic;">DENSE-NUMERICALS.IMPL::BROADCAST)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">because:</span>
+<span style="color: #ff4500;">;</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">Type of</span>
+<span style="color: #ff4500;">;     </span><span style="color: #ff7f24; font-style: italic;">DENSE-NUMERICALS.IMPL::BROADCAST</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">could not be determined</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">Type of</span>
+<span style="color: #ff4500;">;     </span><span style="color: #ff7f24; font-style: italic;">DENSE-NUMERICALS.IMPL::X</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">could not be determined</span>
+#&lt;FUNCTION (COMMON-LISP:LAMBDA (X)) {5527BD0B}&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (<span style="color: #00ffff;">lambda</span> (x)
+           (<span style="color: #00ffff;">declare</span> (optimize speed)
+                    (type (simple-array single-float) x))
+           (sin x))
+
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">(Compiler) Macro of</span>
+<span style="color: #ff4500;">;    </span><span style="color: #ff7f24; font-style: italic;">#&lt;POLYMORPHIC-FUNCTIONS:POLYMORPHIC-FUNCTION DENSE-NUMERICALS.IMPL::ONE-ARG-FN/FLOAT (15)&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">is unable to optimize</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">(DENSE-NUMERICALS.IMPL::ONE-ARG-FN/FLOAT 'SIN DENSE-NUMERICALS.IMPL::X</span>
+<span style="color: #ff4500;">;                                            </span><span style="color: #ff7f24; font-style: italic;">:BROADCAST</span>
+<span style="color: #ff4500;">;                                            </span><span style="color: #ff7f24; font-style: italic;">DENSE-NUMERICALS.IMPL::BROADCAST)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">because:</span>
+<span style="color: #ff4500;">;</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">Unable to avoid array allocation at run time. Consider supplying</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">the OUT argument, and/or ensuring all the appropriate arguments are</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">arrays of appropriate types.</span>
+#&lt;FUNCTION (COMMON-LISP:LAMBDA (X)) {548CFE1B}&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (<span style="color: #00ffff;">lambda</span> (x)
+           (<span style="color: #00ffff;">declare</span> (optimize speed)
+                    (type (simple-array single-float) x))
+           (sin x <span style="color: #b0c4de;">:out</span> x))
+
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">(Compiler) Macro of</span>
+<span style="color: #ff4500;">;    </span><span style="color: #ff7f24; font-style: italic;">#&lt;POLYMORPHIC-FUNCTIONS:POLYMORPHIC-FUNCTION DENSE-NUMERICALS.IMPL::ONE-ARG-FN/FLOAT (15)&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">is unable to optimize</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">(DENSE-NUMERICALS.IMPL::ONE-ARG-FN/FLOAT 'SIN DENSE-NUMERICALS.IMPL::X :OUT</span>
+<span style="color: #ff4500;">;                                            </span><span style="color: #ff7f24; font-style: italic;">DENSE-NUMERICALS.IMPL::OUT</span>
+<span style="color: #ff4500;">;                                            </span><span style="color: #ff7f24; font-style: italic;">:BROADCAST</span>
+<span style="color: #ff4500;">;                                            </span><span style="color: #ff7f24; font-style: italic;">DENSE-NUMERICALS.IMPL::BROADCAST)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">because:</span>
+<span style="color: #ff4500;">;</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">More optimal POLYMORPH with TYPE-LIST</span>
+<span style="color: #ff4500;">;     </span><span style="color: #ff7f24; font-style: italic;">(SYMBOL (SIMPLE-ARRAY SINGLE-FLOAT) &amp;KEY</span>
+<span style="color: #ff4500;">;      </span><span style="color: #ff7f24; font-style: italic;">(:OUT (SIMPLE-ARRAY SINGLE-FLOAT)) (:BROADCAST NULL))</span>
+<span style="color: #ff4500;">;   </span><span style="color: #ff7f24; font-style: italic;">was found to be inapplicable</span>
+#&lt;FUNCTION (COMMON-LISP:LAMBDA (X)) {5535922B}&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (<span style="color: #00ffff;">lambda</span> (x)
+           (<span style="color: #00ffff;">declare</span> (optimize speed)
+                    (type (simple-array single-float) x))
+           (sin x <span style="color: #b0c4de;">:out</span> x <span style="color: #b0c4de;">:broadcast</span> nil))
+#&lt;FUNCTION (COMMON-LISP:LAMBDA (X)) {559A71CB}&gt;
+<span style="color: #00ffff;">DN-USER&gt;</span> (disassemble *)
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">disassembly for (COMMON-LISP:LAMBDA (X))</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">Size: 1238 bytes. Origin: #x559A71CB                        ; (COMMON-LISP:LAMBDA</span>
+                                                                    (X))
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BCF:       90               NOP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BD0: L0:   458D77FD         LEA R14D, [R15-3]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BD4:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BD8:       0F859D040000     JNE L43</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BDE:       498B4705         MOV RAX, [R15+5]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BE2:       488378F902       CMP QWORD PTR [RAX-7], 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BE7:       0F869C040000     JBE L44</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BED:       4C8B4009         MOV R8, [RAX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BF1:       458D70F9         LEA R14D, [R8-7]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BF5:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BF9:       0F8579040000     JNE L42</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7BFF:       458D77FD         LEA R14D, [R15-3]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C03:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C07:       0F8568040000     JNE L41</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C0D:       498B4F05         MOV RCX, [R15+5]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C11:       488379F902       CMP QWORD PTR [RCX-7], 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C16:       0F8674040000     JBE L45</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C1C:       4C8B4909         MOV R9, [RCX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C20:       458D71F9         LEA R14D, [R9-7]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C24:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C28:       0F8544040000     JNE L40</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C2E:       4C897DD8         MOV [RBP-40], R15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C32:       4C8945F0         MOV [RBP-16], R8</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C36:       4C894DE8         MOV [RBP-24], R9</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C3A:       4883EC10         SUB RSP, 16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C3E:       498BD0           MOV RDX, R8</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C41:       498BF9           MOV RDI, R9</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C44:       B904000000       MOV ECX, 4</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C49:       48892C24         MOV [RSP], RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C4D:       488BEC           MOV RBP, RSP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C50:       B8027C3450       MOV EAX, #x50347C02            ; #&lt;FDEFN EQUALP&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C55:       FFD0             CALL RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C57:       4C8B7DD8         MOV R15, [RBP-40]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C5B:       4C8B4DE8         MOV R9, [RBP-24]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C5F:       4C8B45F0         MOV R8, [RBP-16]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C63:       80FA17           CMP DL, 23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C66:       754E             JNE L1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C68:       4C897DD8         MOV [RBP-40], R15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C6C:       488D4424F0       LEA RAX, [RSP-16]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C71:       4883EC30         SUB RSP, 48</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C75:       488B15DCFCFFFF   MOV RDX, [RIP-804]             ; '(EQUALP</span>
+                                                              <span style="color: #ff7f24; font-style: italic;">;   (NARRAY-DIMENSIONS ..))</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C7C:       BF04000000       MOV EDI, 4</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C81:       488B35D8FCFFFF   MOV RSI, [RIP-808]             ; '(NARRAY-DIMENSIONS</span>
+                                                              <span style="color: #ff7f24; font-style: italic;">;   DENSE-NUMERICALS.IMPL::X)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C88:       4C8940F0         MOV [RAX-16], R8</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C8C:       488B0DD5FCFFFF   MOV RCX, [RIP-811]             ; '(NARRAY-DIMENSIONS</span>
+                                                              <span style="color: #ff7f24; font-style: italic;">;   DENSE-NUMERICALS.IMPL::OUT)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C93:       488948E8         MOV [RAX-24], RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C97:       4C8948E0         MOV [RAX-32], R9</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7C9B:       B90C000000       MOV ECX, 12</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CA0:       488928           MOV [RAX], RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CA3:       488BE8           MOV RBP, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CA6:       B882793450       MOV EAX, #x50347982            ; #&lt;FDEFN SB-KERNEL:ASSERT-ERROR&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CAB:       FFD0             CALL RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CAD:       4C8B7DD8         MOV R15, [RBP-40]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CB1:       E91AFFFFFF       JMP L0</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CB6: L1:   458D77FD         LEA R14D, [R15-3]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CBA:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CBE:       0F85AB030000     JNE L39</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CC4:       498B4705         MOV RAX, [R15+5]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CC8:       488378F900       CMP QWORD PTR [RAX-7], 0</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CCD:       0F86C4030000     JBE L46</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CD3:       488B7001         MOV RSI, [RAX+1]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CD7:       458D77FD         LEA R14D, [R15-3]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CDB:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CDF:       0F8587030000     JNE L38</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CE5:       498B4705         MOV RAX, [R15+5]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CE9:       488378F900       CMP QWORD PTR [RAX-7], 0</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CEE:       0F86AA030000     JBE L47</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CF4:       488B4001         MOV RAX, [RAX+1]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CF8:       488945E8         MOV [RBP-24], RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7CFC:       488975E0         MOV [RBP-32], RSI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D00:       4C897DD8         MOV [RBP-40], R15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D04:       488BD6           MOV RDX, RSI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D07:       4883EC10         SUB RSP, 16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D0B:       B902000000       MOV ECX, 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D10:       48892C24         MOV [RSP], RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D14:       488BEC           MOV RBP, RSP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D17:       B802C43650       MOV EAX, #x5036C402            ; #&lt;FDEFN SB-KERNEL:VECTOR-SINGLE-FLOAT-P&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D1C:       FFD0             CALL RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D1E:       4C8B7DD8         MOV R15, [RBP-40]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D22:       488B75E0         MOV RSI, [RBP-32]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D26:       80FA17           CMP DL, 23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D29:       0F8439030000     JEQ L37</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D2F:       4C897DD8         MOV [RBP-40], R15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D33:       488975E0         MOV [RBP-32], RSI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D37:       488B55E8         MOV RDX, [RBP-24]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D3B:       4883EC10         SUB RSP, 16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D3F:       B902000000       MOV ECX, 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D44:       48892C24         MOV [RSP], RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D48:       488BEC           MOV RBP, RSP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D4B:       B802C43650       MOV EAX, #x5036C402            ; #&lt;FDEFN SB-KERNEL:VECTOR-SINGLE-FLOAT-P&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D50:       FFD0             CALL RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D52:       488B75E0         MOV RSI, [RBP-32]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D56:       4C8B7DD8         MOV R15, [RBP-40]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D5A:       80FA17           CMP DL, 23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D5D:       0F84FD020000     JEQ L36</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D63:       488975F0         MOV [RBP-16], RSI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D67:       488B7DE8         MOV RDI, [RBP-24]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D6B:       488BD6           MOV RDX, RSI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D6E:       EB3B             JMP L5</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D70: L2:   4C8D72F1         LEA R14, [RDX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D74:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D78:       750B             JNE L3</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D7A:       458A36           MOV R14B, [R14]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D7D:       4180EE81         SUB R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D81:       4180FE65         CMP R14B, 101</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D85: L3:   0F82A6020000     JB L35</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D8B:       80FA17           CMP DL, 23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D8E:       0F8495020000     JEQ L34</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D94:       488B4A19         MOV RCX, [RDX+25]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D98:       4881F917011050   CMP RCX, #x50100117            ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7D9F:       0F857B020000     JNE L33</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DA5:       488BC1           MOV RAX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DA8: L4:   488BD0           MOV RDX, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DAB: L5:   4C8D72F1         LEA R14, [RDX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DAF:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DB3:       750B             JNE L6</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DB5:       458A36           MOV R14B, [R14]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DB8:       4180EE85         SUB R14B, -123</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DBC:       4180FE61         CMP R14B, 97</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DC0: L6:   73AE             JNB L2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DC2:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DC5: L7:   448B70F1         MOV R14D, [RAX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DC9:       4180EE8D         SUB R14B, -115</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DCD:       4180FE58         CMP R14B, 88</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DD1:       0F8746020000     JNBE L32</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DD7:       488945E8         MOV [RBP-24], RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DDB:       4883C001         ADD RAX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DDF:       488BF0           MOV RSI, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DE2:       488BD7           MOV RDX, RDI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DE5:       EB44             JMP L11</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DE7:       660F1F840000000000 NOP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DF0: L8:   4C8D72F1         LEA R14, [RDX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DF4:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DF8:       750B             JNE L9</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DFA:       458A36           MOV R14B, [R14]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7DFD:       4180EE81         SUB R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E01:       4180FE65         CMP R14B, 101</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E05: L9:   0F82DB010000     JB L31</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E0B:       80FA17           CMP DL, 23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E0E:       0F84CA010000     JEQ L30</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E14:       488B4A19         MOV RCX, [RDX+25]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E18:       4881F917011050   CMP RCX, #x50100117            ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E1F:       0F85B0010000     JNE L29</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E25:       488BC1           MOV RAX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E28: L10:  488BD0           MOV RDX, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E2B: L11:  4C8D72F1         LEA R14, [RDX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E2F:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E33:       750B             JNE L12</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E35:       458A36           MOV R14B, [R14]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E38:       4180EE85         SUB R14B, -123</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E3C:       4180FE61         CMP R14B, 97</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E40: L12:  73AE             JNB L8</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E42:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E45: L13:  448B70F1         MOV R14D, [RAX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E49:       4180EE8D         SUB R14B, -115</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E4D:       4180FE58         CMP R14B, 88</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E51:       0F877B010000     JNBE L28</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E57:       488945E0         MOV [RBP-32], RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E5B:       4883C001         ADD RAX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E5F:       4C8BC0           MOV R8, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E62:       488B45F0         MOV RAX, [RBP-16]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E66:       31DB             XOR EBX, EBX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E68:       EB5D             JMP L16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E6A:       660F1F440000     NOP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E70: L14:  488B4819         MOV RCX, [RAX+25]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E74:       4881F917011050   CMP RCX, #x50100117            ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E7B:       0F8447010000     JEQ L27</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E81:       488B4809         MOV RCX, [RAX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E85:       488B4011         MOV RAX, [RAX+17]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E89:       488BD1           MOV RDX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E8C: L15:  48D1F8           SAR RAX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E8F:       488BCB           MOV RCX, RBX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E92:       48D1F9           SAR RCX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E95:       4801C8           ADD RAX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E98:       4C8BF0           MOV R14, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E9B:       49D1E6           SHL R14, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7E9E:       0F8020010000     JO L26</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EA4:       488D0C00         LEA RCX, [RAX+RAX]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EA8:       483B0DF1FAFFFF   CMP RCX, [RIP-1295]            ; [#x559A79A0] = #x1FFFFFFFFFFFFFFE</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EAF:       0F8F0F010000     JNLE L26</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EB5:       48D1E0           SHL RAX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EB8:       488BD8           MOV RBX, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EBB:       80FA17           CMP DL, 23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EBE:       0F84F8000000     JEQ L25</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EC4:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EC7: L16:  448A70F1         MOV R14B, [RAX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7ECB:       4180EE81         SUB R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7ECF:       4180FE65         CMP R14B, 101</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7ED3:       739B             JNB L14</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7ED5:       488D0C9D00000000 LEA RCX, [RBX*4]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EDD:       48D1F9           SAR RCX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EE0:       488D040E         LEA RAX, [RSI+RCX]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EE4:       488BF0           MOV RSI, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EE7:       488BC7           MOV RAX, RDI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EEA:       31DB             XOR EBX, EBX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EEC:       EB51             JMP L19</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EEE:       6690             NOP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EF0: L17:  488B4819         MOV RCX, [RAX+25]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EF4:       4881F917011050   CMP RCX, #x50100117            ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7EFB:       0F84B1000000     JEQ L24</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F01:       488B4809         MOV RCX, [RAX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F05:       488B4011         MOV RAX, [RAX+17]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F09:       488BD1           MOV RDX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F0C: L18:  48D1F8           SAR RAX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F0F:       488BCB           MOV RCX, RBX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F12:       48D1F9           SAR RCX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F15:       4801C8           ADD RAX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F18:       4C8BF0           MOV R14, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F1B:       49D1E6           SHL R14, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F1E:       0F808A000000     JO L23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F24:       488D0C00         LEA RCX, [RAX+RAX]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F28:       483B0D71FAFFFF   CMP RCX, [RIP-1423]            ; [#x559A79A0] = #x1FFFFFFFFFFFFFFE</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F2F:       7F7D             JNLE L23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F31:       48D1E0           SHL RAX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F34:       488BD8           MOV RBX, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F37:       80FA17           CMP DL, 23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F3A:       746A             JEQ L22</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F3C:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F3F: L19:  448A70F1         MOV R14B, [RAX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F43:       4180EE81         SUB R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F47:       4180FE65         CMP R14B, 101</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F4B:       73A3             JNB L17</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F4D:       488D0C9D00000000 LEA RCX, [RBX*4]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F55:       48D1F9           SAR RCX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F58:       498D0408         LEA RAX, [R8+RCX]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F5C:       4C8BC0           MOV R8, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F5F:       448B77F1         MOV R14D, [RDI-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F63:       4180FE81         CMP R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F67:       7437             JEQ L21</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F69:       4180FEE9         CMP R14B, -23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F6D:       7331             JNB L21</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F6F:       488B7FF9         MOV RDI, [RDI-7]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F73: L20:  488BDC           MOV RBX, RSP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F76:       4883E4F0         AND RSP, -16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F7A:       48D1FF           SAR RDI, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F7D:       BA01000000       MOV EDX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F82:       498BC8           MOV RCX, R8</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F85:       41B801000000     MOV R8D, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F8B:       31C0             XOR EAX, EAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F8D:       FF142558230050   CALL QWORD PTR [#x50002358]    ; BMAS_ssin</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F94:       488BE3           MOV RSP, RBX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F97:       498BD7           MOV RDX, R15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F9A:       488BE5           MOV RSP, RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F9D:       F8               CLC</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F9E:       5D               POP RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7F9F:       C3               RET</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FA0: L21:  488B7F29         MOV RDI, [RDI+41]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FA4:       EBCD             JMP L20</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FA6: L22:  B817011050       MOV EAX, #x50100117            ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FAB:       CC59             INT3 89                        ; OBJECT-NOT-ARRAY-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FAD:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FAE: L23:  CC1E             INT3 30                        ; OBJECT-NOT-TYPE-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FB0:       02               BYTE #X02                      ; RAX(s)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FB1:       73               BYTE #X73                      ; '(SIGNED-BYTE</span>
+                                                              <span style="color: #ff7f24; font-style: italic;">;   61)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FB2: L24:  488BD1           MOV RDX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FB5:       31C0             XOR EAX, EAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FB7:       E950FFFFFF       JMP L18</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FBC: L25:  B817011050       MOV EAX, #x50100117            ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FC1:       CC59             INT3 89                        ; OBJECT-NOT-ARRAY-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FC3:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FC4: L26:  CC1E             INT3 30                        ; OBJECT-NOT-TYPE-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FC6:       02               BYTE #X02                      ; RAX(s)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FC7:       77               BYTE #X77                      ; '(SIGNED-BYTE</span>
+                                                              <span style="color: #ff7f24; font-style: italic;">;   61)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FC8: L27:  488BD1           MOV RDX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FCB:       31C0             XOR EAX, EAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FCD:       E9BAFEFFFF       JMP L15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FD2: L28:  CC49             INT3 73                        ; OBJECT-NOT-SIMPLE-SPECIALIZED-VECTOR-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FD4:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FD5: L29:  488B4209         MOV RAX, [RDX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FD9:       E94AFEFFFF       JMP L10</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FDE: L30:  B817011050       MOV EAX, #x50100117            ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FE3:       CC59             INT3 89                        ; OBJECT-NOT-ARRAY-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FE5:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FE6: L31:  488975C8         MOV [RBP-56], RSI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FEA:       4C897DD8         MOV [RBP-40], R15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FEE:       48897DD0         MOV [RBP-48], RDI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FF2:       4883EC10         SUB RSP, 16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FF6:       B902000000       MOV ECX, 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FFB:       48892C24         MOV [RSP], RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">7FFF:       488BEC           MOV RBP, RSP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8002:       B8E24E3650       MOV EAX, #x50364EE2            ; #&lt;FDEFN SB-EXT:ARRAY-STORAGE-VECTOR&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8007:       FFD0             CALL RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8009:       488B7DD0         MOV RDI, [RBP-48]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">800D:       4C8B7DD8         MOV R15, [RBP-40]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8011:       488B75C8         MOV RSI, [RBP-56]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8015:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8018:       E928FEFFFF       JMP L13</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">801D: L32:  CC49             INT3 73                        ; OBJECT-NOT-SIMPLE-SPECIALIZED-VECTOR-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">801F:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8020: L33:  488B4209         MOV RAX, [RDX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8024:       E97FFDFFFF       JMP L4</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8029: L34:  B817011050       MOV EAX, #x50100117            ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">802E:       CC59             INT3 89                        ; OBJECT-NOT-ARRAY-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8030:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8031: L35:  4C897DD8         MOV [RBP-40], R15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8035:       48897DD0         MOV [RBP-48], RDI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8039:       4883EC10         SUB RSP, 16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">803D:       B902000000       MOV ECX, 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8042:       48892C24         MOV [RSP], RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8046:       488BEC           MOV RBP, RSP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8049:       B8E24E3650       MOV EAX, #x50364EE2            ; #&lt;FDEFN SB-EXT:ARRAY-STORAGE-VECTOR&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">804E:       FFD0             CALL RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8050:       488B7DD0         MOV RDI, [RBP-48]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8054:       4C8B7DD8         MOV R15, [RBP-40]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8058:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">805B:       E965FDFFFF       JMP L7</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8060: L36:  488B45E8         MOV RAX, [RBP-24]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8064:       CC1E             INT3 30                        ; OBJECT-NOT-TYPE-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8066:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8067:       7B               BYTE #X7B                      ; '(VECTOR</span>
+                                                              <span style="color: #ff7f24; font-style: italic;">;   SINGLE-FLOAT)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8068: L37:  CC1E             INT3 30                        ; OBJECT-NOT-TYPE-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">806A:       18               BYTE #X18                      ; RSI(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">806B:       7F               BYTE #X7F                      ; '(VECTOR</span>
+                                                              <span style="color: #ff7f24; font-style: italic;">;   SINGLE-FLOAT)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">806C: L38:  CC72             INT3 114                       ; OBJECT-NOT-INSTANCE-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">806E:       3C               BYTE #X3C                      ; R15(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">806F: L39:  CC72             INT3 114                       ; OBJECT-NOT-INSTANCE-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8071:       3C               BYTE #X3C                      ; R15(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8072: L40:  CC4C             INT3 76                        ; OBJECT-NOT-LIST-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8074:       24               BYTE #X24                      ; R9(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8075: L41:  CC72             INT3 114                       ; OBJECT-NOT-INSTANCE-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8077:       3C               BYTE #X3C                      ; R15(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8078: L42:  CC4C             INT3 76                        ; OBJECT-NOT-LIST-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">807A:       20               BYTE #X20                      ; R8(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">807B: L43:  CC72             INT3 114                       ; OBJECT-NOT-INSTANCE-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">807D:       3C               BYTE #X3C                      ; R15(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">807E:       CC10             INT3 16                        ; Invalid argument count trap</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8080:       CC10             INT3 16                        ; Invalid argument count trap</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8082:       CC24             INT3 36                        ; INVALID-VECTOR-INDEX-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8084:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8085:       8A808010         BYTE #X8A, #X80, #X80, #X10    ; 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8089: L44:  CC24             INT3 36                        ; INVALID-VECTOR-INDEX-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">808B:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">808C:       86808010         BYTE #X86, #X80, #X80, #X10    ; 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8090: L45:  CC24             INT3 36                        ; INVALID-VECTOR-INDEX-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8092:       04               BYTE #X04                      ; RCX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8093:       86808010         BYTE #X86, #X80, #X80, #X10    ; 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8097: L46:  CC24             INT3 36                        ; INVALID-VECTOR-INDEX-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">8099:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">809A:       82808010         BYTE #X82, #X80, #X80, #X10    ; 0</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">809E: L47:  CC24             INT3 36                        ; INVALID-VECTOR-INDEX-ERROR</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">80A0:       00               BYTE #X00                      ; RAX(d)</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">80A1:       82808010         BYTE #X82, #X80, #X80, #X10    ; 0</span>
+NIL
+<span style="color: #00ffff;">DN-USER&gt;</span> (disassemble (<span style="color: #00ffff;">lambda</span> (x) <span style="color: #ff7f24; font-style: italic;">; in place operator</span>
+                        (<span style="color: #00ffff;">declare</span> (optimize speed)
+                                 (type (simple-array single-float) x))
+                        (sin! x)))
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">disassembly for (COMMON-LISP:LAMBDA (X))</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">Size: 1238 bytes. Origin: #x559A83FF                        ; (COMMON-LISP:LAMBDA</span>
+                                                                    (X))
+<span style="color: #ff4500;">;; </span><span style="color: #ff7f24; font-style: italic;">identical disassembly</span>
+NIL
+<span style="color: #00ffff;">DN-USER&gt;</span> (disassemble (<span style="color: #00ffff;">lambda</span> (x)
+                        (<span style="color: #00ffff;">declare</span> (optimize speed (safety 0)) <span style="color: #ff7f24; font-style: italic;">; even shorter disassembly foregoing type-checks</span>
+                                 (type (simple-array single-float) x))
+                        (sin! x)))
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">disassembly for (COMMON-LISP:LAMBDA (X))</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">Size: 562 bytes. Origin: #x5527EA9B                         ; (COMMON-LISP:LAMBDA</span>
+                                                                    (X))
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">A9B:       488B45F0         MOV RAX, [RBP-16]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">A9F:       488B4005         MOV RAX, [RAX+5]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AA3:       488B4001         MOV RAX, [RAX+1]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AA7:       488B4DF0         MOV RCX, [RBP-16]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AAB:       488B4905         MOV RCX, [RCX+5]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AAF:       488B7901         MOV RDI, [RCX+1]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AB3:       488945E8         MOV [RBP-24], RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AB7:       488BD0           MOV RDX, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">ABA:       EB36             JMP L3</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">ABC:       0F1F4000         NOP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AC0: L0:   4C8D72F1         LEA R14, [RDX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AC4:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AC8:       750B             JNE L1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">ACA:       458A36           MOV R14B, [R14]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">ACD:       4180EE81         SUB R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AD1:       4180FE65         CMP R14B, 101</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AD5: L1:   0F82C9010000     JB L25</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">ADB:       488B4A19         MOV RCX, [RDX+25]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">ADF:       4881F917011050   CMP RCX, #x50100117             ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AE6:       0F85AF010000     JNE L24</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AEC:       488BC1           MOV RAX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AEF: L2:   488BD0           MOV RDX, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AF2: L3:   4C8D72F1         LEA R14, [RDX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AF6:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AFA:       750B             JNE L4</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AFC:       458A36           MOV R14B, [R14]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">AFF:       4180EE85         SUB R14B, -123</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B03:       4180FE61         CMP R14B, 97</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B07: L4:   73B7             JNB L0</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B09:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B0C: L5:   488945E0         MOV [RBP-32], RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B10:       4883C001         ADD RAX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B14:       488BF0           MOV RSI, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B17:       488BD7           MOV RDX, RDI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B1A:       EB36             JMP L9</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B1C:       0F1F4000         NOP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B20: L6:   4C8D72F1         LEA R14, [RDX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B24:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B28:       750B             JNE L7</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B2A:       458A36           MOV R14B, [R14]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B2D:       4180EE81         SUB R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B31:       4180FE65         CMP R14B, 101</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B35: L7:   0F8231010000     JB L23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B3B:       488B4A19         MOV RCX, [RDX+25]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B3F:       4881F917011050   CMP RCX, #x50100117             ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B46:       0F8517010000     JNE L22</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B4C:       488BC1           MOV RAX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B4F: L8:   488BD0           MOV RDX, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B52: L9:   4C8D72F1         LEA R14, [RDX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B56:       41F6C60F         TEST R14B, 15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B5A:       750B             JNE L10</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B5C:       458A36           MOV R14B, [R14]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B5F:       4180EE85         SUB R14B, -123</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B63:       4180FE61         CMP R14B, 97</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B67: L10:  73B7             JNB L6</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B69:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B6C: L11:  4C8BF8           MOV R15, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B6F:       4883C001         ADD RAX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B73:       4C8BC0           MOV R8, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B76:       488B45E8         MOV RAX, [RBP-24]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B7A:       31D2             XOR EDX, EDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B7C:       EB24             JMP L14</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B7E:       6690             NOP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B80: L12:  488B4819         MOV RCX, [RAX+25]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B84:       4881F917011050   CMP RCX, #x50100117             ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B8B:       0F84C8000000     JEQ L21</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B91:       488B5809         MOV RBX, [RAX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B95:       488B4011         MOV RAX, [RAX+17]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B99: L13:  4801D0           ADD RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B9C:       488BD0           MOV RDX, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">B9F:       488BC3           MOV RAX, RBX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BA2: L14:  448A70F1         MOV R14B, [RAX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BA6:       4180EE81         SUB R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BAA:       4180FE65         CMP R14B, 101</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BAE:       73D0             JNB L12</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BB0:       48C1E202         SHL RDX, 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BB4:       48D1FA           SAR RDX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BB7:       488D0416         LEA RAX, [RSI+RDX]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BBB:       488BF0           MOV RSI, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BBE:       488BC7           MOV RAX, RDI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BC1:       31D2             XOR EDX, EDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BC3:       EB29             JMP L17</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BC5:       660F1F840000000000 NOP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BCE:       6690             NOP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BD0: L15:  488B4819         MOV RCX, [RAX+25]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BD4:       4881F917011050   CMP RCX, #x50100117             ; NIL</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BDB:       7475             JEQ L20</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BDD:       488B5809         MOV RBX, [RAX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BE1:       488B4011         MOV RAX, [RAX+17]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BE5: L16:  4801D0           ADD RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BE8:       488BD0           MOV RDX, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BEB:       488BC3           MOV RAX, RBX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BEE: L17:  448A70F1         MOV R14B, [RAX-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BF2:       4180EE81         SUB R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BF6:       4180FE65         CMP R14B, 101</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BFA:       73D4             JNB L15</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">BFC:       48C1E202         SHL RDX, 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C00:       48D1FA           SAR RDX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C03:       498D0410         LEA RAX, [R8+RDX]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C07:       4C8BC0           MOV R8, RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C0A:       448B77F1         MOV R14D, [RDI-15]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C0E:       4180FE81         CMP R14B, -127</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C12:       7438             JEQ L19</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C14:       4180FEE9         CMP R14B, -23</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C18:       7332             JNB L19</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C1A:       488B7FF9         MOV RDI, [RDI-7]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C1E: L18:  488BDC           MOV RBX, RSP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C21:       4883E4F0         AND RSP, -16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C25:       48D1FF           SAR RDI, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C28:       BA01000000       MOV EDX, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C2D:       498BC8           MOV RCX, R8</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C30:       41B801000000     MOV R8D, 1</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C36:       31C0             XOR EAX, EAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C38:       FF142558230050   CALL QWORD PTR [#x50002358]     ; BMAS_ssin</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C3F:       488BE3           MOV RSP, RBX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C42:       488B55F0         MOV RDX, [RBP-16]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C46:       488BE5           MOV RSP, RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C49:       F8               CLC</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C4A:       5D               POP RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C4B:       C3               RET</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C4C: L19:  488B7F29         MOV RDI, [RDI+41]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C50:       EBCC             JMP L18</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C52: L20:  488BD9           MOV RBX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C55:       31C0             XOR EAX, EAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C57:       EB8C             JMP L16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C59: L21:  488BD9           MOV RBX, RCX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C5C:       31C0             XOR EAX, EAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C5E:       E936FFFFFF       JMP L13</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C63: L22:  488B4209         MOV RAX, [RDX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C67:       E9E3FEFFFF       JMP L8</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C6C: L23:  48897DD8         MOV [RBP-40], RDI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C70:       488975D0         MOV [RBP-48], RSI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C74:       4883EC10         SUB RSP, 16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C78:       B902000000       MOV ECX, 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C7D:       48892C24         MOV [RSP], RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C81:       488BEC           MOV RBP, RSP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C84:       B8E24E3650       MOV EAX, #x50364EE2             ; #&lt;FDEFN SB-EXT:ARRAY-STORAGE-VECTOR&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C89:       FFD0             CALL RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C8B:       488B75D0         MOV RSI, [RBP-48]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C8F:       488B7DD8         MOV RDI, [RBP-40]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C93:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C96:       E9D1FEFFFF       JMP L11</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C9B: L24:  488B4209         MOV RAX, [RDX+9]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">C9F:       E94BFEFFFF       JMP L2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CA4: L25:  48897DD8         MOV [RBP-40], RDI</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CA8:       4883EC10         SUB RSP, 16</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CAC:       B902000000       MOV ECX, 2</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CB1:       48892C24         MOV [RSP], RBP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CB5:       488BEC           MOV RBP, RSP</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CB8:       B8E24E3650       MOV EAX, #x50364EE2             ; #&lt;FDEFN SB-EXT:ARRAY-STORAGE-VECTOR&gt;</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CBD:       FFD0             CALL RAX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CBF:       488B7DD8         MOV RDI, [RBP-40]</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CC3:       488BC2           MOV RAX, RDX</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CC6:       E941FEFFFF       JMP L5</span>
+<span style="color: #ff4500;">; </span><span style="color: #ff7f24; font-style: italic;">CCB:       CC10             INT3 16                         ; Invalid argument count trap</span>
+NIL
+</pre>

@@ -1,0 +1,122 @@
+
+body{
+    font-family:sans-serif;
+}
+
+.carousel-item{
+    min-height:75vh;
+    max-height:75vh;
+    opacity:50%;
+    overflow-x:none;
+    overflow-y:none;
+    transition: opacity 0.5s transform .6s ease-in-out;
+}
+
+.carousel-item:hover{
+    opacity:100%;
+    transition: opacity 0.5s;
+}
+
+.carousel-indicators button {
+    height: 10px !important;
+    width: 10px !important;
+    margin: 0 10px !important;
+    border-radius: 100%;
+    background-color: #1963ac !important;
+}
+
+#benchmark-table-div-carousel, #optimization-contents-carousel{
+    min-height:75vh;
+    max-height:75vh;
+    overflow-x:none;
+    overflow-y:none;
+}    
+
+p{
+    margin:auto;
+    text-align:justify;
+}
+
+h1{
+    text-align:center;
+}
+
+.label, .submit{
+    display:block;
+    width:300px;
+    margin:auto;
+    padding:3px;
+}
+
+.error{
+    color:red;
+    display:block;
+}
+
+.submit{
+    text-align:center;
+}
+
+label{
+    width:150px;
+}
+
+.src{
+    background-color:#222222;
+    color:white;
+    padding:12px;
+}
+
+.src::-webkit-scrollbar { width: 0 !important }
+    
+
+select{
+    width:150px;
+}
+
+#benchmark-table{
+    margin:auto;
+}
+
+table, th, td{
+    border: 1px solid black;
+    border-collapse: collapse;
+    text-align:center;
+    padding:5px;
+    margin:auto;
+}
+
+#benchmark-table-div, #benchmark-table-div-carousel{
+    margin:15px;
+}
+a > #benchmark-table-div-carousel{
+    font-decoration:none;
+}
+
+.very-slow{
+    background-color:#ff3300;
+    color:white;
+}
+
+.slow{
+    background-color:#ff9999;
+}
+
+.same{
+    background-color:#66ff66;
+}
+
+.fast{
+    background-color:#33cc33;
+    color:white;
+}
+
+.very-fast{
+    background-color:#009933;
+    color:white;
+}
+
+#optimization-contents{
+    overflow-y:scroll;
+    max-height:200vh;
+}

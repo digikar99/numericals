@@ -1,0 +1,208 @@
+<h3 id="numericals-dense-numericals---performance-of-numpy-with-the"><br />
+numericals | dense-numericals - Performance of NumPy with the</h3>
+<p>convenience of Common Lisp<br />
+<br />
+:PROPERTIES: :CUSTOM<sub>ID</sub>: numericals-dense-numericals—performance-of-numpy-with-the-convenience-of-common-lisp :CLASS: text-center bg-dark text-white</p>
+<p>:END:</p>
+<p><span id="carousel"></span></p>
+<ol>
+<li><p>High Performance</p>
+<p><span id="benchmark-table-div-carousel"></span></p></li>
+<li><p>Easy to optimize</p>
+<p><span id="optimization-contents-carousel"></span></p></li>
+<li><p>Informative customizable print-object through dense-arrays</p>
+<p><span id="nice-print-object-carousel"></span></p>
+<p><br />
+<br />
+<br />
+<br />
+</p></li>
+<li><p>1. Quick Tutorial</p>
+<p><span id="tutorial-contents"></span></p></li>
+<li><p>2. Quick API</p>
+<p><span id="api-contents"></span></p>
+<ol>
+<li><p>Configuration Variables:</p>
+<ul>
+<li><strong>multithreaded-threshold</strong></li>
+<li><strong>default-float-format</strong></li>
+<li><strong>inline-with-multithreading</strong></li>
+<li><strong>array-element-type</strong> and <strong>array-element-type-alist</strong></li>
+<li><strong>array-layout</strong></li>
+<li><strong>broadcast-automatically</strong></li>
+</ul></li>
+<li><p>Simple Utilities</p>
+<ul>
+<li>asarray</li>
+<li>zeros zeros-like</li>
+<li>ones ones-like</li>
+<li>rand rand-like</li>
+<li>full full-like</li>
+<li>eye</li>
+<li>aref</li>
+<li>astype</li>
+<li>array=</li>
+<li>copy-array transpose concat reshape</li>
+</ul></li>
+<li><p>Arithmetic Operations:</p>
+<ul>
+<li><ul>
+<li>- * /</li>
+</ul></li>
+<li>add subtract multiply divide</li>
+<li>two-arg-matmul</li>
+</ul></li>
+<li><p>Comparison Operators:</p>
+<ul>
+<li>&lt; &lt;= = /= &gt; &gt;=</li>
+</ul></li>
+<li><p>Transcendental Operators:</p>
+<ul>
+<li>sin asin sinh asinh</li>
+<li>cos acos cosh acosh</li>
+<li>tan atan tanh atanh</li>
+<li>exp expt</li>
+<li>log</li>
+</ul></li>
+<li><p>Rounding Operators:</p>
+<ul>
+<li>abs ffloor floor fceiling ftruncate</li>
+</ul></li>
+<li><p>Reduction Operators:</p>
+<ul>
+<li>sum</li>
+<li>vdot</li>
+<li>max</li>
+<li>min</li>
+<li>maximum</li>
+<li>minimum</li>
+</ul></li>
+</ol></li>
+<li><p>3. Optimization Overview</p>
+<p>Guidelines</p>
+<ul>
+<li>Avoid allocations wherever possible: use in-place operators ending with '!' or equivalently, provide an OUT argument and BROADCAST as NIL</li>
+<li>Declare types and <code>(optimize speed)</code></li>
+<li>Trade off between the use of <code>simple-array</code> and avoiding broadcasts</li>
+</ul>
+<p><span id="optimization-contents"></span></p></li>
+<li><p>4. Benchmark</p>
+<p>Library dense-numericals numericals</p>
+<p>element-type single-float double-float</p>
+<p>Framework All NumPy PyTorch</p>
+<p>Array scale All 10 100 10000 1000000 100000000</p>
+<p><span id="benchmark-table-div"></span></p>
+<p>The above numbers indicate how many times is the corresponding lisp function is <em>faster</em> than the corresponding numpy or pytorch function. The numbers were obtained on an Intel i7-8750H running at 3GHz. The lisp code was compiled with (optimize speed) settings for arrays of sizes smaller than 80000. Appropriate type declarations were also used. The dense-numericals code used 6 threads for arrays of sizes larger than 80000, while PyTorch was left at default settings, with torch.get<sub>numthreads</sub>() returning a value of 6. Thus, lisp and PyTorch had the benefit of multithreading, while numpy did not.</p>
+<p><br />
+SBCL Version: 2.2.6</p>
+<p>Python Version: 3.8.5</p>
+<p>Numpy Version: 1.19.0</p>
+<p>PyTorch Version: 1.7.1.post2</p>
+<p><br />
+And while it is true that the lisp code was inlined and compiled wherever appropriate, that is precisely the point. Note that lisp uses incremental compilation and incremental typing, providing you the benefits of dynamicity as default. But in addition, certain compilers like SBCL also bring to you the safety and performance of static typing. The safety and type-guarantees are certainly far from languages like Haskell, but it gets the work done.</p>
+<p><br />
+None of the code used (safety 0) declarations; thus in some cases, even higher performance can be attainable at the cost of safety and the potential of running into segmentation faults if types were declared incorrectly.</p>
+<p><br />
+</p></li>
+<li><p>5. Goals</p>
+<p><span id="goals-contents"></span></p>
+<ol>
+<li>Remain AOT, avoid JAOT. Like SBCL, a combination of <code>(optimize speed)</code> and appropriate type declarations should result in maximal inlining and minimal runtime spent on function calls.</li>
+<li>Inlining should avoid code bloat.</li>
+<li>Like SBCL, provide useful compiler-notes to the user to help them optimize their code.</li>
+<li>Keep the API close to numpy.</li>
+<li>Provide ways to avoid copying arrays.</li>
+<li>The printed representation of the array object should be transparent in terms of its properties method.</li>
+<li>Array broadcasting should be optional, to avoid confusion.</li>
+<li>Cooperate with existing libraries wherever possible.</li>
+</ol>
+<ol>
+<li><p>Implications of the goals</p>
+<ul>
+<li>Enable high performance even for arrays as small as size 10. (Goal 1 and 2)</li>
+<li>Need CLTL2, through cl-environments, compiler-notes, and polymorphic-functions. (Goal 1 and 3)</li>
+<li>It is easy to start coding. (Goal 4)</li>
+<li>It is easy to optimize. (Goal 3)</li>
+<li>Needs a custom array class that provides multidimensional strides and offsets. This is provided through abstract-arrays, dense-arrays, and dense-numericals. (Goals 4 and 6)</li>
+<li>Wherever appropriate, functions should have an OUT parameter. (Goal 5)</li>
+<li>Provide inplace operators ending with '!' to avoid explicitly supplying an OUT parameter. For instance, <code>(numericals:sin array :out array :broadcast nil)</code> can be shortened to <code>(numericals:sin! array)</code>. (Goal 5)</li>
+<li>Wherever appropriate, functions should have a BROADCAST parameter that determines whether the arrays should or should not be broadcasted. (Goal 7)</li>
+<li>Arrays created with numcl should "just work". (Goal 8)</li>
+<li>Interoperability with magicl should be easy if not seamless. (Goal 8)</li>
+</ul></li>
+<li><p>Comparison against numcl and magicl in terms of the (achievability</p>
+<p>of) goals</p>
+<p>The author thinks that numericals and dense-numericals as a separate project is justified because of the existence of several unachievable-without-significant-rewrite-or-change-of-goals-or-approach for numcl or magicl. These perhaps exist because of the dependence of numericals and dense-numericals and its dependencies on CLTL2 API. On the other hand, it also seems that Common Lisp without CLTL2 API would be terribly ill-suited for numerical computing.</p>
+<p><br />
+</p>
+<table>
+<thead>
+<tr class="header">
+<th>Goal</th>
+<th>numericals</th>
+<th>numcl</th>
+<th>magicl</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1. Maximal inlining</td>
+<td>✔</td>
+<td>✔</td>
+<td>?</td>
+<td>needs compiler-macros or polymorphic-functions to dispatch on specialized arrays</td>
+</tr>
+<tr class="even">
+<td>2. Inlining without code bloat</td>
+<td>✔</td>
+<td>?</td>
+<td>?</td>
+<td>needs separate handling of broadcast and non-broadcasting operations</td>
+</tr>
+<tr class="odd">
+<td>3. Compiler-Notes</td>
+<td>✔</td>
+<td>?</td>
+<td>?</td>
+<td>can use compiler-macro-notes, but requires compiler-macros</td>
+</tr>
+<tr class="even">
+<td>4. Numpy-like API</td>
+<td>✔</td>
+<td>✔</td>
+<td>＋</td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td>5. OUT parameter</td>
+<td>✔</td>
+<td>＋</td>
+<td>✔</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td>6. Transparent printed representation</td>
+<td>✔</td>
+<td>?</td>
+<td>✔</td>
+<td>needs wrapper structures/classes, for example dense-arrays or magicl:tensor</td>
+</tr>
+<tr class="odd">
+<td>7. Optional array broadcasting</td>
+<td>✔</td>
+<td>＋</td>
+<td>?</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<p><br />
+</p>
+<ul>
+<li>✔ - available</li>
+<li>? - perhaps unachievable without significant rewrite or change of goals/approach</li>
+<li>＋ - can be improved, or is doable without much rewrite or change of goals</li>
+</ul></li>
+</ol></li>
+</ol>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Reasonably fast operations for CLHS provided arrays - (dense-)numericals</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+        <link href="../extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Reasonably fast operations for CLHS provided arrays";
+        var mkdocs_page_input_path = "reasonably-fast-clhs-arrays.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <script src="../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/lisp.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> (dense-)numericals
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../intro/">Introduction</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../install/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../current-state/">Current State</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../api/">API Reference</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">(dense-)numericals</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+      <li>Reasonably fast operations for CLHS provided arrays</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="reasonably-fast-operations-for-clhs-provided-arrays">Reasonably fast operations for CLHS provided arrays</h1>
+<pre><code class="language-lisp">(ql:quickload &quot;numericals&quot;)
+;;; See here for instructions on installing quicklisp: https://quicklisp.org/
+</code></pre>
+<p>Since numericals is /faaar/ from completely, and covers only a very small set of operations involved in numerical computing, wherever appropriate, sister libraries will be mentioned. These include:</p>
+<ul>
+<li><a href="https://common-lisp-libraries.readthedocs.io/alexandria/">alexandria</a>: defacto utility library</li>
+<li><a href="https://lisp-stat.dev/docs/manuals/array-operations/">array-operations</a>: minimal dependencies</li>
+<li><a href="https://numcl.github.io/numcl/">numcl</a></li>
+<li>Python's <a href="https://numpy.org/doc/stable/">numpy</a> through <a href="https://digikar99.github.io/py4cl2/">py4cl2</a>: not suited for performance, thus the main reason for this project</li>
+<li>numpy-file-format</li>
+</ul>
+<p>Also, see <a href="https://gist.github.com/phoe/2b63f33a2a4727a437403eceb7a6b4a3#actual-worthwhile-content-starts-here">package local nicknames</a> if required.</p>
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#reasonably-fast-operations-for-common-lisp-arrays">Reasonably fast operations for Common Lisp arrays</a><ul>
+<li><a href="#constructing-arrays">Constructing arrays</a></li>
+<li><a href="#controlling-how-arrays-are-printed">Controlling how arrays are printed</a><ul>
+<li><a href="#print-array">*print-array*</a></li>
+<li><a href="#print-length">*print-length*</a></li>
+<li><a href="#print-right-margin">*print-right-margin*</a></li>
+<li><a href="#print-level">*print-level*</a></li>
+<li><a href="#print-lines">*print-lines*</a></li>
+</ul>
+</li>
+<li><a href="#controlling-the-default-array-element-type">Controlling the default array-element-type</a></li>
+<li><a href="#reading-and-writing-arrays-to-disk">Reading and writing arrays to disk</a></li>
+</ul>
+</li>
+</ul>
+<!-- markdown-toc end -->
+
+<h2 id="constructing-arrays">Constructing arrays</h2>
+<p>Several functions for constructing arrays (out of thin air) include:</p>
+<ul>
+<li>numericals:</li>
+<li>zeros, ones, rand, zeros-like, ones-like, rand-like</li>
+<li>full, full-like, eye</li>
+<li>array-operations: zeros, zeros*, ones, ones*, rand, randn*, linspace, generate</li>
+<li>numcl: zeros, ones, arange, linspace, eye</li>
+<li>cl:make-array</li>
+</ul>
+<p>Recommended functions for
+- converting lists to arrays: numericals:asarray
+- copying arrays: numericals:copy</p>
+<h2 id="controlling-how-arrays-are-printed">Controlling how arrays are printed</h2>
+<p>Common Lisp provides a number of parameters for this purpose:</p>
+<h3 id="print-array">*print-array*</h3>
+<pre><code class="language-lisp">CL-USER&gt; (let ((*print-array* nil))
+           (princ (numericals:zeros 10))
+           nil)
+
+#&lt;(SIMPLE-VECTOR 10) {103C7B8C0F}&gt;
+NIL
+CL-USER&gt; (let ((*print-array* t))
+           (princ (numericals:zeros 10))
+           nil)
+#(0 0 0 0 0 0 0 0 0 0)
+NIL
+</code></pre>
+<h3 id="print-length">*print-length*</h3>
+<pre><code class="language-lisp">CL-USER&gt; (let ((*print-length* 10))
+           (princ (numericals:zeros 100))
+           nil)
+#(0 0 0 0 0 0 0 0 0 0 ...)
+NIL
+CL-USER&gt; (let ((*print-length* nil))
+           (princ (numericals:zeros 100))
+           nil)
+#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+NIL
+</code></pre>
+<h3 id="print-right-margin">*print-right-margin*</h3>
+<pre><code class="language-lisp">CL-USER&gt; (let ((*print-right-margin* 100))
+           (princ (numericals:zeros 100))
+           nil)
+#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  0 0)
+NIL
+</code></pre>
+<h3 id="print-level">*print-level*</h3>
+<p>The number of levels of an object that should be printed.</p>
+<h3 id="print-lines">*print-lines*</h3>
+<p>The number of lines of the object that should be printed.</p>
+<h2 id="controlling-the-default-array-element-type">Controlling the default array-element-type</h2>
+<p>There are several variables in the <code>numericals</code> package that allow specifying the default element type of the output in one place, instead of having to specify it for each function individually. These include:</p>
+<ul>
+<li>*array-element-type*</li>
+<li>*default-float-format*</li>
+</ul>
+<pre><code class="language-lisp">CL-USER&gt; (let ((numericals:*array-element-type* '(signed-byte 32)))
+           (describe (numericals:add '(1 2 3)
+                                     '(4 5 6))))
+#(5 7 9)
+  [simple specialized vector]
+
+Element-type: (SIGNED-BYTE 32)
+Length: 3
+; No value
+CL-USER&gt; (let ((numericals:*array-element-type* 'double-float))
+           (describe (numericals:add '(1 2 3)
+                                     '(4 5 6))))
+#(5.0d0 7.0d0 9.0d0)
+  [simple specialized vector]
+
+Element-type: DOUBLE-FLOAT
+Length: 3
+; No value
+</code></pre>
+<p>Certain functions like sin, cos, tan, exp (and several others) are sensible mainly for floating point numbers. For these functions, the default element type of the output is controlled either through the input, or through *default-float-format*, while for other functions like zeros, ones, rand, add, subtract, divide, multiply, the default element type of the output is controlled either by the input, or by the value of *array-element-type*.</p>
+<pre><code class="language-lisp">CL-USER&gt; (let ((numericals:*default-float-format* 'single-float))
+           (describe (numericals:sin '(1 2 3))))
+#(0.84147096 0.9092974 0.14112)
+  [simple specialized vector]
+
+Element-type: SINGLE-FLOAT
+Length: 3
+; No value
+CL-USER&gt; (let ((numericals:*default-float-format* 'double-float))
+           (describe (numericals:sin '(1 2 3))))
+#(0.8414709848078965d0 0.9092974268256817d0 0.1411200080598672d0)
+  [simple specialized vector]
+
+Element-type: DOUBLE-FLOAT
+Length: 3
+; No value
+</code></pre>
+<p>There also exists *array-element-type-alist* that allows specifying package local default element types if the need ever arises. All of these can be overridden for the particular function by explicitly specifying the <code>out</code> or <code>type</code> arguments wherever appropriate.</p>
+<h2 id="reading-and-writing-arrays-to-disk">Reading and writing arrays to disk</h2>
+<p>As human-readable text files (slowest method currently):</p>
+<ul>
+<li>numpy: save, load</li>
+</ul>
+<p>As readable lisp objects:</p>
+<ul>
+<li>cl: read, write</li>
+</ul>
+<p>As binary objects useable by python:</p>
+<ul>
+<li>numpy-file-format: load-array, store-array</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(false);
+        };
+    </script>
+
+</body>
+</html>

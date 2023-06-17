@@ -1,0 +1,275 @@
+*** \\
+numericals | dense-numericals - Performance of NumPy with the
+convenience of Common Lisp\\
+\\
+    :PROPERTIES:
+    :CUSTOM_ID: numericals-dense-numericals---performance-of-numpy-with-the-convenience-of-common-lisp
+    :CLASS: text-center bg-dark text-white
+    :END:
+
+<<carousel>>
+
+**** High Performance
+     :PROPERTIES:
+     :CUSTOM_ID: high-performance
+     :CLASS: text-center
+     :END:
+
+<<benchmark-table-div-carousel>>
+
+**** Easy to optimize
+     :PROPERTIES:
+     :CUSTOM_ID: easy-to-optimize
+     :CLASS: text-center
+     :END:
+
+<<optimization-contents-carousel>>
+
+**** Informative customizable print-object through dense-arrays
+     :PROPERTIES:
+     :CUSTOM_ID: informative-customizable-print-object-through-dense-arrays
+     :CLASS: text-center
+     :END:
+
+<<nice-print-object-carousel>>
+
+\\
+\\
+\\
+\\
+
+**** 1. Quick Tutorial
+     :PROPERTIES:
+     :CUSTOM_ID: tutorial
+     :CLASS: p-3 bg-primary text-white
+     :END:
+
+<<tutorial-contents>>
+
+**** 2. Quick API
+     :PROPERTIES:
+     :CUSTOM_ID: api
+     :CLASS: p-3 bg-primary text-white
+     :END:
+
+<<api-contents>>
+***** Configuration Variables:
+      :PROPERTIES:
+      :CUSTOM_ID: configuration-variables
+      :END:
+
+- *multithreaded-threshold*
+- *default-float-format*
+- *inline-with-multithreading*
+- *array-element-type* and *array-element-type-alist*
+- *array-layout*
+- *broadcast-automatically*
+
+***** Simple Utilities
+      :PROPERTIES:
+      :CUSTOM_ID: simple-utilities
+      :END:
+
+- asarray
+- zeros zeros-like
+- ones ones-like
+- rand rand-like
+- full full-like
+- eye
+- aref
+- astype
+- array=
+- copy-array transpose concat reshape
+
+***** Arithmetic Operations:
+      :PROPERTIES:
+      :CUSTOM_ID: arithmetic-operations
+      :END:
+
+- + - * /
+- add subtract multiply divide
+- two-arg-matmul
+
+***** Comparison Operators:
+      :PROPERTIES:
+      :CUSTOM_ID: comparison-operators
+      :END:
+
+- < <= = /= > >=
+
+***** Transcendental Operators:
+      :PROPERTIES:
+      :CUSTOM_ID: transcendental-operators
+      :END:
+
+- sin asin sinh asinh
+- cos acos cosh acosh
+- tan atan tanh atanh
+- exp expt
+- log
+
+***** Rounding Operators:
+      :PROPERTIES:
+      :CUSTOM_ID: rounding-operators
+      :END:
+
+- abs ffloor floor fceiling ftruncate
+
+***** Reduction Operators:
+      :PROPERTIES:
+      :CUSTOM_ID: reduction-operators
+      :END:
+
+- sum
+- vdot
+- max
+- min
+- maximum
+- minimum
+
+**** 3. Optimization Overview
+     :PROPERTIES:
+     :CUSTOM_ID: optimization
+     :CLASS: p-3 bg-primary text-white
+     :END:
+
+Guidelines
+
+- Avoid allocations wherever possible: use in-place operators ending
+  with '!' or equivalently, provide an OUT argument and BROADCAST as NIL
+- Declare types and =(optimize speed)=
+- Trade off between the use of =simple-array= and avoiding broadcasts
+
+<<optimization-contents>>
+
+**** 4. Benchmark
+     :PROPERTIES:
+     :CUSTOM_ID: benchmark
+     :CLASS: p-3 bg-primary text-white
+     :END:
+
+Library dense-numericals numericals
+
+element-type single-float double-float
+
+Framework All NumPy PyTorch
+
+Array scale All 10 100 10000 1000000 100000000
+
+<<benchmark-table-div>>
+
+The above numbers indicate how many times is the corresponding lisp
+function is /faster/ than the corresponding numpy or pytorch function.
+The numbers were obtained on an Intel i7-8750H running at 3GHz. The lisp
+code was compiled with (optimize speed) settings for arrays of sizes
+smaller than 80000. Appropriate type declarations were also used. The
+dense-numericals code used 6 threads for arrays of sizes larger than
+80000, while PyTorch was left at default settings, with
+torch.get_num_threads() returning a value of 6. Thus, lisp and PyTorch
+had the benefit of multithreading, while numpy did not.
+
+\\
+SBCL Version: 2.2.6
+
+Python Version: 3.8.5
+
+Numpy Version: 1.19.0
+
+PyTorch Version: 1.7.1.post2
+
+\\
+And while it is true that the lisp code was inlined and compiled
+wherever appropriate, that is precisely the point. Note that lisp uses
+incremental compilation and incremental typing, providing you the
+benefits of dynamicity as default. But in addition, certain compilers
+like SBCL also bring to you the safety and performance of static typing.
+The safety and type-guarantees are certainly far from languages like
+Haskell, but it gets the work done.
+
+\\
+None of the code used (safety 0) declarations; thus in some cases, even
+higher performance can be attainable at the cost of safety and the
+potential of running into segmentation faults if types were declared
+incorrectly.
+
+\\
+
+**** 5. Goals
+     :PROPERTIES:
+     :CUSTOM_ID: goals
+     :CLASS: p-3 bg-primary text-white
+     :END:
+
+<<goals-contents>>
+
+1. Remain AOT, avoid JAOT. Like SBCL, a combination of
+   =(optimize speed)= and appropriate type declarations should result in
+   maximal inlining and minimal runtime spent on function calls.
+2. Inlining should avoid code bloat.
+3. Like SBCL, provide useful compiler-notes to the user to help them
+   optimize their code.
+4. Keep the API close to numpy.
+5. Provide ways to avoid copying arrays.
+6. The printed representation of the array object should be transparent
+   in terms of its properties method.
+7. Array broadcasting should be optional, to avoid confusion.
+8. Cooperate with existing libraries wherever possible.
+
+***** Implications of the goals
+      :PROPERTIES:
+      :CUSTOM_ID: implications-of-the-goals
+      :END:
+
+- Enable high performance even for arrays as small as size 10. (Goal 1
+  and 2)
+- Need CLTL2, through cl-environments, compiler-notes, and
+  polymorphic-functions. (Goal 1 and 3)
+- It is easy to start coding. (Goal 4)
+- It is easy to optimize. (Goal 3)
+- Needs a custom array class that provides multidimensional strides and
+  offsets. This is provided through abstract-arrays, dense-arrays, and
+  dense-numericals. (Goals 4 and 6)
+- Wherever appropriate, functions should have an OUT parameter. (Goal 5)
+- Provide inplace operators ending with '!' to avoid explicitly
+  supplying an OUT parameter. For instance,
+  =(numericals:sin array :out array :broadcast nil)= can be shortened to
+  =(numericals:sin! array)=. (Goal 5)
+- Wherever appropriate, functions should have a BROADCAST parameter that
+  determines whether the arrays should or should not be broadcasted.
+  (Goal 7)
+- Arrays created with numcl should "just work". (Goal 8)
+- Interoperability with magicl should be easy if not seamless. (Goal 8)
+
+***** Comparison against numcl and magicl in terms of the (achievability
+of) goals
+      :PROPERTIES:
+      :CUSTOM_ID: comparison-against-numcl-and-magicl-in-terms-of-the-achievability-of-goals
+      :END:
+
+The author thinks that numericals and dense-numericals as a separate
+project is justified because of the existence of several
+unachievable-without-significant-rewrite-or-change-of-goals-or-approach
+for numcl or magicl. These perhaps exist because of the dependence of
+numericals and dense-numericals and its dependencies on CLTL2 API. On
+the other hand, it also seems that Common Lisp without CLTL2 API would
+be terribly ill-suited for numerical computing.
+
+\\
+
+| Goal                                  | numericals | numcl | magicl | Description                                                                      |
+|---------------------------------------+------------+-------+--------+----------------------------------------------------------------------------------|
+| 1. Maximal inlining                   | ✔          | ✔     | ?      | needs compiler-macros or polymorphic-functions to dispatch on specialized arrays |
+| 2. Inlining without code bloat        | ✔          | ?     | ?      | needs separate handling of broadcast and non-broadcasting operations             |
+| 3. Compiler-Notes                     | ✔          | ?     | ?      | can use compiler-macro-notes, but requires compiler-macros                       |
+| 4. Numpy-like API                     | ✔          | ✔     | ＋     | -                                                                                |
+| 5. OUT parameter                      | ✔          | ＋    | ✔      | -                                                                                |
+| 6. Transparent printed representation | ✔          | ?     | ✔      | needs wrapper structures/classes, for example dense-arrays or magicl:tensor      |
+| 7. Optional array broadcasting        | ✔          | ＋    | ?      | -                                                                                |
+
+\\
+
+- ✔ - available
+- ? - perhaps unachievable without significant rewrite or change of
+  goals/approach
+- ＋ - can be improved, or is doable without much rewrite or change of
+  goals

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Current State - (dense-)numericals</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+        <link href="../extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Current State";
+        var mkdocs_page_input_path = "current-state.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <script src="../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/lisp.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> (dense-)numericals
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../intro/">Introduction</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../install/">Installation</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Current State</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#included">Included</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#core">core</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#tests">tests</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#dense-numericals-and-extensible-compound-types">dense-numericals and extensible-compound-types</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#magicl">magicl</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#comparison-with-other-libraries">Comparison with other libraries</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#native-cl-arrays">Native CL arrays</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#non-native-cl-arrays">Non-native CL arrays</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#foreign-function-interfaces">Foreign function interfaces</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#gsll">gsll</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#eigen">eigen</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#history">History</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#project-predecessors">Project Predecessors</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../api/">API Reference</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">(dense-)numericals</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+      <li>Current State</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="current-state-of-numericals-dense-numericals">Current state of numericals | dense-numericals</h1>
+<h2 id="included">Included</h2>
+<h3 id="core">core</h3>
+<p>There are two main asdf systems:</p>
+<ul>
+<li><code>numericals</code> is designed to work with <code>cl:array</code> so that interfacing with the rest of the lisp ecosystem is trivial.</li>
+<li><code>dense-numericals</code> is designed to work with <a href="https://github.com/digikar99/dense-arrays">dense-arrays:array</a></li>
+</ul>
+<p>Currently, <code>(asdf:load-system "numericals")</code> provides 3(+1) packages:</p>
+<ul>
+<li><code>numericals</code> provides basic math functionality</li>
+<li><code>numericals.random</code> provides array generators of random numbers sampled from various distributions</li>
+<li><code>numericals.linalg</code> contains some common linear algebra operations</li>
+</ul>
+<p>Equivalent packages are provided by the <code>(asdf:load-system "dense-numericals")</code> asdf system:</p>
+<ul>
+<li><code>dense-numericals</code></li>
+<li><code>dense-numericals.random</code></li>
+<li><code>dense-numericals.linalg</code></li>
+</ul>
+<h3 id="tests">tests</h3>
+<p>Tests for various functions are littered through all the files in the form of <code>(5am:def-test ...)</code> forms. Once the system is loaded, run <code>(asdf:test-system "numericals")</code> or <code>(asdf:test-system "dense-numericals")</code> to run the tests.</p>
+<h3 id="dense-numericals-and-extensible-compound-types">dense-numericals and extensible-compound-types</h3>
+<p>Using CL like specialized type declarations for <code>dense-arrays:array</code> requires the use of <a href="https://github.com/digikar99/extensible-compound-types">extensible-compound-types</a> along with <code>(cl:pushnew :extensible-compound-types cl:*features*)</code> and a complete recompilation. See <a href="/install">installation</a> for more details.</p>
+<h3 id="magicl">magicl</h3>
+<p>The following two systems provide packages for using <code>magicl</code> functions:</p>
+<ul>
+<li><code>numericals/magicl</code>,</li>
+<li>and <code>dense-numericals/magicl</code></li>
+</ul>
+<p>Functions in the <code>numericals.magicl</code> and the <code>dense-numericals.magicl</code> package are essentially wrappers around <a href="https://github.com/quil-lang/magicl">magicl</a>.</p>
+<h2 id="comparison-with-other-libraries">Comparison with other libraries</h2>
+<h3 id="native-cl-arrays">Native CL arrays</h3>
+<p>As of this writing,</p>
+<ul>
+<li>The only libraries that offer broadcasted operations on arrays are this and <a href="https://github.com/numcl/numcl">numcl</a></li>
+<li><code>numcl</code> does not yet have a focus on high performance - though, it <a href="https://github.com/numcl/numcl/issues/57">should be possible to implement the current einsum based backend using BLAS and BMAS</a>; instead the focus there is on functionality; by contrast, the focus here is on performance first, and functionality second. Users do not have to choose. <code>:mix</code> option of <code>uiop:define-package</code> can be useful for mixing the two libraries as per user preferences</li>
+<li>Other minor differences wrt numcl include:</li>
+<li>Both <code>(ones 2 3 :type 'single-float)</code> and <code>(ones '(2 3) :type 'single-float)</code> are legal in numericals; while only the latter is legal in numcl/numpy</li>
+<li><code>numericals</code> provides a <code>*array-element-type-alist*</code> equivalent to <code>swank:*readtable-alist*</code> to provide a package local way of specifying the default element-type for arrays. This can be further overriden by binding <code>*array-element-type*</code>. This does impose performance penalties however.</li>
+<li><code>numcl</code> relies on JIT backed by <a href="https://github.com/numcl/specialized-function">specialized-function</a>, while <code>numericals</code> relies on AOT backed by <a href="https://github.com/digikar99/polymorphic-functions/">polymorphic-functions</a> and <a href="https://github.com/alex-gutev/cl-form-types">cl-form-types</a>. Again, these are not either-or, high level user functions can (in theory) utilize specialized-function, while the innards can use static-dispatch either by polymorphic-functions or <a href="https://github.com/alex-gutev/static-dispatch">static-dispatch</a> or <a href="https://github.com/marcoheisig/fast-generic-functions/">fast-generic-functions</a>.</li>
+<li>In addition to these two, another performant library operating on CL arrays includes <a href="https://github.com/tpapp/lla">lla</a>. Again, <code>uiop:define-package</code> with <code>:mix</code> can be used suitably.</li>
+</ul>
+<p>The author of <code>numericals</code> <a href="https://gist.github.com/digikar99/16066dbf24b8789c969ea58837e0fbef">did not find other libraries operating on native CL arrays</a>.</p>
+<h3 id="non-native-cl-arrays">Non-native CL arrays</h3>
+<p>There are <a href="https://github.com/CodyReichert/awesome-cl#machine-learning">quite</a> a <a href="https://github.com/CodyReichert/awesome-cl#numerical-and-scientific">few</a> libraries in Common Lisp in this domain. I have only managed to take a peak at <a href="https://gist.github.com/digikar99/16066dbf24b8789c969ea58837e0fbef#femlisp-matlisp">femlisp-matlisp</a>.</p>
+<p>That said, the goal of <code>numericals</code> is not to <em>replace</em> python ecosystems, at least not in the short run, but instead to overcome the limitations of libraries like <a href="https://github.com/bendudson/py4cl">py4cl</a>/<a href="https://github.com/digikar99/py4cl2">2</a> of sub-10,000 instructions per second. However, now there's also <a href="https://github.com/digikar99/py4cl2-cffi">py4cl2-cffi</a> which is about a 10 times faster than <code>py4cl</code>/<code>2</code> without using compiler macros yet.</p>
+<h3 id="foreign-function-interfaces">Foreign function interfaces</h3>
+<h4 id="gsll">gsll</h4>
+<p>A number of functions in <a href="https://www.gnu.org/software/gsl/">gsl</a> and <a href="https://gsll.common-lisp.dev/">gsll</a> operate on double precision floats, while some applications appreciate operators working on single precision floats without a conversion overhead. Thus, while extremely featureful, <code>gsll</code> is insufficient for everyone's needs.</p>
+<h4 id="eigen">eigen</h4>
+<p><a href="https://eigen.tuxfamily.org/index.php">eigen</a> has wonderful documentation. I have only ever done a basic course in linear algebra, and often feel as if I am missing out on something when people work on linear algebra, but I found eigen's documentation to be superb! For instance, see</p>
+<ul>
+<li><a href="https://eigen.tuxfamily.org/dox/group__QuickRefPage.html">this QuickRef page</a>,</li>
+<li>or <a href="https://eigen.tuxfamily.org/dox/group__TutorialLinearAlgebra.html">this Linear Algebra tutorial comparing different decompositions</a>,</li>
+<li>or <a href="https://eigen.tuxfamily.org/dox/group__DenseDecompositionBenchmark.html">this linked page on benchmark comparison of various decompositions</a>.</li>
+</ul>
+<p>So, if eigen and C++ suit your needs, you might as well use it! That said, it isn't the fastest in everything - <a href="https://sleef.org/">SLEEF</a> can often be faster in areas where it is specifically designed for.</p>
+<h2 id="history">History</h2>
+<p>Curiosity got the better of me one day, and I set out to explore the limits of numerical computing with Common Lisp. I mean - what does speed require? Just memory-locality and SIMD?
+SBCL has memory-locality. What about SIMD? Well, the functionality hasn't been "standardized" yet, and there are several attempts. Indeed,
+SBCL needs more documentation - think Emacs! But knowledge exists in people's heads. People are willing to share it. So, this was possible.</p>
+<p>PS: This library began as a <a href="https://www.reddit.com/r/lisp/comments/fkfgjn/sbcl_with_simd_how_to_optimize_sseavx2_to_pointer/">reddit post</a>, that, in turn, was triggered by <a href="https://www.reddit.com/r/lisp/comments/fjmm6y/deep_learning_with_gpus/">this reddit post</a>.</p>
+<p>You should probably use the latest <a href="https://github.com/sbcl/sbcl">SBCL (get from git)</a>, at least SBCL-2.0.9. The build is fairly easy: <code>sh make.sh &amp;&amp; sh run-sbcl.sh # or install.sh</code> or pick a binary from <a href="http://www.sbcl.org/platform-table.html">here</a>.</p>
+<h3 id="project-predecessors">Project Predecessors</h3>
+<ul>
+<li><a href="./sbcl-numericals">sbcl-numericals</a></li>
+<li><a href="https://github.com/digikar99/numericals/releases/tag/2020.08">numericals-2020.08</a></li>
+</ul>
+<p>The project renaming reflects an attempt to separate the portable parts of the codebase
+from the SBCL-specific part, so that a portability attempt may be made in the future.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../install/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../api/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(false);
+        };
+    </script>
+
+</body>
+</html>
