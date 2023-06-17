@@ -1,0 +1,20 @@
+site_name: (dense-)numericals
+theme:
+    name: readthedocs
+    collapse_by_default: false
+    highlightjs: true
+    hljs_languages:
+        - lisp
+    navigation_depth: 4
+    sticky_navigation: false
+    prev_next_buttons_location: none
+include_search_page: true
+nav:
+    - Introduction: index.md
+    - Installation: install.md
+    - Current State: current-state.md
+    - API Reference: api.md
+    - Old Documentation: old-index.html
+plugins:
+    - search
+extra_css: [extra.css]

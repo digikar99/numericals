@@ -1,0 +1,42 @@
+.wy-side-scroll {
+		/* background-color:#b3d9ff; */
+		background:white;
+}
+
+.wy-menu-vertical a{
+		color:black;
+}
+
+
+
+/* .toctree-l1 .current > a.reference.internal.current{ */
+/* 		background:#2980B9; */
+/* } */
+
+.rst-versions .rst-current-version{
+		background-color:#2980B9;
+}
+
+body{
+    font-family: Noto Sans;
+}
+
+p{
+    font-size:16px;
+}
+
+.rst-content pre, .rst-content pre code{
+    font-size:90%;
+    font-family: Noto Sans Mono;
+}
+
+.rst-content code{
+    font-size:100%;
+    font-family: Noto Sans;
+    border:none;
+    padding:0;
+}
+
+.hljs-comment{
+    font-style:normal;
+}
