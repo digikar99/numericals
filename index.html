@@ -13,7 +13,7 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Numerical Computing in Common Lisp";
+        var mkdocs_page_name = "Introduction";
         var mkdocs_page_input_path = "index.md";
         var mkdocs_page_url = null;
       </script>
@@ -42,8 +42,22 @@
       </div>
 
       <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="intro/">Introduction</a>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href=".">Introduction</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#why-two-names-numericals-and-dense-numericals">Why two names: numericals and dense-numericals?</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#about-common-lisp">About common lisp</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#about-numericals">About numericals</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-numericalsdense-numericals-do-not-intend-to-provide">What numericals/dense-numericals do not intend to provide?</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#where-next">Where next?</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#acknowledgements">Acknowledgements</a>
+    </li>
+    </ul>
                 </li>
               </ul>
               <ul>
@@ -72,7 +86,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-      <li>Numerical Computing in Common Lisp</li>
+      <li>Introduction</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -81,475 +95,219 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="numerical-computing-in-common-lisp">Numerical Computing in Common Lisp</h1>
-<blockquote>
-<p>Currently, <code>numericals</code> and <code>dense-numericals</code> provides fast arithmetic, comparison, logical, transcendental, and float-rounding operations. While it is possible to use linear algebra routines by <a href="#interfacing-with-magicl">interfacing with magicl</a>, unless there is sufficient interest, given (i) the limited developer time (ii) the lack of fast basic mathematic libraries in Common Lisp*, <code>numericals</code> and <code>dense-numericals</code> does not aim to provide fast linear algebra operations at the moment. Improving the interface would be at a higher priority.</p>
-<p>*There are a fair number of maintained and unmaintained numerical/scientific computing libraries providing (incomplete) linear algebra routines in Common Lisp - <a href="https://github.com/quil-lang/magicl">magicl</a>, <a href="https://gsll.common-lisp.dev/">gsll</a>, <a href="https://github.com/blindglobe/lisp-matrix">lisp-matrix</a> <a href="https://github.com/Lisp-Stat/numerical-utilities">lisp-stat/numerical-utilities</a> (see <a href="https://github.com/CodyReichert/awesome-cl#numerical-and-scientific">awesome-cl</a>) - yet none has bothered (or needed?) SIMD based fast basic mathematical operations. This library therefore does not wish to focus on linear algebra before getting the fast basic mathematical operations get suitably polished.</p>
-</blockquote>
-<h2 id="getting-started">Getting started</h2>
-<p>Click one of the below links depending on your (i) proficiency in programming (ii) proficiency in Common Lisp (iii) the task at hand.</p>
+                <h1 id="numericals-dense-numericals-write-fast-code-fast">numericals | dense-numericals: write fast code fast</h1>
+<!-- Place this tag in your head or just before your close body tag. -->
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+<p><a class="github-button" href="https://github.com/digikar99/numericals/" aria-label="See numericals on GitHub">Github</a>
+<a href="https://github.com/digikar99/numericals/actions/workflows/CI.yml">
+<img style="margin-top:-0.75em;"     src="https://github.com/digikar99/numericals/actions/workflows/CI.yml/badge.svg"/>
+</a>
+<a class="github-button" href="https://github.com/digikar99/numericals/subscription" data-icon="octicon-eye" data-show-count="true" aria-label="Watch digikar99/numericals on GitHub">Watch</a>
+<a class="github-button" href="https://github.com/digikar99/numericals" data-icon="octicon-star" data-show-count="true" aria-label="Star digikar99/numericals on GitHub">Star</a>
+<a class="github-button" href="https://github.com/digikar99/numericals/issues" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue digikar99/numericals on GitHub">Issue</a></p>
+<p><em>In case of any inaccuracies, ambiguities or suggestions, please <a href="https://github.com/digikar99/numericals/issues">create an issue here</a>.</em></p>
+<p><code>numericals</code> / <code>dense-numericals</code> brings to you the performance of proto-NumPy with the debugging and development abilities of Common Lisp.</p>
+<p>Even before that</p>
+<h2 id="why-two-names-numericals-and-dense-numericals">Why two names: numericals and dense-numericals?</h2>
+<p>These are the names of the two main asdf systems provided as a part of this project. </p>
 <ul>
-<li>I want to get things done reasonably fast. I don't care about maximizing runtime performance so long as it isn't abysmal.</li>
-<li>I want to operate on CLHS provided arrays. They are good enough for me. I don't care about your "new fancy XYZ arrays".</li>
-<li>
-<p>I'm curious about these new fancy arrays. I myself have a fair share of problems with CLHS provided arrays, and certainly wish they could be better.</p>
-</li>
-<li>
-<p>I want to extract the maximum juice out of my machine. I know why I need it. I care about every last bit of performance.</p>
-</li>
-<li>I'm happy with CLHS provided arrays, OR I wish we had a better alternative to CLHS arrays.</li>
-<li>I'm a reasonably proficient lisper and have a basic idea about maximizing performance, OR I'm new to lisp, but I have a basic idea about maximizing performance, OR I'm new to lisp, and this will be amongst my first times learning to optimize performance.</li>
+<li><code>numericals</code> is designed to work with <code>cl:array</code> so that interfacing with the rest of the lisp ecosystem is trivial.</li>
+<li><code>dense-numericals</code> is designed to work with <a href="https://github.com/digikar99/dense-arrays">dense-arrays:array</a> which provides a numpy-like array object for common lisp. <code>dense-arrays</code> itself is fairly extensible, and trivial extensions are provided for <a href="https://github.com/sionescu/static-vectors">static-vectors</a> as well as <a href="https://github.com/takagi/cl-cuda">cl-cuda</a>*.</li>
 </ul>
-<h2 id="design-decisions">Design Decisions</h2>
+<p>*Currently <code>dense-numericals</code> only works with <code>cl:vector</code> as the backend storage. Extension to static-vectors or cl-cuda will be provided in the future if at least one user expresses their needs (through an email or an <a href="https://github.com/digikar99/numericals/issues">issue</a>).</p>
+<p>And while, in theory, this choice can be provided through a configuration variable, but it will only add to the usage overhead.</p>
+<h2 id="about-common-lisp">About common lisp</h2>
+<p>Common Lisp is great for prototyping:</p>
 <ul>
-<li>Why not GSL? GSL uses its own vector and matrix wrappers, and while one can certainly make CFFI use them, it doesn't seem like a good way. Using BLAS and LAPACK looks better.</li>
+<li><a href="https://mikelevins.github.io/posts/2020-12-18-repl-driven/">REPL-based programming</a> means that you can write your program one function at a time. Type, structure, function, and class redefinitions are handled more gracefully compared to most other languages.</li>
+<li>Global variables in common lisp have dynamic scope, while local variables have default lexical scope. This means you can use global variables locally :). See <a href="TODO">this example</a>.</li>
+<li>Its <a href="https://lisper.in/restarts">condition system</a> builds upon this and goes beyond traditional exception handling, allowing one to provide restarts for resuming a "crashed" program.</li>
 </ul>
-<h2 id="getting-started_1">Getting started</h2>
-<p>If you are happy with Common Lisp arrays, you can <code>(ql:quickload "numericals")</code>. Otherwise if you think arrays could look nicer, and think numpy's way of doing things are sensible*, then you can <code>(ql:quickload "dense-numericals")</code>.</p>
-<pre><code class="language-lisp">(uiop:define-package :numericals-demo
-  ;; (:mix :numericals :cl))
-  (:mix :dense-numericals :dense-arrays-plus-lite :cl))
+<p>But it is also great in the longer run:</p>
+<ul>
+<li>Optional static typing with implementations like SBCL means you do not have to worry yourself with type declarations during prototyping. But as your code and types stabilize, you can add the type declarations to aid documentation as well as speed and safety, while also inlining the small functions whose call overhead exceeds the work they do.</li>
+<li>A 1994 ANSI standard coupled with several <a href="https://portability.cl/">portability libraries</a> means that it is possible to write code that works without changes even after decades.</li>
+<li>Common Lisp also allows for the deployment of binaries, and there are tools to distribute the shared libraries that the binary depends upon.</li>
+</ul>
+<p>Indeed, there are limitations:</p>
+<ul>
+<li>If you want to write fast code, then redefinitions, dynamic scoping, and condition systems can get in the way. So, to some extent, it is a tradeoff that you can work around as your program stabilizes.</li>
+<li>The type system is much limited than ML like systems and does not provide true parametric types. But see <a href="TODO">this example</a>. <a href="https://github.com/coalton-lang/coalton">Coalton</a> is an effort to work around this. It provides a ML like programming system built on top of Common Lisp.</li>
+</ul>
+<h2 id="about-numericals">About numericals</h2>
+<p>Like Julia, Common Lisp (SBCL) already offers a solution to the purported two-language problem. However, lisp code built using generic functions is not helpful for solving this. <a href="https://github.com/numcl/specialized-function">specialized-function</a> and <a href="https://github.com/alex-gutev/static-dispatch">static-dispatch</a> help here, but generic functions have other disadvantages:</p>
+<ul>
+<li>inability to dispatch on specialized array types</li>
+<li>inability to dispatch on optional or keyword arguments</li>
+</ul>
+<p>In addition, while Common Lisp's ANSI standard offers compiler macros that allows one to control what specialized form a particular call site compiles to (see <a href="https://stackoverflow.com/questions/61094156/macro-expanding-to-same-operator">this</a> or <a href="http://www.lispworks.com/documentation/HyperSpec/Body/m_define.htm">this</a>), compiler macros are of limited use without access to the type information of the arguments. Unfortunately, <a href="https://stackoverflow.com/questions/67149358/portable-type-propagation-in-common-lisp-inlined-functions-without-compiler-macr">this type information is not available trivially</a>. To access it, one requires a somewhat sophisticated machinery of CLTL2 in the form of <a href="https://github.com/alex-gutev/cl-environments">cl-environments</a>, <a href="https://github.com/alex-gutev/cl-form-types">cl-form-types</a>, and <a href="https://github.com/digikar99/polymorphic-functions">polymorphic-functions</a>. In particular, the latter overcomes both the disadvantages of generic functions, and allows dispatching over specialized array types, as well as optional or keyword arguments. And coupled with the former two, it is also able to dispatch statically to a reasonable extent if the call site is compiled with <code>(optimize speed)</code> with <code>safety&lt;speed</code> and <code>debug&lt;speed</code>.</p>
+<p>Put together, this allows compiling the following code:</p>
+<pre><code class="language-lisp">(disassemble
+ (lambda (x)
+   (declare (optimize speed)
+            (type (simple-array single-float 1) x))
+   (nu:sin! x)))
 </code></pre>
-<h3 id="an-introduction-to-dense-arrays">An introduction to dense-arrays</h3>
-<p>The arrays that <code>dense-numericals</code> works on are provided by <a href="https://github.com/digikar99/dense-arrays/">dense-arrays</a>. At its simplest, these are wrappers around <code>cl:vector</code> and enable numpy-like* copy-free slicing aka copy-free selection of array elements / axes. </p>
-<pre><code class="language-lisp">CL-USER&gt; (setq cl:*print-length* 10)
-CL-USER&gt; (let ((a (cl:make-array '(1000 1000))))
-           (select:select a t 0)) ; select the 0th element of every row
-#(0 0 0 0 0 0 0 0 0 0 ...)
-CL-USER&gt; (let ((a (dense-arrays:make-array '(1000 1000))))
-           (dense-arrays:aref a nil 0)) ; select the 0th element of every row
-#&lt;STANDARD-DENSE-ARRAY NIL 1000 T
-  0
-  0
-  0
-  0
-  0
-  0
-  0
-  0
-  0
-  0
-  ...
- {10511DAA23}&gt;
-CL-USER&gt; (let ((a (cl:make-array '(1000 1000))))
-           (time (loop for i below 1000 do (select:select a t i))))
+<p>into code containing no high level function calls but only:</p>
+<pre><code>...
+; BFA:       4D8B55F0         MOV R10, [R13-16]               ; thread.alien-linkage-table-base
+; BFE:       41FF92082E0000   CALL [R10+11784]                ; &amp;BMAS_ssin
+; C05:       488BE3           MOV RSP, RBX
+...
+</code></pre>
+<p>and the following slight variant (using <code>double-float</code> instead of <code>single-float</code>)</p>
+<pre><code class="language-lisp">(disassemble
+ (lambda (x)
+   (declare (optimize speed)
+            (type (simple-array double-float 1) x))
+   (nu:sin! x)))
+</code></pre>
+<p>into the following:</p>
+<pre><code>...
+; 672:       4D8B55F0         MOV R10, [R13-16]               ; thread.alien-linkage-table-base
+; 676:       41FF92C82E0000   CALL [R10+11976]                ; &amp;BMAS_dsin
+; 67D:       488BE3           MOV RSP, RBX
+...
+</code></pre>
+<p>What this aggressive inlining means is that the performance is minimally impacted with increasing loop lengths. Below, notice that the overall number of <code>sin</code> calculated are the same in each of the three cases, although the loop lengths are different.</p>
+<pre><code class="language-lisp">IMPL&gt; (let ((a (nu:rand 100000 :type 'single-float))
+            (b (nu:rand 100000 :type 'single-float)))
+        (declare (optimize speed)
+                 (type (simple-array single-float) a b))
+        (time (loop repeat 1000 do
+          (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  0.159 seconds of real time
-  0.159541 seconds of total run time (0.159541 user, 0.000000 system)
-  100.63% CPU
-  352,387,000 processor cycles
-  10,863,248 bytes consed
+  0.296 seconds of real time
+  0.292903 seconds of total run time (0.292903 user, 0.000000 system)
+  98.99% CPU
+  646,713,220 processor cycles
+  32,512 bytes consed
 
 NIL
-CL-USER&gt; (let ((a (dense-arrays:make-array '(1000 1000))))
-           (time (loop for i below 1000 do (dense-arrays:aref a nil i))))
+IMPL&gt; (let ((a (nu:rand 1000 :type 'single-float))
+            (b (nu:rand 1000 :type 'single-float)))
+        (declare (optimize speed)
+                 (type (simple-array single-float) a b))
+        (time (loop repeat 100000 do
+          (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  0.000 seconds of real time
-  0.000910 seconds of total run time (0.000878 user, 0.000032 system)
+  0.288 seconds of real time
+  0.290469 seconds of total run time (0.290469 user, 0.000000 system)
+  100.69% CPU
+  641,386,456 processor cycles
+  3,186,176 bytes consed
+
+NIL
+IMPL&gt; (let ((a (nu:rand 10 :type 'single-float))
+            (b (nu:rand 10 :type 'single-float)))
+        (declare (optimize speed)
+                 (type (simple-array single-float 1) a b))
+        (time (loop repeat 10000000 do
+          (nu:sin a :out b :broadcast nil))))
+Evaluation took:
+  1.579 seconds of real time
+  1.580698 seconds of total run time (1.580698 user, 0.000000 system)
+  [ Run times consist of 0.017 seconds GC time, and 1.564 seconds non-GC time. ]
+  100.13% CPU
+  3,487,968,606 processor cycles
+  320,015,504 bytes consed
+
+NIL
+</code></pre>
+<p>Without inlining, the performance can be impacted severely. For instance, below, the lack of <code>(optimize speed)</code> declaration prevents inlining. Note that the below can be optimized further by avoiding type checks if a <code>(safety 0)</code> declaration is added.</p>
+<pre><code class="language-lisp">IMPL&gt; (let ((a (nu:rand 100000 :type 'single-float))
+            (b (nu:rand 100000 :type 'single-float)))
+        (declare (type (simple-array single-float) a b))
+        (time (loop repeat 1000 do
+          (nu:sin a :out b :broadcast nil))))
+Evaluation took:
+  0.251 seconds of real time
+  0.251034 seconds of total run time (0.251034 user, 0.000000 system)
   100.00% CPU
-  2,001,298 processor cycles
-  261,904 bytes consed
+  554,269,126 processor cycles
+  97,792 bytes consed
 
 NIL
-</code></pre>
-<p>Here, the <a href="https://lisp-stat.github.io/select/#index-Generic-Function_002c-select">select:select</a> operation copies over the elements of the array into the new array. While the <code>dense-arrays:aref</code> merely returns another wrapper over a certain section of the array. Note that it is not that <code>select:select</code> purposefully copies over the elements; the case is that given the way Common Lisp arrays are, it actually is not possible to implement the functionality of <code>select:select</code> efficiently. For instance, <a href="https://numcl.github.io/numcl/#src/2aref.lisp">numcl:aref</a> provides a similar functionality as <code>select:select</code>, however it too is slow in the general case:</p>
-<pre><code class="language-lisp">CL-USER&gt; (let ((a (numcl:zeros '(1000 1000) :type t)))
-           ;; select the ith element of all the rows, aka select the ith column
-           (time (loop for i below 1000 do (numcl:aref a t i))))
+IMPL&gt; (let ((a (nu:rand 1000 :type 'single-float))
+            (b (nu:rand 1000 :type 'single-float)))
+        (declare (type (simple-array single-float) a b))
+        (time (loop repeat 100000 do
+          (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  7.287 seconds of real time
-  7.290938 seconds of total run time (7.290938 user, 0.000000 system)
-  [ Run times consist of 0.051 seconds GC time, and 7.240 seconds non-GC time. ]
-  100.05% CPU
-  16,097,057,600 processor cycles
-  1,752,658,096 bytes consed
+  0.308 seconds of real time
+  0.308766 seconds of total run time (0.308766 user, 0.000000 system)
+  [ Run times consist of 0.013 seconds GC time, and 0.296 seconds non-GC time. ]
+  100.32% CPU
+  679,509,546 processor cycles
+  9,583,360 bytes consed
 
 NIL
-CL-USER&gt; (let ((a (numcl:zeros '(1000 1000) :type t)))
-           ;; select the ith element of all the columns, aka select the ith row
-           (time (loop for i below 1000 do (numcl:aref a i t))))
+IMPL&gt; (let ((a (nu:rand 10 :type 'single-float))
+            (b (nu:rand 10 :type 'single-float)))
+        (declare (type (simple-array single-float 1) a b))
+        (time (loop repeat 10000000 do
+          (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  0.000 seconds of real time
-  0.001688 seconds of total run time (0.001618 user, 0.000070 system)
-  100.00% CPU
-  3,718,742 processor cycles
-  457,408 bytes consed
+  5.343 seconds of real time
+  5.349964 seconds of total run time (5.346585 user, 0.003379 system)
+  [ Run times consist of 0.049 seconds GC time, and 5.301 seconds non-GC time. ]
+  100.13% CPU
+  11,804,640,438 processor cycles
+  959,968,016 bytes consed
 
 NIL
 </code></pre>
-<p>The second case is faster here, because <a href="http://www.lispworks.com/documentation/HyperSpec/Body/f_mk_ar.htm">cl:make-array</a> does provide <code>displaced-to</code> and <code>displaced-index-offset</code> which enable the creation of "wrapper" non-simple arrays if the elements are contiguous. This works only for the rightmost dimension, which is why in <code>(numcl:aref a i t)</code> with <code>t</code> being the rightmost index indicating "select all the elements along this axis", there is a way to avoid copying the array elements, but <code>(numcl:aref a t i)</code> necessitates copying.</p>
-<p>By contrast, <code>dense-arrays::dense-array</code> provide for multidimensional strides and offsets, enabling copy free slicing for arbitrary axes. This enables the interpretation of the same <code>cl:vector</code> (the <code>storage</code> slot below) in multiple ways:</p>
-<pre><code class="language-lisp">DENSE-ARRAYS&gt; (make-array '(2 3) :constructor #'+)
-#&lt;STANDARD-DENSE-ARRAY 2x3 :ROW-MAJOR T
-   (0 1 2)
-   (1 2 3)
- {100330F653}&gt;
-DENSE-ARRAYS&gt; (describe *)
-#&lt;STANDARD-DENSE-ARRAY 2x3 :ROW-MAJOR T {100330F653}&gt;
-  [standard-object]
+<p>This may or may not matter for most use cases. But when it does matter, a naive lisp implementation using generic functions stops being as useful, and one is either forced to reimplement the lisp code to suit their needs or move to a different language altogether which handles this well.</p>
+<p>Thus, numericals and dense-numericals intend to provide a solution to this separation between "write code fast" and "write fast code".</p>
+<p>PS: The above <code>BMAS_ssin</code> foreign function is built over <a href="https://sleef.org/">SLEEF</a> and uses SIMD to compute the sine. The equivalent SBCL non-SIMD equivalent is about 30 times slower:</p>
+<pre><code class="language-lisp">IMPL&gt; (let ((a (nu:rand 100000 :type 'single-float :max 1.0))
+            (b (nu:rand 100000 :type 'single-float)))
+        (declare (type (simple-array single-float 1) a b)
+                 (optimize speed))
+        (time (loop repeat 1000 do
+          (loop for i below 100000 do
+            (setf (row-major-aref b i) (sin (row-major-aref a i)))))))
+Evaluation took:
+  2.495 seconds of real time
+  2.493383 seconds of total run time (2.493383 user, 0.000000 system)
+  99.92% CPU
+  5,505,542,370 processor cycles
+  0 bytes consed
 
-Slots with :INSTANCE allocation:
-  STORAGE                        = #(0 1 2 1 2 3)
-  DIMENSIONS                     = (2 3)
-  ELEMENT-TYPE                   = T
-  RANK                           = 2
-  TOTAL-SIZE                     = 6
-  STRIDES                        = (3 1)
-  OFFSETS                        = (0 0)
-  LAYOUT                         = :ROW-MAJOR
-  ROOT-ARRAY                     = NIL
-; No value
-DENSE-ARRAYS&gt; (aref (make-array '(2 3) :constructor #'+) 1)
-#&lt;STANDARD-DENSE-ARRAY NIL 3 T
-   1
-   2
-   3
- {10033B1543}&gt;
-DENSE-ARRAYS&gt; (aref (make-array '(2 3) :constructor #'+) nil 1)
-#&lt;STANDARD-DENSE-ARRAY NIL 2 T
-   1
-   2
- {10033B23E3}&gt;
-DENSE-ARRAYS&gt; (describe *)
-#&lt;STANDARD-DENSE-ARRAY NIL 2 T  {10033B23E3}&gt;
-  [standard-object]
-
-Slots with :INSTANCE allocation:
-  STORAGE                        = #(0 1 2 1 2 3)
-  DIMENSIONS                     = (2)
-  ELEMENT-TYPE                   = T
-  RANK                           = 1
-  TOTAL-SIZE                     = 2
-  STRIDES                        = (3)
-  OFFSETS                        = (1)
-  CONTIGUOUS-P                   = NIL
-  ROOT-ARRAY                     = #&lt;STANDARD-DENSE-ARRAY 2x3 T  {10033B2183}&gt;
-; No value
-</code></pre>
-<p>Indeed this also means that the arrays might not be contiguous. Contiguous dense arrays are of type <code>dense-arrays:simple-array</code>; for such arrays, <code>(array-layout dense-array)</code> returns either <code>:row-major</code> or <code>:column-major</code> which is also seen in the printed representations above. Otherwise if <code>(array-layout dense-array)</code> returns <code>nil</code>, then there is no guarantee that the array is a contiguous array, and one can use <code>dense-arrays:make-array</code> or <code>dense-arrays:copy-array</code> to obtain a <code>dense-arrays:simple-array</code> aka contiguous array.</p>
-<p>Dense arrays provides two major types <code>(dense-arrays:array &amp;optional element-type rank/dimensions)</code> and <code>(dense-arrays:simple-array &amp;optional element-type rank/dimensions)</code> analogous to their CL counterparts. These should work with <code>typep</code> and <code>subtypep</code>, a caveat being that without the use of <a href="https://github.com/digikar99/extensible-compound-types">extensible-compound-types</a>, the dimensions are reduced to ranks. Thus, </p>
-<pre><code class="language-lisp">CL-USER&gt; (alexandria:type= '(dense-arrays:array * (2 3 4)) ; based on CL:TYPEP
-                           '(dense-arrays:array * 3))
-T
-T
-CL-USER&gt; (extensible-compound-types:type= '(dense-arrays:array * (2 3 4))
-                                          '(dense-arrays:array * 3))
 NIL
-T
 </code></pre>
-<p>For advanced usage relating to customizing the behavior of dense-arrays, see <a href="https://github.com/digikar99/dense-arrays/blob/main/DOC.org">here</a>. For a demonstration on optimizing dense-arrays, see <a href="https://github.com/digikar99/dense-arrays/blob/main/perf.org">here</a> (you just need to use <code>dense-arrays:do-arrays</code> and declare the types!).</p>
-<p>*Numpy arrays with their multidimensional strides and offsets might not be the best way to do things either. See <a href="https://www.reddit.com/r/lisp/comments/wei81o/comment/iitttgb/?utm_source=share&amp;utm_medium=web2x&amp;context=3">here</a> for a discussion.</p>
-<h3 id="using-numericals-to-extend-numericals-implementing-mean">Using numericals to extend numericals: implementing <code>mean</code></h3>
-<p>As I write this, numericals already has the following operators: <code>sum divide expt multiply</code> operation.</p>
-<p>In this section, we implement the <code>mean</code> operator as a simple wrapper around the existing operators. We start with a basic runtime correct function, but also go into compile time notes and optimizations.</p>
-<h4 id="getting-the-correct-answer-at-runtime">Getting the correct answer at runtime</h4>
-<p>We start with <code>mean</code>, and take an inspiration from <a href="https://numpy.org/doc/stable/reference/generated/numpy.mean.html">numpy</a> to formulate the function's parameter list:</p>
-<pre><code class="language-lisp">(numericals.common:compiler-in-package numericals.common:*compiler-package*)
-
-(define-polymorphic-function nu:mean (array-like &amp;key out axes keep-dims) :overwrite t)
-</code></pre>
-<p>We use <code>array-like</code> here, since from the user's perspective it will be convenient to avoid having to explicitly cast it into an array. Thus, immediately at the outset, we have two cases:</p>
-<pre><code class="language-lisp">(defpolymorph nu:mean ((array-like list) &amp;key out axes keep-dims) t
-  ...)
-(defpolymorph nu:mean ((array-like nu:array) &amp;key out axes keep-dims) t
-  ...)
-</code></pre>
-<p>The subtype polymorphism provided by polymorphic-functions should help with the optimization: we should only be required to define a few cases for the <code>nu:array</code>, without bothering about each array-element-type. For the <code>list</code> case, the simplest definition would be:</p>
-<pre><code class="language-lisp">(defpolymorph nu:mean ((array-like list) &amp;key out axes keep-dims) t
-  (nu:mean (nu:asarray array-like) :out out :axes axes :keep-dims keep-dims))
-</code></pre>
-<p>Since a runtime array allocation is involved, we include a <code>suboptimal-note</code> in our definition, so that the user can be helped later. In addition, we also know that inlining this function won't cost much in terms of code bloat and there is a guarantee of non-recursion, thus we also provide an <code>:inline t</code> option to override polymorphic function's note about not inlining it.</p>
-<pre><code class="language-lisp">(defpolymorph (nu:mean :inline t :suboptimal-note runtime-array-allocation)
-    ((array-like list) &amp;key out axes) t
-  (nu:mean (nu:asarray array-like) :out out :axes axes))
-</code></pre>
-<p>We will return to this case later. But now, let's start with the polymorph for <code>nu:array</code>. The plan is to calculate the <code>sum</code> and then divide by the <code>number-of-elements</code>:</p>
-<pre><code class="language-lisp">(defpolymorph nu:mean ((array-like nu:array) &amp;key out axes keep-dims) t
-  (let* ((sum (nu:sum array :out out :axes axes :keep-dims keep-dims))
-         (number-of-elements ...))
-    (nu:divide sum number-of-elements :out out)))
-</code></pre>
-<p>Wherever possible, we supply the <code>out</code> argument. <code>sum</code> could either be an array, or it could be a real. To calculate the <code>number-of-elements</code>, we consider three cases: <code>axes</code> is NIL, or an integer, or a list of integers.</p>
-<pre><code class="language-lisp">(defpolymorph nu:mean ((array-like nu:array) &amp;key out axes keep-dims) t
-  (let* ((sum (nu:sum array-like :out out :axes axes :keep-dims keep-dims))
-         (number-of-elements
-           (etypecase axes
-             (null (array-total-size array-like))
-             (integer (nu:shape array-like axes))
-             (list (loop :for d :in (narray-dimensions array-like)
-                         :for i :from 0
-                         :with number-of-elements := 1
-                         :if (member i axes)
-                           :do (setf number-of-elements (* number-of-elements d))
-                         :finally (return number-of-elements))))))
-    (declare (type real number-of-elements))
-    (nu:divide sum number-of-elements :out out)))
-</code></pre>
-<p>These two polymorphs seem enough to get us the required functionality at runtime. We can check out a few cases to see if the function is working correctly. Ideally, writing a test case would be recommendable.</p>
-<pre><code class="language-lisp">IMPL&gt; (numericals.common:compiler-in-package numericals.common:*compiler-package*)
-#&lt;PACKAGE &quot;DENSE-NUMERICALS.IMPL&quot;&gt;
-IMPL&gt; (setq nu:*array-element-type* 'single-float)
-SINGLE-FLOAT
-IMPL&gt; (nu:mean '(1 2 3))
-2.0
-IMPL&gt; (nu:mean '(1 2 3.5))
-2.1666667
-IMPL&gt; (nu:mean '((1 2 3) (4 5 6)))
-3.5
-IMPL&gt; (nu:mean '((1 2 3) (4 5 6)) :axes 0)
-#&lt;STANDARD-DENSE-ARRAY :ROW-MAJOR 3 SINGLE-FLOAT
-    2.500
-    3.500
-    4.500
- {10596A0B33}&gt;
-IMPL&gt; (nu:mean '((1 2 3) (4 5 6)) :axes 1)
-#&lt;STANDARD-DENSE-ARRAY :ROW-MAJOR 2 SINGLE-FLOAT
-    2.000
-    5.000
- {10596A47C3}&gt;
-IMPL&gt; (nu:mean '((1 2 3) (4 5 6)) :axes 1 :keep-dims t)
-#&lt;STANDARD-DENSE-ARRAY :ROW-MAJOR 2x1 SINGLE-FLOAT
-  (  2.000    )
-  (  5.000    )
- {102447F653}&gt;
-IMPL&gt; (nu:mean '((1 2 3) (4 5 6)) :keep-dims t)
-#&lt;STANDARD-DENSE-ARRAY :ROW-MAJOR 1x1 SINGLE-FLOAT
-  (  3.500    )
- {102448B023}&gt;
-</code></pre>
-<p>Indeed, these seem good enough. Now let's turn to optimization and compiler notes!</p>
-<h4 id="optimizing-a-specific-case-of-numean">Optimizing a specific case of nu:mean</h4>
-<p>For this part, it is helpful to use ALIVE or SLIME or equivalent, so that you can <em>compile</em> one form at a time and see the notes and warnings corresponding to it. We will be trying to optimize a simpler single-float-mean function that calculates the overall mean of single float arrays.</p>
-<p>For our case, we note that one of the conditions which the <code>mean</code> function should satisfy includes that no runtime array allocation is involved. For the other conditions, let's use the compiler notes emitted by polymorphic-functions to discover what needs to be optimized!</p>
-<p>If you are using SBCL (see <code>(cl:lisp-implementation-type)</code>, you might also want to declaim the following to focus on the compiler notes emitted by polymorphic-functions alone.</p>
-<pre><code class="language-lisp">(declaim (sb-ext:muffle-conditions sb-ext:compiler-note))
-;; You can revert it with
-;; (declaim (sb-ext:unmuffle-conditions sb-ext:compiler-note))
-</code></pre>
-<p>Now, compiling the previous <code>nu:mean</code> polymorph with <code>(optimize speed)</code> emits some notes:</p>
-<pre><code class="language-lisp">(defpolymorph nu:mean ((array-like nu:array) &amp;key out axes keep-dims) t
-  (declare (optimize speed))
-  (let* ((sum (nu:sum array-like :out out :axes axes :keep-dims keep-dims))
-         (number-of-elements
-           (etypecase axes
-             (null (array-total-size array-like))
-             (integer (nu:shape array-like axes))
-             (list (loop :for d :in (narray-dimensions array-like)
-                         :for i :from 0
-                         :with number-of-elements := 1
-                         :if (member i axes)
-                           :do (setf number-of-elements (* number-of-elements d))
-                         :finally (return number-of-elements))))))
-    (declare (type real number-of-elements))
-    (nu:divide sum number-of-elements :out out)))
-</code></pre>
-<p>These notes mainly concern <code>nu:sum</code> and <code>nu:divide</code> and are about the type of <code>out</code> being not known. If you are using SLIME (or ALIVE?) you should see the <code>(nu:sum array-like :out out :axes axes :keep-dims keep-dims)</code> and <code>(nu:divide sum number-of-elements :out out)</code> forms being underlined to indicate where the notes are being emitted from.</p>
-<p>What do we know about <code>out</code>? That, if it is supplied and if it has to be supplied, then it must be a <code>nu:array</code>. To keep things simple, we check this using whether or not the value of <code>out</code> is of type <code>null</code>. This naive way makes our function looks like this:</p>
-<pre><code class="language-lisp">(defpolymorph nu:mean ((array-like nu:array) &amp;key out axes keep-dims) t
-  (declare (optimize speed))
-  (if (null out)
-      (locally (declare (type null out))
-        (let* ((sum (nu:sum array-like :out out :axes axes :keep-dims keep-dims))
-               (number-of-elements
-                 (etypecase axes
-                   (null (array-total-size array-like))
-                   (integer (nu:shape array-like axes))
-                   (list (loop :for d :in (narray-dimensions array-like)
-                               :for i :from 0
-                               :with number-of-elements := 1
-                               :if (member i axes)
-                                 :do (setf number-of-elements (* number-of-elements d))
-                               :finally (return number-of-elements))))))
-          (declare (type real number-of-elements))
-          (nu:divide sum number-of-elements :out out)))
-      (locally (declare (type nu:array out))
-        (let* ((sum (nu:sum array-like :out out :axes axes :keep-dims keep-dims))
-               (number-of-elements
-                 (etypecase axes
-                   (null (array-total-size array-like))
-                   (integer (nu:shape array-like axes))
-                   (list (loop :for d :in (narray-dimensions array-like)
-                               :for i :from 0
-                               :with number-of-elements := 1
-                               :if (member i axes)
-                                 :do (setf number-of-elements (* number-of-elements d))
-                               :finally (return number-of-elements))))))
-          (declare (type real number-of-elements))
-          (nu:divide sum number-of-elements :out out)))))
-</code></pre>
-<p>And compiling this gets us quite a few notes. Let's focus on one of them:</p>
-<pre><code>; (Compiler) Macro of
-;    #&lt;POLYMORPHIC-FUNCTIONS:POLYMORPHIC-FUNCTION TWO-ARG-FN/NON-COMPARISON (13)&gt;
-; is unable to optimize
-;   (TWO-ARG-FN/NON-COMPARISON 'NU:DIVIDE X Y :BROADCAST BROADCAST)
-; in
-;   (LAMBDA (X Y &amp;KEY (BROADCAST NU:*BROADCAST-AUTOMATICALLY*) (OUT NIL) &amp;AUX)
-;     (DECLARE (TYPE NULL OUT)
-;              (TYPE T BROADCAST)
-;              (TYPE REAL Y)
-;              (TYPE T X)
-;              (IGNORABLE))
-;     (DECLARE (IGNORABLE OUT))
-;     (BLOCK NU:DIVIDE
-;       (LOCALLY
-;         (TWO-ARG-FN/NON-COMPARISON 'NU:DIVIDE X Y :BROADCAST BROADCAST))))
-; generated from
-;   (NU:DIVIDE SUM NUMBER-OF-ELEMENTS :OUT OUT)
-; because:
-;
-;   Type of
-;     X
-;   could not be determined
-;   Type of
-;     BROADCAST
-;   could not be determined
-</code></pre>
-<p>From this, we can tell that <code>x</code> corresponds to <code>sum</code> and that nowhere have we told about the type of <code>sum</code>. In fact, the type of <code>sum</code>: it could be a <code>real</code> or it could be a <code>nu:array</code>. And in the case it is of type <code>nu:array</code>, we must necessarily broadcast. Thus, we have the following new definition:</p>
-<pre><code class="language-lisp">(defpolymorph nu:mean ((array-like nu:array) &amp;key out axes keep-dims) t
-  (declare (optimize speed))
-  (if (null out)
-      (locally (declare (type null out))
-        (let* ((sum (nu:sum array-like :out out :axes axes :keep-dims keep-dims))
-               (number-of-elements
-                 (etypecase axes
-                   (null (array-total-size array-like))
-                   (integer (nu:shape array-like axes))
-                   (list (loop :for d :in (narray-dimensions array-like)
-                               :for i :from 0
-                               :with number-of-elements := 1
-                               :if (member i axes)
-                                 :do (setf number-of-elements (* number-of-elements d))
-                               :finally (return number-of-elements))))))
-          (declare (type real number-of-elements))
-          (if (realp sum)
-              (locally (declare (type real sum))
-                (nu:divide sum number-of-elements))
-              (locally (declare (type nu:array sum))
-                (nu:divide sum number-of-elements :out out :broadcast t)))))
-      (locally (declare (type nu:array out))
-        (let* ((sum (nu:sum array-like :out out :axes axes :keep-dims keep-dims))
-               (number-of-elements
-                 (etypecase axes
-                   (null (array-total-size array-like))
-                   (integer (nu:shape array-like axes))
-                   (list (loop :for d :in (narray-dimensions array-like)
-                               :for i :from 0
-                               :with number-of-elements := 1
-                               :if (member i axes)
-                                 :do (setf number-of-elements (* number-of-elements d))
-                               :finally (return number-of-elements))))))
-          (declare (type real number-of-elements))
-          (if (realp sum)
-              (locally (declare (type real sum))
-                (nu:divide sum number-of-elements))
-              (locally (declare (type nu:array sum))
-                (nu:divide sum number-of-elements :out out :broadcast t)))))))
-</code></pre>
-<p>Compiling this gets us some other notes now:</p>
-<pre><code>; While compiling
-;     (TWO-ARG-FN/NON-COMPARISON 'NU:DIVIDE X Y :BROADCAST BROADCAST)
-; in
-;   (LAMBDA (X Y &amp;KEY (BROADCAST NU:*BROADCAST-AUTOMATICALLY*) (OUT NIL) &amp;AUX)
-;     (DECLARE (TYPE NULL OUT)
-;              (TYPE (EQL T) BROADCAST)
-;              (TYPE REAL Y)
-;              (TYPE ARRAY X)
-;              (IGNORABLE))
-;     (DECLARE (IGNORABLE OUT))
-;     (BLOCK NU:DIVIDE
-;       (LOCALLY
-;         (TWO-ARG-FN/NON-COMPARISON 'NU:DIVIDE X Y :BROADCAST BROADCAST))))
-; generated from
-;   (NU:DIVIDE SUM NUMBER-OF-ELEMENTS :OUT OUT :BROADCAST T)
-;   Following notes were encountered:
-;
-;     No applicable POLYMORPH discovered for polymorphic-function
-;       TWO-ARG-FN/NON-COMPARISON
-;     and ARGS:
-;
-;       ('NU:DIVIDE X Y :BROADCAST BROADCAST)
-;
-;     derived to be of TYPES:
-;
-;       ((EQL NU:DIVIDE) ARRAY REAL (EQL :BROADCAST) (EQL T))
-;
-;     Available Effective-Type-Lists include:
-;
-;       (SYMBOL NUMBER NUMBER &amp;KEY (:BROADCAST T) (:OUT NULL))
-;       (SYMBOL LIST LIST &amp;KEY (:BROADCAST (OR NULL T)) (:OUT ARRAY))
-;       (SYMBOL NUMBER LIST &amp;KEY (:BROADCAST (OR NULL T)) (:OUT ARRAY))
-;       (SYMBOL LIST NUMBER &amp;KEY (:BROADCAST (OR NULL T)) (:OUT ARRAY))
-;       (SYMBOL LIST LIST &amp;KEY (:BROADCAST (OR NULL T)) (:OUT NULL))
-;       (SYMBOL NUMBER LIST &amp;KEY (:BROADCAST (OR NULL T)) (:OUT NULL))
-;       (SYMBOL LIST NUMBER &amp;KEY (:BROADCAST (OR NULL T)) (:OUT NULL))
-;       (SYMBOL (SIMPLE-ARRAY &lt;TYPE&gt;) (SIMPLE-ARRAY &lt;TYPE&gt;) &amp;KEY
-;        (:BROADCAST (OR NULL NULL)) (:OUT (SIMPLE-ARRAY &lt;TYPE&gt;)))
-;       (SYMBOL (SIMPLE-ARRAY &lt;TYPE&gt;) (SIMPLE-ARRAY &lt;TYPE&gt;) &amp;KEY
-;        (:BROADCAST (OR NULL NULL)) (:OUT NULL))
-;       (SYMBOL (ARRAY &lt;TYPE&gt;) (ARRAY &lt;TYPE&gt;) &amp;KEY (:BROADCAST (OR NULL T))
-;        (:OUT (ARRAY &lt;TYPE&gt;)))
-;       (SYMBOL (ARRAY &lt;TYPE&gt;) (ARRAY &lt;TYPE&gt;) &amp;KEY (:BROADCAST (OR NULL T))
-;        (:OUT NULL))
-;       (SYMBOL (ARRAY &lt;TYPE&gt;) NUMBER &amp;KEY (:BROADCAST (OR NULL (NOT NULL)))
-;        (:OUT (OR NULL (ARRAY &lt;TYPE&gt;))))
-;       (SYMBOL NUMBER (ARRAY &lt;TYPE&gt;) &amp;KEY (:BROADCAST (OR NULL (NOT NULL)))
-;        (:OUT (OR NULL (ARRAY &lt;TYPE&gt;))))
-</code></pre>
-<p>No applicable polymorph for <code>divide</code>? How come? Certainly there exists a polymorph for <code>divide</code> that can take in a <code>nu:array</code> and a <code>real</code> as input, right? Careful observation tells us that even though such a polymorph exists (see the last two type lists), such a polymorph also has constraints on the type of <code>out</code>. In particular, the element-type of <code>out</code> must match the element type of <code>x</code> or <code>y</code>, or in our case, the <code>sum</code>. In fact, the element-type of <code>sum</code> if it happens to be an <code>nu:array</code> is also determined by the element-type of the input <code>array-like</code>.</p>
-<ol>
-<li><strong>divide:</strong> We know that the second argument to <code>divide</code> will always be a <code>real</code>, and as such broadcasting cannot be avoided. However, <code>divide</code> accepts an <code>out</code> argument, and we would like to avoid runtime allocation of <code>out</code>. But, while supplying <code>out</code> we would want to check if or not <code>sum</code> is a real, because if <code>sum</code> is a real, then both <code>sum</code> and <code>number-of-elements</code> are real, and then we do not need to supply <code>out</code>. The following is our modified function then. Let's try to compile with <code>(optimize speed)</code> to see what notes are emitted. </li>
-</ol>
-<pre><code class="language-lisp">(defpolymorph nu:mean ((array-like nu:array) &amp;key out axes keep-dims) t
-  (let* ((sum (nu:sum array-like :out out :axes axes :keep-dims keep-dims))
-         (number-of-elements
-           (etypecase axes
-             (null (array-total-size array-like))
-             (integer (nu:shape array-like axes))
-             (list (loop :for d :in (narray-dimensions array-like)
-                         :for i :from 0
-                         :with number-of-elements := 1
-                         :if (member i axes)
-                           :do (setf number-of-elements (* number-of-elements d))
-                         :finally (return number-of-elements))))))
-    (declare (type real number-of-elements))
-    (if (realp sum)
-        (locally (declare (type real sum))
-          (nu:divide sum number-of-elements))
-        (locally (declare (type nu:array sum))
-          (nu:divide sum number-of-elements :out out :broadcast t)))))
-</code></pre>
-<pre><code class="language-lisp">(defun mean-caller (x)
-  (declare (optimize speed))
-  (nu:mean x))
-</code></pre>
-<p>The crucial note this emits is:</p>
-<pre><code>    Type of
-      X
-    could not be determined
-</code></pre>
-<p>So, we specify the type of <code>x</code>:</p>
-<pre><code>(defun mean-caller (x)
-  (declare (optimize speed)
-           (type (simple-array single-float) x))
-  (nu:mean x))
-</code></pre>
-<p>This gets us more information.</p>
-<pre><code class="language-lisp">(defpolymorph nu:mean ((array-like nu:array) &amp;key out axes keep-dims) t
-  (let* ((sum (nu:sum array-like :out out :axes axes :keep-dims keep-dims))
-         (number-of-elements
-           (etypecase axes
-             (null (array-total-size array-like))
-             (integer (nu:shape array-like axes))
-             (list (loop :for d :in (narray-dimensions array-like)
-                         :for i :from 0
-                         :with number-of-elements := 1
-                         :if (member i axes)
-                           :do (setf number-of-elements (* number-of-elements d))
-                         :finally (return number-of-elements))))))
-    (declare (type real number-of-elements))
-    (nu:divide sum number-of-elements :out out)))
-</code></pre>
-<h3 id="interfacing-with-magicl">Interfacing with magicl</h3>
+<p>Some overhead of the computation indeed stems from the conversion of single-float to double-float and back again; however, even if we stick to double-float, there is a difference of about 10x. But that's also the point, if an application wants performance over accuracy, they should not be forced to look beyond lisp.</p>
+<h2 id="what-numericalsdense-numericals-do-not-intend-to-provide">What numericals/dense-numericals do not intend to provide?</h2>
+<p><code>numericals</code> / <code>dense-numericals</code> do not intend to offer a one-stop solution to the numerical computation ecosystem in common lisp. Even planning to do so is delusionary and should be considered a severe case of NIH syndrome. To that extent, we widely adopt:</p>
+<ul>
+<li><a href="https://github.com/digikar99/bmas">BMAS</a> backed by <a href="https://sleef.org/">SLEEF</a>,</li>
+<li>and more recently, <a href="https://eigen.tuxfamily.org/">Eigen</a> backed by <a href="https://www.netlib.org/blas/">BLAS</a> and <a href="https://www.netlib.org/lapack/">LAPACK</a>, as well as <a href="http://common-lisp.net/project/gsll/">gsll</a>.</li>
+</ul>
+<p>This is further coupled with multithreading using <a href="https://lparallel.org/">lparallel</a> and the C-library builtin <a href="https://www.openmp.org/">OpenMP</a>.</p>
+<p>As further testament to the <em>profoundly found elsewhere</em> attitude adopted here, we have</p>
+<ul>
+<li><code>numericals</code> working with <code>cl:array</code> that can be used in conjunction with other libraries</li>
+<li>two systems <code>numericals/magicl</code> and <code>dense-numericals/magicl</code> are provided that are essentially wrappers around <a href="https://github.com/quil-lang/magicl">magicl</a></li>
+</ul>
+<p>Thus, we intend to provide facilities for writing fast code fast, but at the same time, we want to promote the use of existing facilities wherever appropriate.</p>
+<h2 id="where-next">Where next?</h2>
+<ul>
+<li><a href="/install">Install it</a>,</li>
+<li><a href="/current-state">Checkout the current state of numericals/dense-numericals</a>,</li>
+<li>Or visit the <a href="/api">API reference</a></li>
+<li><a href="/old-index.html">Old documentation page</a></li>
+</ul>
+<h2 id="acknowledgements">Acknowledgements</h2>
+<ul>
+<li>Everyone who has contributed to SBCL.</li>
+<li><a href="https://www.reddit.com/user/love5an/">u/love5an</a> and <a href="https://www.reddit.com/user/neil-lindquist/">u/neil-lindquist</a> for the required hand-holding and the <a href="https://gist.github.com/Lovesan/660866b96a2632b900359333a251cc1c">gist</a>.</li>
+<li>Paul Khuong for <a href="https://pvk.ca/Blog/2013/06/05/fresh-in-sbcl-1-dot-1-8-sse-intrinsics/">some</a> <a href="https://pvk.ca/Blog/2014/08/16/how-to-define-new-intrinsics-in-sbcl/">blog posts</a>.</li>
+<li><a href="https://github.com/guicho271828">guicho271828</a> for <a href="https://github.com/guicho271828/sbcl-wiki/wiki">SBCL Wiki</a> as well as <a href="https://github.com/numcl/numcl">numcl</a>.</li>
+<li>All the <a href="https://github.com/shibatch/sleef">SLEEF</a> contributors</li>
+<li>All the contributors of <a href="https://github.com/rpav/c2ffi/">c2ffi</a> and <a href="https://github.com/rpav/cl-autowrap">cl-autowrap</a></li>
+<li><a href="https://www.reddit.com/r/lisp/comments/wei81o/comment/iitttgb/?utm_source=share&amp;utm_medium=web2x&amp;context=3">u/moon-chilled's sassy comment</a> (Is that the term?)</li>
+<li>It's possible that I could have forgotten to mention somebody - so... yeah... happy number crunching!</li>
+</ul>
               
             </div>
           </div><footer>
@@ -575,6 +333,8 @@ IMPL&gt; (nu:mean '((1 2 3) (4 5 6)) :keep-dims t)
     
     
     
+      <span><a href="install/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
   </span>
 </div>
     <script>var base_url = '.';</script>
@@ -592,5 +352,5 @@ IMPL&gt; (nu:mean '((1 2 3) (4 5 6)) :keep-dims t)
 
 <!--
 MkDocs version : 1.4.2
-Build Date UTC : 2023-06-17 07:40:45.128727+00:00
+Build Date UTC : 2023-06-17 07:44:58.664250+00:00
 -->
