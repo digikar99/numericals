@@ -5,5 +5,6 @@
   :depends-on ("alexandria"
                "fiveam"
                "cl-form-types"
+               "cffi"
                "polymorphic-functions")
   :components ((:file "common")))
