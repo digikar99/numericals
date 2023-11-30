@@ -1,6 +1,8 @@
-
 (defpackage :numericals.common
-  (:use :cl :alexandria :polymorphic-functions)
+  (:use :peltadot)
+  (:import-from #:alexandria
+                #:switch
+                #:eswitch)
   (:export #:compiler-in-package
            #:*compiler-package*
 

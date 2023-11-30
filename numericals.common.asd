@@ -6,5 +6,5 @@
                "fiveam"
                "cl-form-types"
                "cffi"
-               "polymorphic-functions")
+               "peltadot")
   :components ((:file "common")))

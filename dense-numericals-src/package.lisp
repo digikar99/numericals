@@ -21,8 +21,7 @@
   (:use)
   (:documentation "Depends on foreign-functions")
   (:mix :dense-numericals-lite)
-  (:import-from :extensible-optimizing-coerce
-                #:coerce)
+  (:import-from :peltadot #:coerce)
   (:reexport :dense-numericals-lite)
   (:export #:astype
            #:fill
@@ -170,27 +169,9 @@
    #:poisson))
 
 (uiop:define-package :dense-numericals.impl
-  #+extensible-compound-types
-  (:mix :dense-arrays-plus-lite :extensible-compound-types-cl :cl :alexandria :iterate)
-  #-extensible-compound-types
-  (:mix :dense-arrays-plus-lite :cl :alexandria :iterate)
+  (:mix :dense-arrays-plus-lite :iterate :peltadot :alexandria)
   (:use :numericals.common :abstract-arrays)
-  (:import-from :extensible-compound-types-cl
-                #:imlet)
-  (:import-from :polymorphic-functions
-                :define-polymorphic-function
-                :undefine-polymorphic-function
-                :defpolymorph
-                :suboptimal-polymorph-note
-                :env
-                :optim-speed
-                :optim-debug
-                :defpolymorph-compiler-macro
-                #:pflet
-                #:pflet*
-                #:traverse-tree
-                #:cl-type-specifier-p)
-  (:import-from :cl-form-types
+  (:import-from :peltadot/form-types
                 #:constant-form-value)
   (:import-from :dense-arrays
                 #:dimensions->strides
@@ -258,9 +239,13 @@
 
 ;; FIXME: Avoid TPLN
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (trivial-package-local-nicknames:add-package-local-nickname
+   :polymorphic-functions :peltadot/polymorphic-functions)
+  (trivial-package-local-nicknames:add-package-local-nickname
+   :cl-form-types :peltadot/form-types)
   (trivial-package-local-nicknames:add-package-local-nickname :nu :dense-numericals)
-  (trivial-package-local-nicknames:add-package-local-nickname :rand
-                                                              :dense-numericals.random)
+  (trivial-package-local-nicknames:add-package-local-nickname
+   :rand :dense-numericals.random)
   (trivial-package-local-nicknames:add-package-local-nickname :la :dense-numericals.linalg)
   )
 

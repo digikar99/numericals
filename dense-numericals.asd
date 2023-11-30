@@ -5,23 +5,22 @@
   :license "MIT"
   :author "Shubhamkar B. Ayare (shubhamayare@yahoo.co.in)"
   :depends-on ("numericals.common"
-               "dense-arrays-plus-lite"
-               "bmas"
-               "cl-autowrap"
-               "ceigen-lite"
+
                "alexandria"
-               "iterate"
-               "uiop"
+               "bmas"
+               "ceigen-lite"
                "cffi"
-               "gsll"
-               "extensible-compound-types-cl"
+               "cl-autowrap"
+               "dense-arrays-plus-lite"
                "fiveam"
+               "gsll"
+               "iterate"
                "lparallel"
+               "peltadot"
                "policy-cond"
-               "polymorphic-functions"
                "swank"
-               "extensible-optimizing-coerce"
-               "trivial-package-local-nicknames")
+               "trivial-package-local-nicknames"
+               "uiop")
   ;; TODO: Use CFFI-GROVEL or something to manage shared library / c files
   :components ((:file "package")
                (:file "utils"                 :depends-on ("package"))

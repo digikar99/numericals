@@ -2,7 +2,8 @@
 
 (defpackage :numericals
   (:use)
-  (:import-from :extensible-optimizing-coerce #:coerce)
+  (:documentation "Vectorized basic math functionality for CL:ARRAY")
+  (:import-from :peltadot #:coerce)
   (:import-from :cl
                 #:aref
                 #:array-rank
@@ -192,6 +193,7 @@
 
 (defpackage :numericals.random
   (:use)
+  (:documentation "Contains functions that provide arrays of random numbers sampled from various distributions")
   (:export ;; real / float types
    #:gaussian
    #:normal
@@ -255,16 +257,8 @@
            #:axpy))
 
 (uiop:define-package :numericals.impl
-  #-extensible-compound-types
-  (:mix :cl :alexandria :iterate :introspect-environment
-        :polymorphic-functions)
-  #+extensible-compound-types
-  (:mix :extensible-compound-types-cl :cl :alexandria :iterate :introspect-environment
-   :polymorphic-functions)
-  (:import-from :extensible-compound-types.impl
-                #:with-eval-always)
-  (:import-from :extensible-compound-types-cl
-                #:imlet)
+  (:mix :iterate :peltadot :alexandria :introspect-environment)
+  (:use)
   (:import-from :numericals
                 #:maybe-form-not-constant-error
                 #:*type*
@@ -275,12 +269,7 @@
                 #:type-min
                 #:type-max
                 #:inline-or-funcall
-                #:fref)
-  (:import-from :polymorphic-functions
-                #:optim-speed
-                #:env
-                #:traverse-tree
-                #:cl-type-specifier-p))
+                #:fref))
 
 
 (cl:in-package :numericals.impl)
@@ -292,6 +281,8 @@
 
 ;; FIXME: Avoid TPLN
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (trivial-package-local-nicknames:add-package-local-nickname
+   :polymorphic-functions :peltadot/polymorphic-functions)
   (trivial-package-local-nicknames:add-package-local-nickname :nu :numericals)
   (trivial-package-local-nicknames:add-package-local-nickname :rand :numericals.random)
   (trivial-package-local-nicknames:add-package-local-nickname :la :numericals.linalg))
@@ -299,31 +290,9 @@
 (5am:def-suite :numericals)
 
 (defun type-parameter-p (symbol) (member symbol '(<type> <m> <n> <k>)))
-(pushnew 'type-parameter-p polymorphic-functions:*parametric-type-symbol-predicates*)
+(pushnew 'type-parameter-p *parametric-type-symbol-predicates*)
 
 (setq numericals.common:*compiler-package* :numericals.impl
       numericals.common:*suite-name* :numericals)
 
 (5am:def-suite nu::array :in :numericals)
-
-#-extensible-compound-types
-(progn
-
-  (pushnew (cons (cons `(and (eql :auto)
-                             (polymorphic-functions.extended-types:subtypep real))
-                       nil)
-                 t)
-           polymorphic-functions.extended-types:*subtypep-alist*
-           :test #'equal)
-
-  (pushnew (cons (cons `(polymorphic-functions.extended-types:subtypep real)
-                       `(eql :auto))
-                 nil)
-           polymorphic-functions.extended-types:*subtypep-alist*
-           :test #'equal)
-
-  (pushnew (cons (cons `(eql :auto)
-                       `(polymorphic-functions.extended-types:subtypep real))
-                 nil)
-           polymorphic-functions.extended-types:*subtypep-alist*
-           :test #'equal))

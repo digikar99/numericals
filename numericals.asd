@@ -5,27 +5,24 @@
   :license "MIT"
   :author "Shubhamkar B. Ayare (shubhamayare@yahoo.co.in)"
   :depends-on ("numericals.common"
-               "polymorphic-functions"
-               "cl-form-types"
-               "compiler-macro-notes"
-               "ctype"
+
+               "alexandria"
                "bmas"
                "ceigen-lite"
-               "gsll"
-               "extensible-compound-types-cl"
-               "fiveam"
-               ;; #+sbcl "numericals/sbcl"
-               "alexandria"
-               "iterate"
                "cffi"
+               "cl-form-types"
+               "compiler-macro-notes"
+               "fiveam"
+               "gsll"
+               "introspect-environment"
+               "iterate"
                "lparallel"
+               "peltadot"
                "policy-cond"
                "specialized-function"
                "swank"
-               "extensible-optimizing-coerce"
-               "trivial-types"
                "trivial-package-local-nicknames"
-               "introspect-environment")
+               "trivial-types")
   :components ((:file "package")
                ;; FIXME: Simplify primitives
                (:file "utils"                 :depends-on ("package"))
@@ -106,7 +103,8 @@
                                (:file "lu")
                                (:file "svd")
                                (:file "cholesky")
-                               (:file "eig")))))
+                               (:file "eig")))
+                 ))
                (:module "random"  :depends-on ("translations"
                                                "ptr-iterate-but-inner"
                                                "primitives")
