@@ -155,31 +155,6 @@ can be helpful to locate bugs.")
 
 ;;; Below functions are taken from DENSE-ARRAYS-PLUS-LITE
 
-(defun dimensions (array-like)
-  "Consequences of ARRAY-LIKE having elements of different dimensions is undefined."
-  (typecase array-like
-    (string      nil)
-    (sequence    (let ((len (length array-like)))
-                   (cons len
-                         (when (> len 0) (dimensions (elt array-like 0))))))
-    (cl:array    (cl:array-dimensions array-like))
-    (t           ())))
-
-(defun element-type (array-like)
-  "Consequences of ARRAY-LIKE having elements of different element-type is undefined."
-  (typecase array-like
-    (string      t)
-    (sequence    (if (< 0 (length array-like))
-                     (loop :for i :from 1 :below (length array-like)
-                           :with max-type := (element-type (elt array-like 0))
-                           :do (setq max-type
-                                     (max-type max-type
-                                               (element-type (elt array-like i))))
-                           :finally (return max-type))
-                     'null))
-    (cl:array    (cl:array-element-type array-like))
-    (t           (type-of array-like))))
-
 (defun max-type (type-1 type-2)
   (cond ((subtypep type-1 type-2)
          type-2)
