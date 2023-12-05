@@ -9,17 +9,17 @@
   (declare (type simple-array a out)
            (optimize speed))
   (let ((rank (nu:array-rank a)))
-    (and (= rank (nu:array-rank out))
+    (and (cl:= rank (nu:array-rank out))
          (if (< rank 2)
              nil
              (and (equal (narray-dimensions a)
                          (narray-dimensions out))
-                  (= (array-dimension a (- rank 1))
-                     (array-dimension a (- rank 2))))))))
+                  (cl:= (array-dimension a (- rank 1))
+                        (array-dimension a (- rank 2))))))))
 
 (defpolymorph la:inv ((a (simple-array <type>)) &key ((out (simple-array <type>))))
     (simple-array <type>)
-  (policy-cond:with-expectations (= 0 safety)
+  (policy-cond:with-expectations (cl:= 0 safety)
       ((assertion (out-shape-compatible-for-inv-p a out)
                   ()
                   "Cannot compute inverse of array of shape ~A~%into array of shape ~A."
