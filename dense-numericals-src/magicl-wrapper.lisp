@@ -134,7 +134,7 @@ Converts the results back to STANDARD-DENSE-ARRAY"
                  :for (arg . rest) := rem-arguments
                  :if (cl:typep arg 'standard-dense-array)
                    :do (setf (first rem-arguments)
-                             (as-magicl-tensor arg :copy nil))
+                             (to-magicl-tensor arg :copy nil))
                  :finally (return arguments)))))
 
 (defun magicl-call-form-from-lambda-list (magicl-name lambda-list array-parameters)
