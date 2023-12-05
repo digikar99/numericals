@@ -66,7 +66,7 @@
                  ;; (print (list n in-size in-dims out-size out-dims))
                  (if (< out-size n)
                      (loop :repeat out-size
-                           :do (locally (declare (sb-ext:muffle-conditions style-warning))
+                           :do (locally (declare (#+sbcl sb-ext:muffle-conditions style-warning))
                                  (funcall #'(setf fref)
                                           (funcall c-name-sum n in-ptr stride)
                                           out-ptr

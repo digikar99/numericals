@@ -80,7 +80,7 @@
                    (declare (type (unsigned-byte 32) n out-size))
                    (if (< out-size n)
                        (loop :repeat out-size
-                             :do (locally (declare (sb-ext:muffle-conditions style-warning))
+                             :do (locally (declare (#+sbcl sb-ext:muffle-conditions style-warning))
                                    (funcall #'(setf fref)
                                             (funcall c-name-sum n in-ptr stride)
                                             out-ptr
