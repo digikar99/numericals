@@ -16,7 +16,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-constant +one-arg-fn-float-doc+
     "
-These functions have a single array as input and a single array as output.
+This function has a single array as input and a single array as output.
 If the output array is not supplied, its element-type is given by *DEFAULT-FLOAT-FORMAT*
 
 For large arrays, you should be happy without any declarations. You can
@@ -393,18 +393,24 @@ TODO: Provide more details
 (macrolet ((def (name
                  (single-float-error)
                  (double-float-error))
-             (eval `(define-polymorphic-function ,name (value &rest args)
-                      :overwrite t
-                      :documentation +one-arg-fn-float-doc+))
-             `(progn
-                (define-polymorphic-function ,name (value &rest args))
-                (defpolymorph ,name (x &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
-                  (declare (ignore out))
-                  (one-arg-fn/float ',name x :broadcast broadcast))
-                (defpolymorph ,name (x &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
-                  (one-arg-fn/float ',name x :out out :broadcast broadcast))
-                (define-numericals-one-arg-test ,name nu::array
-                    (,single-float-error) (,double-float-error)))))
+             (let ((doc (uiop:strcat
+                         (documentation
+                          (find-symbol (symbol-name name) :cl)
+                          'cl:function)
+                         #\newline
+                         +one-arg-fn-float-doc+)))
+               (eval `(define-polymorphic-function ,name (value &rest args)
+                        :overwrite t
+                        :documentation ,doc))
+               `(progn
+                  (define-polymorphic-function ,name (value &rest args))
+                  (defpolymorph ,name (x &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
+                    (declare (ignore out))
+                    (one-arg-fn/float ',name x :broadcast broadcast))
+                  (defpolymorph ,name (x &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
+                    (one-arg-fn/float ',name x :out out :broadcast broadcast))
+                  (define-numericals-one-arg-test ,name nu::array
+                      (,single-float-error) (,double-float-error))))))
   (def nu:sqrt      (2f-7)  (1d-15))
   (def nu:abs       (2f-7)  (1d-15))
   (def nu:fround    (0.0f0) (0.0d0))
