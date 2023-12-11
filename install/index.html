@@ -8,7 +8,7 @@
     <title>Installation - (dense-)numericals</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="../extra.css" rel="stylesheet" />
     
       <script>
@@ -18,13 +18,12 @@
         var mkdocs_page_url = null;
       </script>
     
-    <script src="../js/jquery-3.6.0.min.js" defer></script>
     <!--[if lt IE 9]>
       <script src="../js/html5shiv.min.js"></script>
     <![endif]-->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/lisp.min.js"></script>
-      <script>hljs.initHighlightingOnLoad();</script> 
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/lisp.min.js"></script>
+      <script>hljs.highlightAll();</script> 
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -36,7 +35,7 @@
           <a href=".." class="icon icon-home"> (dense-)numericals
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
-      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
   </form>
 </div>
       </div>
@@ -52,8 +51,6 @@
     <li class="toctree-l2"><a class="reference internal" href="#using-quicklisp">Using quicklisp</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#the-latest-from-github-and-download-dependencies">The latest from github and download-dependencies</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#using-extensible-compound-types">Using extensible-compound-types</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#using-ultralisp">Using ultralisp</a>
     </li>
@@ -87,8 +84,8 @@
       <div class="wy-nav-content">
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href=".." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-      <li>Installation</li>
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -139,9 +136,6 @@ git clone https://github.com/digikar99/numericals
 ;;; OR
 (ql:quickload &quot;dense-numericals&quot;)
 </code></pre>
-<h2 id="using-extensible-compound-types">Using extensible-compound-types</h2>
-<p>If you are using <code>numericals</code>, you do not need to look into <a href="https://github.com/digikar99/extensible-compound-types">extensible-compound-types</a>.</p>
-<p>TODO: What to do if you are using <code>dense-numericals</code>?</p>
 <h2 id="using-ultralisp">Using ultralisp</h2>
 <p><a href="https://github.com/digikar99/polymorphic-functions#getting-it-from-ultralisp">Fetch from this dist of ultralisp</a>. Once <code>(ql:quickload "numericals")</code> or <code>(ql:quickload "dense-numericals")</code> is successful; use inside your own package using <code>:mix</code> option of <code>uiop:define-package</code> (see above discussion), or <a href="https://common-lisp-libraries.readthedocs.io/#libraries">package-local-nicknames</a>.</p>
 <h2 id="using-clpm">Using clpm</h2>
@@ -177,14 +171,15 @@ git clone https://github.com/digikar99/numericals
     
   </span>
 </div>
-    <script>var base_url = '..';</script>
-    <script src="../js/theme_extra.js" defer></script>
-    <script src="../js/theme.js" defer></script>
-      <script src="../search/main.js" defer></script>
-    <script defer>
-        window.onload = function () {
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
             SphinxRtdTheme.Navigation.enable(false);
-        };
+        });
     </script>
 
 </body>

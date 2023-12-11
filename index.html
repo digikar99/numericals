@@ -8,7 +8,7 @@
     <title>(dense-)numericals</title>
     <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/theme_extra.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="extra.css" rel="stylesheet" />
     
       <script>
@@ -18,13 +18,12 @@
         var mkdocs_page_url = null;
       </script>
     
-    <script src="js/jquery-3.6.0.min.js" defer></script>
     <!--[if lt IE 9]>
       <script src="js/html5shiv.min.js"></script>
     <![endif]-->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/lisp.min.js"></script>
-      <script>hljs.initHighlightingOnLoad();</script> 
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/lisp.min.js"></script>
+      <script>hljs.highlightAll();</script> 
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -36,7 +35,7 @@
           <a href="." class="icon icon-home"> (dense-)numericals
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
-      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
   </form>
 </div>
       </div>
@@ -89,8 +88,8 @@
       <div class="wy-nav-content">
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href="." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-      <li>Introduction</li>
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Introduction</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -181,11 +180,11 @@
         (time (loop repeat 1000 do
           (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  0.296 seconds of real time
-  0.292903 seconds of total run time (0.292903 user, 0.000000 system)
-  98.99% CPU
-  646,713,220 processor cycles
-  32,512 bytes consed
+  0.252 seconds of real time
+  0.252051 seconds of total run time (0.252051 user, 0.000000 system)
+  100.00% CPU
+  556,048,756 processor cycles
+  32,752 bytes consed
 
 NIL
 IMPL&gt; (let ((a (nu:rand 1000 :type 'single-float))
@@ -195,11 +194,11 @@ IMPL&gt; (let ((a (nu:rand 1000 :type 'single-float))
         (time (loop repeat 100000 do
           (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  0.288 seconds of real time
-  0.290469 seconds of total run time (0.290469 user, 0.000000 system)
-  100.69% CPU
-  641,386,456 processor cycles
-  3,186,176 bytes consed
+  0.256 seconds of real time
+  0.258519 seconds of total run time (0.258331 user, 0.000188 system)
+  101.17% CPU
+  570,228,290 processor cycles
+  3,176,944 bytes consed
 
 NIL
 IMPL&gt; (let ((a (nu:rand 10 :type 'single-float))
@@ -209,12 +208,13 @@ IMPL&gt; (let ((a (nu:rand 10 :type 'single-float))
         (time (loop repeat 10000000 do
           (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  1.579 seconds of real time
-  1.580698 seconds of total run time (1.580698 user, 0.000000 system)
-  [ Run times consist of 0.017 seconds GC time, and 1.564 seconds non-GC time. ]
-  100.13% CPU
-  3,487,968,606 processor cycles
-  320,015,504 bytes consed
+  1.820 seconds of real time
+  1.822983 seconds of total run time (1.822983 user, 0.000000 system)
+  [ Real times consist of 0.040 seconds GC time, and 1.780 seconds non-GC time. ]
+  [ Run times consist of 0.038 seconds GC time, and 1.785 seconds non-GC time. ]
+  100.16% CPU
+  4,022,371,122 processor cycles
+  319,987,040 bytes consed
 
 NIL
 </code></pre>
@@ -252,16 +252,17 @@ IMPL&gt; (let ((a (nu:rand 10 :type 'single-float))
         (time (loop repeat 10000000 do
           (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  5.343 seconds of real time
-  5.349964 seconds of total run time (5.346585 user, 0.003379 system)
-  [ Run times consist of 0.049 seconds GC time, and 5.301 seconds non-GC time. ]
-  100.13% CPU
-  11,804,640,438 processor cycles
-  959,968,016 bytes consed
+  7.144 seconds of real time
+  7.145966 seconds of total run time (7.142114 user, 0.003852 system)
+  [ Real times consist of 0.076 seconds GC time, and 7.068 seconds non-GC time. ]
+  [ Run times consist of 0.078 seconds GC time, and 7.068 seconds non-GC time. ]
+  100.03% CPU
+  15,773,699,348 processor cycles
+  959,986,352 bytes consed
 
 NIL
 </code></pre>
-<p>This may or may not matter for most use cases. But when it does matter, a naive lisp implementation using generic functions stops being as useful, and one is either forced to reimplement the lisp code to suit their needs or move to a different language altogether which handles this well.</p>
+<p>This may or may not matter for most use cases. But when it does matter, a naive lisp implementation using generic functions stops being as useful. Then, one is either forced to reimplement the lisp code to suit their needs or move to a different language altogether which handles this.</p>
 <p>Thus, numericals and dense-numericals intend to provide a solution to this separation between "write code fast" and "write fast code".</p>
 <p>PS: The above <code>BMAS_ssin</code> foreign function is built over <a href="https://sleef.org/">SLEEF</a> and uses SIMD to compute the sine. The equivalent SBCL non-SIMD equivalent is about 30 times slower:</p>
 <pre><code class="language-lisp">IMPL&gt; (let ((a (nu:rand 100000 :type 'single-float :max 1.0))
@@ -272,10 +273,10 @@ NIL
           (loop for i below 100000 do
             (setf (row-major-aref b i) (sin (row-major-aref a i)))))))
 Evaluation took:
-  2.495 seconds of real time
-  2.493383 seconds of total run time (2.493383 user, 0.000000 system)
-  99.92% CPU
-  5,505,542,370 processor cycles
+  5.576 seconds of real time
+  5.579197 seconds of total run time (5.575260 user, 0.003937 system)
+  100.05% CPU
+  12,320,119,856 processor cycles
   0 bytes consed
 
 NIL
@@ -341,20 +342,21 @@ NIL
     
   </span>
 </div>
-    <script>var base_url = '.';</script>
-    <script src="js/theme_extra.js" defer></script>
-    <script src="js/theme.js" defer></script>
-      <script src="search/main.js" defer></script>
-    <script defer>
-        window.onload = function () {
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
             SphinxRtdTheme.Navigation.enable(false);
-        };
+        });
     </script>
 
 </body>
 </html>
 
 <!--
-MkDocs version : 1.4.2
-Build Date UTC : 2023-06-17 07:49:52.124339+00:00
+MkDocs version : 1.5.3
+Build Date UTC : 2023-12-11 19:05:37.832386+00:00
 -->
