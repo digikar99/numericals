@@ -25,10 +25,6 @@ Equivalent packages are provided by the `(asdf:load-system "dense-numericals")` 
 
 Tests for various functions are littered through all the files in the form of `(5am:def-test ...)` forms. Once the system is loaded, run `(asdf:test-system "numericals")` or `(asdf:test-system "dense-numericals")` to run the tests.
 
-### dense-numericals and extensible-compound-types
-
-Using CL like specialized type declarations for `dense-arrays:array` requires the use of [extensible-compound-types](https://github.com/digikar99/extensible-compound-types) along with `(cl:pushnew :extensible-compound-types cl:*features*)` and a complete recompilation. See [installation](/install) for more details.
-
 ### magicl
 
 The following two systems provide packages for using `magicl` functions:

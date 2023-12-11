@@ -106,12 +106,12 @@ IMPL> (let ((a (nu:rand 100000 :type 'single-float))
         (time (loop repeat 1000 do
           (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  0.296 seconds of real time
-  0.292903 seconds of total run time (0.292903 user, 0.000000 system)
-  98.99% CPU
-  646,713,220 processor cycles
-  32,512 bytes consed
-  
+  0.252 seconds of real time
+  0.252051 seconds of total run time (0.252051 user, 0.000000 system)
+  100.00% CPU
+  556,048,756 processor cycles
+  32,752 bytes consed
+
 NIL
 IMPL> (let ((a (nu:rand 1000 :type 'single-float))
             (b (nu:rand 1000 :type 'single-float)))
@@ -120,11 +120,11 @@ IMPL> (let ((a (nu:rand 1000 :type 'single-float))
         (time (loop repeat 100000 do
           (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  0.288 seconds of real time
-  0.290469 seconds of total run time (0.290469 user, 0.000000 system)
-  100.69% CPU
-  641,386,456 processor cycles
-  3,186,176 bytes consed
+  0.256 seconds of real time
+  0.258519 seconds of total run time (0.258331 user, 0.000188 system)
+  101.17% CPU
+  570,228,290 processor cycles
+  3,176,944 bytes consed
   
 NIL
 IMPL> (let ((a (nu:rand 10 :type 'single-float))
@@ -134,12 +134,13 @@ IMPL> (let ((a (nu:rand 10 :type 'single-float))
         (time (loop repeat 10000000 do
           (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  1.579 seconds of real time
-  1.580698 seconds of total run time (1.580698 user, 0.000000 system)
-  [ Run times consist of 0.017 seconds GC time, and 1.564 seconds non-GC time. ]
-  100.13% CPU
-  3,487,968,606 processor cycles
-  320,015,504 bytes consed
+  1.820 seconds of real time
+  1.822983 seconds of total run time (1.822983 user, 0.000000 system)
+  [ Real times consist of 0.040 seconds GC time, and 1.780 seconds non-GC time. ]
+  [ Run times consist of 0.038 seconds GC time, and 1.785 seconds non-GC time. ]
+  100.16% CPU
+  4,022,371,122 processor cycles
+  319,987,040 bytes consed
   
 NIL
 ```
@@ -180,17 +181,18 @@ IMPL> (let ((a (nu:rand 10 :type 'single-float))
         (time (loop repeat 10000000 do
           (nu:sin a :out b :broadcast nil))))
 Evaluation took:
-  5.343 seconds of real time
-  5.349964 seconds of total run time (5.346585 user, 0.003379 system)
-  [ Run times consist of 0.049 seconds GC time, and 5.301 seconds non-GC time. ]
-  100.13% CPU
-  11,804,640,438 processor cycles
-  959,968,016 bytes consed
+  7.144 seconds of real time
+  7.145966 seconds of total run time (7.142114 user, 0.003852 system)
+  [ Real times consist of 0.076 seconds GC time, and 7.068 seconds non-GC time. ]
+  [ Run times consist of 0.078 seconds GC time, and 7.068 seconds non-GC time. ]
+  100.03% CPU
+  15,773,699,348 processor cycles
+  959,986,352 bytes consed
   
 NIL
 ```
 
-This may or may not matter for most use cases. But when it does matter, a naive lisp implementation using generic functions stops being as useful, and one is either forced to reimplement the lisp code to suit their needs or move to a different language altogether which handles this well.
+This may or may not matter for most use cases. But when it does matter, a naive lisp implementation using generic functions stops being as useful. Then, one is either forced to reimplement the lisp code to suit their needs or move to a different language altogether which handles this.
 
 Thus, numericals and dense-numericals intend to provide a solution to this separation between "write code fast" and "write fast code".
 
@@ -205,12 +207,12 @@ IMPL> (let ((a (nu:rand 100000 :type 'single-float :max 1.0))
           (loop for i below 100000 do
             (setf (row-major-aref b i) (sin (row-major-aref a i)))))))
 Evaluation took:
-  2.495 seconds of real time
-  2.493383 seconds of total run time (2.493383 user, 0.000000 system)
-  99.92% CPU
-  5,505,542,370 processor cycles
+  5.576 seconds of real time
+  5.579197 seconds of total run time (5.575260 user, 0.003937 system)
+  100.05% CPU
+  12,320,119,856 processor cycles
   0 bytes consed
-
+  
 NIL
 ```
 
@@ -249,5 +251,3 @@ Thus, we intend to provide facilities for writing fast code fast, but at the sam
 - All the contributors of [c2ffi](https://github.com/rpav/c2ffi/) and [cl-autowrap](https://github.com/rpav/cl-autowrap)
 - [u/moon-chilled's sassy comment](https://www.reddit.com/r/lisp/comments/wei81o/comment/iitttgb/?utm_source=share&utm_medium=web2x&context=3) (Is that the term?)
 - It's possible that I could have forgotten to mention somebody - so... yeah... happy number crunching!
-
-

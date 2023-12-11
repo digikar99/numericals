@@ -4,7 +4,7 @@ jobs:
 
   test:
 
-    name: ${{ matrix.library }}
+    name: ${{ matrix.library }} ${{ matrix.lisp }}
 
     strategy:
       matrix:

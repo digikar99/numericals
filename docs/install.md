@@ -64,12 +64,6 @@ Finally, you will need to instruct the quicklisp client to look into this path. 
 (ql:quickload "dense-numericals")
 ```
 
-## Using extensible-compound-types
-
-If you are using `numericals`, you do not need to look into [extensible-compound-types](https://github.com/digikar99/extensible-compound-types).
-
-TODO: What to do if you are using `dense-numericals`?
-
 ## Using ultralisp
 
 [Fetch from this dist of ultralisp](https://github.com/digikar99/polymorphic-functions#getting-it-from-ultralisp). Once `(ql:quickload "numericals")` or `(ql:quickload "dense-numericals")` is successful; use inside your own package using `:mix` option of `uiop:define-package` (see above discussion), or [package-local-nicknames](https://common-lisp-libraries.readthedocs.io/#libraries).
