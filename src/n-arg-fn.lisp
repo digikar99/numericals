@@ -29,6 +29,7 @@
                      (if (eq t default-element-type)
                          out-type
                          (max-type out-type default-element-type)))))
+             (out-type (upgraded-c-array-element-type out-type))
              (arrays
                (loop :for array-like :on array-likes
                      :do (unless (and (arrayp (first array-like))
@@ -107,6 +108,7 @@
                  (if (eq t default-element-type)
                      common-type
                      (max-type common-type default-element-type))))
+             (common-type (upgraded-c-array-element-type common-type))
              (arrays
                (loop :for array-like :on array-likes
                      :do (unless (and (arrayp (first array-like))
