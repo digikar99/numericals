@@ -243,13 +243,15 @@
          (name-form-type (cl-form-types:form-type name env)))
     (if (and (optima:match type-form-type
                ((or (list 'eql _)
-                    (list 'member _))
+                    (list 'member _)
+                    (list 'equal _))
                 t)
                (_
                 nil))
              (optima:match name-form-type
                ((or (list 'eql _)
-                    (list 'member _))
+                    (list 'member _)
+                    (list 'equal _))
                 t)
                (_
                 nil)))
@@ -297,8 +299,8 @@
     ;; TODO: Use CTYPE to normalize types?
     (if (and (listp form-type)
              (null (cddr form-type))
-             (or (eq 'eql (first form-type))
-                 (eq 'member (first form-type))))
+             (or (member (first form-type)
+                         '(eql member equal))))
         (switch ((second form-type) :test #'type=)
           ('single-float 4)
           ('double-float 8)
@@ -333,8 +335,8 @@
     ;; TODO: Use CTYPE to normalize types?
     (if (and (listp form-type)
              (null (cddr form-type))
-             (or (eq 'eql (first form-type))
-                 (eq 'member (first form-type))))
+             (or (member (first form-type)
+                         '(eql member equal))))
         (switch ((second form-type) :test #'type=)
           ('single-float :float)
           ('double-float :double)
