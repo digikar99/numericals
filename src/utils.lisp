@@ -183,16 +183,25 @@ can be helpful to locate bugs.")
         (t
          (error "Don't know how to find MAX-TYPE of ~S and ~S" type-1 type-2))))
 
+(define-constant +c-array-element-types+
+    '(single-float
+      double-float
+      (complex single-float)
+      (complex double-float)
+      (unsigned-byte 64)
+      (unsigned-byte 32)
+      (unsigned-byte 16)
+      (unsigned-byte 08)
+      (signed-byte 64)
+      (signed-byte 32)
+      (signed-byte 16)
+      (signed-byte 08))
+  :test #'equal)
+
 (defun upgraded-c-array-element-type (type)
-  (loop :for supertype :in '(single-float double-float
-                             (complex single-float) (complex double-float)
-                             (unsigned-byte 64)
-                             (unsigned-byte 32)
-                             (unsigned-byte 16)
-                             (unsigned-byte 08)
-                             (signed-byte 64)
-                             (signed-byte 32)
-                             (signed-byte 16)
-                             (signed-byte 08))
+  (loop :for ctype :in +c-array-element-types+
+        :when (type= type ctype)
+          :do (return-from upgraded-c-array-element-type type))
+  (loop :for supertype :in +c-array-element-types+
         :when (subtypep type supertype)
-          :do (return supertype)))
+        :do (return-from upgraded-c-array-element-type supertype)))
