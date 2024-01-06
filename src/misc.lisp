@@ -1,8 +1,10 @@
 (in-package :dense-numericals.impl)
 
-(defun nu:shape (array &optional axis)
-  (let ((shape (dense-arrays-plus-lite::dimensions array)))
-    (if axis
-        (nth axis shape)
-        shape)))
+(defpolymorph nu:shape (array &optional ((axis null)))
+    list
+  (dense-arrays-plus-lite::dimensions array))
+
+(defpolymorph nu:shape (array &optional ((axis integer)))
+    integer
+  (nth axis (dense-arrays-plus-lite::dimensions array)))
 
