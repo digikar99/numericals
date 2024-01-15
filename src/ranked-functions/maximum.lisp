@@ -226,7 +226,13 @@
                  ;; (print (list x y))
                  (< (/ (abs (- x y))
                        (+ (abs x) (abs y)))
-                    0.01)))))
+                    0.01))))
+         (our-maximum (array)
+           (let ((max most-negative-double-float))
+             (nu:do-arrays ((x array))
+               (if (> x max)
+                   (setq max x)))
+             max)))
     (loop :for *array-element-type* :in `(single-float
                                           double-float
                                           (signed-byte 64)
@@ -295,9 +301,19 @@
                                             :axes '(0 2)
                                             :keep-dims t)))
 
-             (let ((array (nu:rand 100)))
-               (5am:is (float-close-p (nu:maximum array)
-                                      (let ((max most-negative-double-float))
-                                        (nu:do-arrays ((x array))
-                                          (if (> x max) (setq max x)))
-                                        max)))))))
+             (loop repeat 16
+                   for size from 1000
+                   do (let* ((array
+                               (nu:rand 100
+                                        :min (cl:round
+                                              (type-min *array-element-type*)
+                                              2)
+                                        :max (cl:round
+                                              (type-max *array-element-type*)
+                                              2)))
+                             (actual-value   (nu:maximum array))
+                             (expected-value (our-maximum array)))
+                        (5am:is (float-close-p actual-value expected-value)
+                                "Test failed for array of size ~a and element type ~a ~2%obtained value ~a ~%  BUT~%expected value ~a"
+                                size *array-element-type*
+                                actual-value expected-value))))))

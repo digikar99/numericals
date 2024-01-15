@@ -227,7 +227,12 @@
                  ;; (print (list x y))
                  (< (/ (abs (- x y))
                        (+ (abs x) (abs y)))
-                    0.01)))))
+                    0.01))))
+         (our-minimum (array)
+           (let ((min most-positive-double-float))
+             (nu:do-arrays ((x array))
+               (if (< x min) (setq min x)))
+             min)))
     (loop :for *array-element-type* :in `(single-float
                                           double-float
                                           (signed-byte 64)
@@ -290,9 +295,19 @@
                                             :axes '(0 2)
                                             :keep-dims t)))
 
-             (let ((array (nu:rand 100)))
-               (5am:is (float-close-p (nu:minimum array)
-                                      (let ((min most-positive-double-float))
-                                        (nu:do-arrays ((x array))
-                                          (if (< x min) (setq min x)))
-                                        min)))))))
+             (loop repeat 16
+                   for size from 1000
+                   do (let* ((array
+                               (nu:rand 100
+                                        :min (cl:round
+                                              (type-min *array-element-type*)
+                                              2)
+                                        :max (cl:round
+                                              (type-max *array-element-type*)
+                                              2)))
+                             (actual-value   (nu:minimum array))
+                             (expected-value (our-minimum array)))
+                        (5am:is (float-close-p actual-value expected-value)
+                                "Test failed for array of size ~a and element type ~a ~2%obtained value ~a ~%  BUT~%expected value ~a"
+                                size *array-element-type*
+                                actual-value expected-value))))))
