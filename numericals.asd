@@ -10,7 +10,6 @@
                "bmas"
                "ceigen-lite"
                "cffi"
-               "cl-form-types"
                "compiler-macro-notes"
                "fiveam"
                "gsll"
