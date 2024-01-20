@@ -23,29 +23,41 @@
 (defun fixnum-sum (n x incx)
   #+sbcl
   (nth-value 0 (floor (bmas:i64sum n x incx) 2))
-  #-sbcl
-  (bmas:i64sum n x incx))
+  #+ccl
+  (bmas:i64sum n x incx)
+  #-(or ccl sbcl)
+  (error "FIXNUM-SUM does not know how to handle fixnums on ~A"
+         (lisp-implementation-type)))
 
 (declaim (inline fixnum-hmax))
 (defun fixnum-hmax (n x incx)
   #+sbcl
   (nth-value 0 (floor (bmas:i64hmax n x incx) 2))
-  #-sbcl
-  (bmas:i64hmax n x incx))
+  #+ccl
+  (bmas:i64hmax n x incx)
+  #-(or ccl sbcl)
+  (error "FIXNUM-HMAX does not know how to handle fixnums on ~A"
+         (lisp-implementation-type)))
 
 (declaim (inline fixnum-hmin))
 (defun fixnum-hmin (n x incx)
   #+sbcl
   (nth-value 0 (floor (bmas:i64hmin n x incx) 2))
-  #-sbcl
-  (bmas:i64hmax n x incx))
+  #+ccl
+  (bmas:i64hmin n x incx)
+  #-(or sbcl ccl)
+  (error "FIXNUM-HMIN does not know how to handle fixnums on ~A"
+         (lisp-implementation-type)))
 
 (declaim (inline fixnum-dot))
 (defun fixnum-dot (n x incx y incy)
   #+sbcl
   (nth-value 0 (floor (bmas:i64dot n x incx y incy) 4))
-  #-sbcl
-  (bmas:i64dot n x incx y incy))
+  #+ccl
+  (bmas:i64dot n x incx y incy)
+  #-(or sbcl ccl)
+  (error "FIXNUM-DOT does not know how to handle fixnums on ~A"
+         (lisp-implementation-type)))
 
 (declaim (type hash-table *translation-table*))
 (defparameter *translation-table*
@@ -104,10 +116,10 @@
 
      (nu:two-arg-max bmas:smax bmas:dmax cl:max bmas:i64max bmas:i32max bmas:i16max bmas:i8max
                                                 bmas:u64max bmas:u32max bmas:u16max bmas:u8max
-                                                fixnum-max)
+                                                bmas:i64max)
      (nu:two-arg-min bmas:smin bmas:dmin cl:min bmas:i64min bmas:i32min bmas:i16min bmas:i8min
                                                 bmas:u64min bmas:u32min bmas:u16min bmas:u8min
-                                                fixnum-min)
+                                                bmas:i64min)
 
      (nu:sum bmas:ssum bmas:dsum cl:+ bmas:i64sum bmas:i32sum bmas:i16sum bmas:i8sum
                                       bmas:i64sum bmas:i32sum bmas:i16sum bmas:i8sum
@@ -336,7 +348,9 @@
     ('(unsigned-byte 64) :uint64)
     ('(unsigned-byte 32) :uint32)
     ('(unsigned-byte 16) :uint16)
-    ('(unsigned-byte 08) :uint8)))
+    ('(unsigned-byte 08) :uint8)
+    #+(or sbcl ccl)
+    ('fixnum :fixnum)))
 (define-compiler-macro c-type (&whole form type-form &environment env)
   (let ((form-type (cl-form-types:form-type type-form env)))
     ;; TODO: Use CTYPE to normalize types?
@@ -355,5 +369,7 @@
           ('(unsigned-byte 32) :uint32)
           ('(unsigned-byte 16) :uint16)
           ('(unsigned-byte 08) :uint8)
+          #+(or sbcl ccl)
+          ('fixnum :fixnum)
           (t form))
         form)))

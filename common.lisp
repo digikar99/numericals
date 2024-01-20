@@ -149,6 +149,16 @@
   (def (unsigned-byte 16) :uint16)
   (def (unsigned-byte 08) :uint8))
 
+(defpolymorph fref (ptr (type (eql :fixnum))) fixnum
+  (declare (ignore type))
+  #+sbcl
+  (nth-value 0 (floor (cffi:mem-ref ptr :int64) 2))
+  #+ccl
+  (cffi:mem-ref ptr :int64)
+  #-(or sbcl ccl)
+  (error "FREF does not know how to handle fixnums on ~A"
+         (lisp-implementation-type)))
+
 (define-polymorphic-function (setf fref) (value ptr type)
   :documentation "A type-inferencing alternative to CFFI:MEM-REF"
   :overwrite t)
@@ -167,3 +177,13 @@
   (def (unsigned-byte 32) :uint32)
   (def (unsigned-byte 16) :uint16)
   (def (unsigned-byte 08) :uint8))
+
+(defpolymorph (setf fref) (value ptr (type (eql :fixnum))) fixnum
+  (declare (ignore type))
+  #+sbcl
+  (setf (cffi:mem-ref ptr :int64) (* value 2))
+  #+ccl
+  (setf (cffi:mem-ref ptr :int64) value)
+  #-(or sbcl ccl)
+  (error "FREF does not know how to handle fixnums on ~A"
+         (lisp-implementation-type)))

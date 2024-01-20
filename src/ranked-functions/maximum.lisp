@@ -243,8 +243,7 @@
                                           (unsigned-byte 32)
                                           (unsigned-byte 16)
                                           (unsigned-byte 08)
-                                          ;; fixnum
-                                          )
+                                          fixnum)
           :do
              (5am:is (= 3 (nu:maximum (nu:asarray '(1 2 3)))))
              (5am:is (= 9 (nu:maximum (nu:asarray '((1 2 3)
