@@ -56,6 +56,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#using-clpm">Using clpm</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#using-ros">Using ros</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -137,8 +139,17 @@ git clone https://github.com/digikar99/numericals
 (ql:quickload &quot;dense-numericals&quot;)
 </code></pre>
 <h2 id="using-ultralisp">Using ultralisp</h2>
-<p><a href="https://github.com/digikar99/polymorphic-functions#getting-it-from-ultralisp">Fetch from this dist of ultralisp</a>. Once <code>(ql:quickload "numericals")</code> or <code>(ql:quickload "dense-numericals")</code> is successful; use inside your own package using <code>:mix</code> option of <code>uiop:define-package</code> (see above discussion), or <a href="https://common-lisp-libraries.readthedocs.io/#libraries">package-local-nicknames</a>.</p>
+<p>If you are trying <a href="https://ultralisp.org/">Ultralisp</a> for the first time:</p>
+<pre><code class="language-lisp">(ql-dist:install-dist &quot;http://dist.ultralisp.org/&quot;
+                      :prompt nil)
+</code></pre>
+<p>If you have been using ultralisp, simply update its dist:</p>
+<pre><code class="language-lisp">(ql:update-dist &quot;ultralisp&quot;)
+</code></pre>
+<p>Once <code>(ql:quickload "numericals")</code> or <code>(ql:quickload "dense-numericals")</code> is successful; use inside your own package using <code>:mix</code> option of <code>uiop:define-package</code>, or <a href="https://common-lisp-libraries.readthedocs.io/#libraries">package-local-nicknames</a>.</p>
 <h2 id="using-clpm">Using clpm</h2>
+<p>TODO</p>
+<h2 id="using-ros">Using ros</h2>
 <p>TODO</p>
               
             </div>
