@@ -66,8 +66,25 @@ Finally, you will need to instruct the quicklisp client to look into this path. 
 
 ## Using ultralisp
 
-[Fetch from this dist of ultralisp](https://github.com/digikar99/polymorphic-functions#getting-it-from-ultralisp). Once `(ql:quickload "numericals")` or `(ql:quickload "dense-numericals")` is successful; use inside your own package using `:mix` option of `uiop:define-package` (see above discussion), or [package-local-nicknames](https://common-lisp-libraries.readthedocs.io/#libraries).
+If you are trying [Ultralisp](https://ultralisp.org/) for the first time:
+
+```lisp
+(ql-dist:install-dist "http://dist.ultralisp.org/"
+                      :prompt nil)
+```
+
+If you have been using ultralisp, simply update its dist:
+
+```lisp
+(ql:update-dist "ultralisp")
+```
+
+Once `(ql:quickload "numericals")` or `(ql:quickload "dense-numericals")` is successful; use inside your own package using `:mix` option of `uiop:define-package`, or [package-local-nicknames](https://common-lisp-libraries.readthedocs.io/#libraries).
 
 ## Using clpm
+
+TODO
+
+## Using ros
 
 TODO

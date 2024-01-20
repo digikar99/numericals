@@ -1,6 +1,6 @@
 (defsystem "dense-numericals"
   :pathname "dense-numericals-src/"
-  :version "2023.06.0" ; year, month, patch
+  :version "2024.01.0" ; year, month, patch
   :description "A high performance numerical computing library for Common Lisp (focus: basic math operations)"
   :license "MIT"
   :author "Shubhamkar B. Ayare (shubhamayare@yahoo.co.in)"
