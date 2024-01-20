@@ -119,6 +119,13 @@
                                               bmas:u64hmin bmas:u32hmin bmas:u16hmin bmas:u8hmin
                                               fixnum-hmin)
 
+     (nu:arg-maximum bmas:shimax bmas:dhimax cl:nil bmas:i64himax bmas:i32himax bmas:i16himax bmas:i8himax
+                                             bmas:u64himax bmas:u32himax bmas:u16himax bmas:u8himax
+                                             bmas:i64himax)
+     (nu:arg-minimum bmas:shimin bmas:dhimin cl:nil bmas:i64himin bmas:i32himin bmas:i16himin bmas:i8himin
+                                             bmas:u64himin bmas:u32himin bmas:u16himin bmas:u8himin
+                                             bmas:i64himin)
+
      (nu:two-arg-logand nil nil cl:logand bmas:i8and bmas:i8and bmas:i8and bmas:i8and)
      (nu:two-arg-logior nil nil cl:logior bmas:i8or  bmas:i8or  bmas:i8or  bmas:i8or)
      (nu:two-arg-logxor nil nil cl:logxor bmas:i8xor bmas:i8xor bmas:i8xor bmas:i8xor)

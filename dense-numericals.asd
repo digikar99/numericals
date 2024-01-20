@@ -70,6 +70,8 @@
                  (:file "std")
                  (:file "matmul")
                  (:file "concat")
+                 (:file "arg-maximum")
+                 (:file "arg-minimum")
                  (:module "linear-algebra"
                   :components ((:file "eigen")
                                (:file "det")

@@ -93,6 +93,8 @@ Package: `numericals` or `dense-numericals`
 - vdot
 - maximum
 - minimum
+- arg-maximum
+- arg-minimum
 
 ### Linear algebra operators
 

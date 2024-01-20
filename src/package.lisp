@@ -136,6 +136,8 @@
    #:sum
    #:maximum
    #:minimum
+   #:arg-maximum
+   #:arg-minimum
    #:vdot
    #:reshape
    #:mean

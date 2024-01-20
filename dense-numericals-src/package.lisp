@@ -97,6 +97,8 @@
            #:std
            #:maximum
            #:minimum
+           #:arg-maximum
+           #:arg-minimum
 
            #:shape
 
