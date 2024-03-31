@@ -389,6 +389,29 @@ TODO: Provide more details
   (one-arg-fn/float 'nu:atan x :out out :broadcast broadcast))
 (define-numericals-one-arg-test nu:atan nu::array (2f-7) (1d-15))
 
+(macrolet ((def (name
+                 (single-float-error)
+                 (double-float-error))
+             (let ((doc (uiop:strcat
+                         (documentation
+                          (find-symbol (symbol-name name) :cl)
+                          'cl:function)
+                         #\newline
+                         +one-arg-fn-float-doc+)))
+               (eval `(define-polymorphic-function ,name (value &key out broadcast)
+                        :overwrite t
+                        :documentation ,doc))
+               `(progn
+                  (define-polymorphic-function ,name (value &key out broadcast))
+                  (defpolymorph ,name (x &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
+                    (declare (ignore out))
+                    (one-arg-fn/float ',name x :broadcast broadcast))
+                  (defpolymorph ,name (x &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
+                    (one-arg-fn/float ',name x :out out :broadcast broadcast))
+                  (define-numericals-one-arg-test ,name nu::array
+                      (,single-float-error) (,double-float-error))))))
+  (def nu:sqrt      (2f-7)  (1d-15))
+  (def nu:abs       (2f-7)  (1d-15)))
 
 (macrolet ((def (name
                  (single-float-error)
@@ -411,8 +434,6 @@ TODO: Provide more details
                     (one-arg-fn/float ',name x :out out :broadcast broadcast))
                   (define-numericals-one-arg-test ,name nu::array
                       (,single-float-error) (,double-float-error))))))
-  (def nu:sqrt      (2f-7)  (1d-15))
-  (def nu:abs       (2f-7)  (1d-15))
   (def nu:fround    (0.0f0) (0.0d0))
   (def nu:ftruncate (0.0f0) (0.0d0))
   (def nu:ffloor    (0.0f0) (0.0d0))
