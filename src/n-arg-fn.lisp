@@ -17,7 +17,7 @@
                        ;; Set up an initial guess for OUT-TYPE
                        (values (if (arrayp (first array-likes))
                                    (array-element-type (first array-likes))
-                                   (element-type (first array-likes)))
+                                   (traits:element-type (first array-likes)))
                                (rest array-likes))
                      ;; Refine the initial guess
                      (loop :for array-like :in array-likes
@@ -25,7 +25,7 @@
                                      (max-type out-type
                                                (if (arrayp array-like)
                                                    (array-element-type array-like)
-                                                   (element-type array-like)))))
+                                                   (traits:element-type array-like)))))
                      (if (eq t default-element-type)
                          out-type
                          (max-type out-type default-element-type)))))
@@ -50,7 +50,7 @@
                       (or out (nu:zeros dimensions :type out-type)))
               (error 'incompatible-broadcast-dimensions
                      :array-likes array-likes
-                     :dimensions (mapcar #'dimensions array-likes)))))))
+                     :dimensions (mapcar #'traits:dimensions array-likes)))))))
 
 ;;; These functions cannot have (much) benefits of a compiler-macro
 ;;; until it becomes possible to tell the array dimensions at compile time.

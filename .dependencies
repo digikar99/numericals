@@ -1,4 +1,4 @@
 ("dense-arrays" :git "https://github.com/digikar99/dense-arrays")
 ("cl-bmas" :git "https://github.com/digikar99/cl-bmas")
 ("cl-ceigen-lite" :git "https://github.com/digikar99/cl-ceigen-lite")
-("extensible-optimizing-coerce" :git "https://github.com/digikar99/extensible-optimizing-coerce")
+("peltadot" :git "https://gitlab.com/digikar/peltadot")

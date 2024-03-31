@@ -245,6 +245,8 @@
    :polymorphic-functions :peltadot/polymorphic-functions)
   (trivial-package-local-nicknames:add-package-local-nickname
    :cl-form-types :peltadot/form-types)
+  (trivial-package-local-nicknames:add-package-local-nickname
+   :traits :peltadot-traits-library)
   (trivial-package-local-nicknames:add-package-local-nickname :nu :dense-numericals)
   (trivial-package-local-nicknames:add-package-local-nickname
    :rand :dense-numericals.random)
