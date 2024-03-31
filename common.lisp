@@ -58,7 +58,7 @@
     ('(unsigned-byte 16) 0)
     ('(unsigned-byte 08) 0)))
 (define-compiler-macro type-zero (&whole form type-form &environment env)
-  (let ((type-form-type (cl-form-types:nth-form-type type-form env 0 t t)))
+  (let ((type-form-type (peltadot/form-types:nth-form-type type-form env 0 t t)))
     ;; (print (cons type-form type-form-type))
     (if (and (listp type-form-type)
              (null (cddr type-form-type))
@@ -94,7 +94,7 @@
     ('(unsigned-byte 16) (1- (expt 2 16)))
     ('(unsigned-byte 08) (1- (expt 2 08)))))
 (define-compiler-macro type-max (&whole form type-form &environment env)
-  (let ((type-form-type (cl-form-types:nth-form-type type-form env 0 t t)))
+  (let ((type-form-type (peltadot/form-types:nth-form-type type-form env 0 t t)))
     (if (and (listp type-form-type)
              (null (cddr type-form-type))
              (member (first type-form-type)
@@ -120,7 +120,7 @@
     (function-designator-form
      &rest arguments
      &environment env)
-  (let ((form-type (cl-form-types:nth-form-type function-designator-form env 0 t t)))
+  (let ((form-type (peltadot/form-types:nth-form-type function-designator-form env 0 t t)))
     (if (subtypep form-type 'symbol env)
         (if (and (listp form-type)
                  (null (cddr form-type))
