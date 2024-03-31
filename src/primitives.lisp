@@ -218,7 +218,6 @@ Examples:
   (ensure-row-major-layout)
   (nu:asarray array-like :type (element-type array-like)))
 
-(define-polymorphic-function nu:copy (x &key out broadcast))
 (defpolymorph nu:asarray (array-like &key (type default-element-type)
                                      (layout :row-major))
     (values cl:array &optional)
