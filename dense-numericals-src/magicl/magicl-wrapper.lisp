@@ -1,4 +1,4 @@
-(peltadot/utils:defpackage :dense-numericals/magicl
+(uiop:define-package :dense-numericals/magicl
   (:documentation "A DENSE-NUMERICALS wrapper around MAGICL.")
   (:use)
   (:import-from :magicl
