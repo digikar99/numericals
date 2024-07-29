@@ -48,7 +48,10 @@
   (:use
    :peltadot
    :dense-numericals/basic-math/impl)
-  (:shadowing-import-from #:dense-numericals/more-utils #:fill)
+  (:import-from #:alexandria
+                #:lastcar
+                #:with-gensyms
+                #:make-gensym-list)
   (:shadowing-import-from #:dense-numericals/basic-math #:copy)
   (:local-nicknames (:nu :dense-numericals/transcendental)
                     (:form-types :peltadot/form-types)
