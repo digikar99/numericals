@@ -1,0 +1,638 @@
+(numericals/common:compiler-in-package numericals/common:*compiler-package*)
+
+;; References:
+;; - https://netlib.org/blas/blasqr.pdf
+;; - https://netlib.org/blas/#_documentation
+
+(defmacro case/string (string &body clauses)
+  `(switch (,string :test 'string=)
+     ,@clauses))
+
+(define-condition not-all-the-same-layout (error)
+  ((layouts :initarg :layouts)
+   (forms :initarg :forms))
+  (:report (lambda (c s)
+             (format s "Expected all the arguments to have the same layout, but they are:")
+             (terpri s)
+             (with-slots (layouts forms) c
+               (mapcar (lm layout form (format s "  ~S ~S~%" layout form))
+                       layouts forms)))))
+
+(defmacro define-blas-wrapper (lisp-name blas-call
+                               &key input output lisp-scalars blas-scalars documentation overwrite
+                                 constraints (binding-transformation-form `(locally :body))
+                                 (type-var nil type-var-p))
+
+  "
+BLAS-CALL should be a list with the first element denoting the base-name
+of the blas function to be called, and the rest of the variables indicating
+the call syntax
+
+INPUT and OUTPUT should each be a list with each element of the form
+  (ARRAY-VAR &KEY DIM-VARS STRIDE-VARS LD-VAR)
+If OUTPUT is NIL, then the result of the call is returned as the output.
+
+Each element of LISP-SCALARS should be a SYMBOL.
+
+Each element of BLAS-SCALARS should be either a list of the form
+  (BLAS-ARG-NAME LISP-SCALAR-FORM)
+
+Each element of CONSTRAINTS should be a form referring only to input variables.
+The form will be treated as an assertion in the appropriate lexical environment.
+
+BINDING-TRANSFORMATION-FORM should be a form with one of its nodes eq to :BODY
+:BODY would be replaced by the bindings in BLAS-SCALARS and other elements
+and the blas-call.
+
+TYPE-VAR should be a symbol, which when found in BINDING-TRANSFORMATION-FORM
+will be replaced by the appropriate ELEMENT-TYPE that the polymorph is being
+compiled for.
+"
+
+  (let* ((input-names (mapcar #'first input))
+         (output-names (mapcar #'first output))
+         (all-names (append input-names output-names))
+         (column-major-check
+           `(and ,@(loop :for name :in all-names
+                         :collect `(eq :column-major (array-layout ,name)))))
+         (row-major-check
+           `(and ,@(loop :for name :in all-names
+                         :collect `(eq :row-major (array-layout ,name)))))
+         (layout-error-form
+           `(error 'not-all-the-same-layout
+                   :forms (list ,@all-names)
+                   :layouts (mapcar #'array-layout (list ,@all-names))))
+         (element-types '(single-float double-float))
+         (blas-prefixes  '("s" "d"))
+         (base-name (first blas-call))
+         (blas-args (rest blas-call))
+         (array-pointer-unwrapper-forms
+           `(with-pointers-to-vectors-data
+                ,(loop :for name :in all-names
+                       :if (member name blas-args)
+                         :collect `(,name (array-storage ,name)))
+              ;; (print (list ,@blas-args))
+              ;; (force-output)
+              )))
+
+    (multiple-value-bind (input-names input-ranks
+                          input-simples input-destructuring-bindings
+                          out-names out-ranks out-simples out-defaults)
+
+        (let (input-names input-ranks
+              out-names out-ranks out-simples out-defaults
+              input-simples
+              input-destructuring-bindings)
+          (flet ((process-input (spec)
+                   (destructuring-bind (name &key rank dim-vars stride-vars ld-var simple)
+                       spec
+                     (push name input-names)
+                     (cond (rank
+                            (push rank input-ranks))
+                           ((zerop (length dim-vars))
+                            (push 'cl:* input-ranks))
+                           (t
+                            (push (length dim-vars) input-ranks)))
+                     (push simple input-simples)
+                     (when ld-var
+                       (push `(,ld-var (array-dimension ,name
+                                                        (ecase (array-layout ,name)
+                                                          (:row-major 1)
+                                                          (:column-major 0))))
+                             input-destructuring-bindings))
+                     (unless (every #'type-parameter-p dim-vars))
+                     (loop :for i :from 0
+                           :for d :in dim-vars
+                           :unless (assoc-value input-destructuring-bindings d)
+                             :do (push `(,d (array-dimension ,name ,i))
+                                       input-destructuring-bindings))
+                     (loop :for i :from 0
+                           :for s :in stride-vars
+                           :unless (assoc-value input-destructuring-bindings s)
+                             :do (push `(,s (array-stride ,name ,i))
+                                       input-destructuring-bindings))))
+                 (process-output (spec)
+                   (destructuring-bind (name &key rank dim-vars stride-vars ld-var simple default-form)
+                       spec
+                     (when (and (member name output-names)
+                                (not (member name input-names)))
+                       (push name out-names)
+                       (cond (rank
+                              (push rank out-ranks))
+                             ((zerop (length dim-vars))
+                              (push 'cl:* out-ranks))
+                             (t
+                              (push (length dim-vars) out-ranks)))
+                       (push simple out-simples)
+                       (push default-form out-defaults)
+                       (when ld-var
+                         (push `(,ld-var (array-dimension ,name
+                                                          (ecase (array-layout ,name)
+                                                            (:row-major 1)
+                                                            (:column-major 0))))
+                               input-destructuring-bindings))
+                       (loop :for i :from 0
+                             :for d :in dim-vars
+                             :unless (assoc-value input-destructuring-bindings d)
+                               :do (push `(,d (array-dimension ,name ,i))
+                                         input-destructuring-bindings))
+                       (loop :for i :from 0
+                             :for s :in stride-vars
+                             :unless (assoc-value input-destructuring-bindings s)
+                               :do (push `(,s (array-stride ,name ,i))
+                                         input-destructuring-bindings))))))
+            (dolist (inp input) (process-input inp))
+            (dolist (op output) (process-output op)))
+          (loop :for binding :in blas-scalars
+                :unless (assoc-value input-destructuring-bindings (first binding))
+                  :do (push binding input-destructuring-bindings))
+          (nreversef input-destructuring-bindings)
+          (values (nreverse input-names) (nreverse input-ranks) (nreverse input-simples)
+                  input-destructuring-bindings out-names out-ranks out-simples out-defaults))
+
+      (flet ((polymorph-inputs (element-type)
+               (append (mapcar (lm name rank simple-p
+                                   `(,name (,(if simple-p 'simple-array 'array)
+                                             ,element-type
+                                             ,rank)))
+                               input-names input-ranks input-simples)
+                       '(&key)
+                       lisp-scalars
+                       (mapcar (lm name rank simple-p default-form
+                                   `((,name (or (,(if simple-p 'simple-array 'array)
+                                                  ,element-type
+                                                  ,rank)
+                                                ;; TODO: Split the polymorphs into two types, or more?
+                                                null))
+                                     ,default-form))
+                               out-names out-ranks out-simples out-defaults))))
+
+        (when overwrite
+          (undefine-polymorphic-function lisp-name))
+
+        (with-gensyms (return-value order)
+          `(progn
+             (define-polymorphic-function ,lisp-name
+                 ,(append input-names '(&key) lisp-scalars out-names)
+               :documentation ,documentation :overwrite ,overwrite)
+             ;; TODO: Add polymorph for lists and general arrays
+             ,@(loop :for element-type :in element-types
+                     :for blas-prefix :in blas-prefixes
+                     :for blas-name := (or (find-symbol
+                                            (string-upcase
+                                             (concatenate 'string
+                                                          blas-prefix
+                                                          (string base-name)))
+                                            :cblas)
+                                           (find-symbol
+                                            (string-upcase
+                                             (concatenate 'string
+                                                          blas-prefix
+                                                          (string base-name)))
+                                            :lapacke))
+                     :for polymorph-input-list := (polymorph-inputs element-type)
+                     :for blapack-package := (cond ((eq (find-package :cblas)
+                                                        (symbol-package blas-name))
+                                                    :cblas)
+                                                   ((eq (find-package :lapacke)
+                                                        (symbol-package blas-name))
+                                                    :lapacke))
+                     :for body := (traverse-tree
+                                   binding-transformation-form
+                                   (lambda (node)
+                                     (cond
+                                       ((and type-var-p
+                                             (eq node type-var))
+                                        element-type)
+                                       ((eq node :body)
+                                        `(let* ,input-destructuring-bindings
+                                           (declare (inline ,blas-name))
+                                           (let ((,return-value
+                                                   ,(if (some (lm arg (eq :order arg))
+                                                              blas-args)
+                                                        `(let ((,order
+                                                                  (cond
+                                                                    (,column-major-check
+                                                                     ,(ecase blapack-package
+                                                                        (:cblas cblas:+col-major+)
+                                                                        (:lapacke
+                                                                         lapacke:+lapack-col-major+)))
+                                                                    (,row-major-check
+                                                                     ,(ecase blapack-package
+                                                                        (:cblas cblas:+row-major+)
+                                                                        (:lapacke
+                                                                         lapacke:+lapack-row-major+)))
+                                                                    (t
+                                                                     ,layout-error-form))))
+                                                           (,@array-pointer-unwrapper-forms
+                                                            (,blas-name
+                                                             ,@(loop :for arg :in blas-args
+                                                                     :if (eq :order arg)
+                                                                       :collect order
+                                                                     :else
+                                                                       :collect arg))))
+                                                        `(,@array-pointer-unwrapper-forms
+                                                          (print (,blas-name ,@blas-args))))))
+                                             (declare (ignorable ,return-value))
+                                             ,(if output-names
+                                                  `(values ,@output-names)
+                                                  return-value))))
+                                       (t
+                                        node))))
+                     :collect
+                     `(defpolymorph ,lisp-name ,polymorph-input-list t
+                        (declare (notinline nu:copy))
+                        (policy-cond:with-expectations (= 0 safety)
+                            ,(loop :for c :in constraints
+                                   :collect `(assertion ,@c))
+                          ,body)))))))))
+
+
+(define-blas-wrapper la:norm2 ("NRM2" n x incx)
+  :overwrite t
+  :input ((x :stride-vars (incx) :dim-vars (n)))
+  :output nil
+  :documentation "Calculates the euclidean norm of the vector X: returns sqrt(X'*X)")
+
+(define-blas-wrapper la:dot ("DOT" n x incx y incy)
+  :overwrite t
+  :input ((x :stride-vars (incx) :dim-vars (n))
+          (y :stride-vars (incy) :dim-vars (n)))
+  :output nil
+  :documentation "Calculates the dot product of the two vectors X and Y.")
+
+(define-blas-wrapper la:outer ("GER" :order m n alpha x incx y incy a lda)
+  :overwrite t
+  :input ((x :stride-vars (incx) :dim-vars (m))
+          (y :stride-vars (incy) :dim-vars (n)))
+  :output ((a :dim-vars (m n) :ld-var lda
+              :default-form (nu:zeros (array-dimension x 0)
+                                      (array-dimension y 0)
+                                      :type (array-element-type x))))
+  :binding-transformation-form
+  (let ((alpha (coerce 1 (array-element-type x))))
+    :body)
+  :constraints (((and (= (array-dimension x 0) (array-dimension a 0))
+                      (= (array-dimension y 0) (array-dimension a 1)))
+                 (x y a)
+                 "Expected X Y and A to have the dimensions in the form
+  X: (M)
+  Y: (N)
+  A: (M N)
+but they are
+  X: ~S
+  Y: ~S
+  Z: ~S"
+                 (narray-dimensions x) (narray-dimensions y) (narray-dimensions a)))
+  :documentation "Computes the outer product A of the vectors X and Y
+considering X as the column vector and Y as the row vector.
+
+This is the same as the matrix multiplication A = X*Y")
+
+(define-blas-wrapper la:outer ("GER" :order m n alpha x incx y incy a lda)
+  :input ((x :rank 2)
+          (y :rank 2))
+  :output ((a :dim-vars (m n) :ld-var lda
+              :default-form (nu:zeros (array-dimension x 0)
+                                      (array-dimension y 1)
+                                      :type (array-element-type x))))
+  :binding-transformation-form
+  (let ((alpha (coerce 1 (array-element-type x)))
+        (incx (array-stride x 0))
+        (incy (array-stride y 1)))
+    :body)
+  :constraints (((= 1 (array-dimension x 1)) (x) "Expected X to be a column vector")
+                ((= 1 (array-dimension y 0)) (y) "Expected Y to be a row vector")
+                ((and (= (array-dimension x 0) (array-dimension a 0))
+                      (= (array-dimension y 1) (array-dimension a 1)))
+                 (x y a)
+                 "Expected X Y and A to have the dimensions in the form
+  X: (M 1)
+  Y: (1 N)
+  A: (M N)
+but they are
+  X: ~S
+  Y: ~S
+  Z: ~S"
+                 (narray-dimensions x) (narray-dimensions y) (narray-dimensions a)))
+  :documentation "Computes the outer product A of the vectors X and Y
+considering X as the column vector and Y as the row vector.
+
+This is the same as the matrix multiplication A = X*Y")
+
+;; Always rely on col-major this function because of an apparant LAPACKE bug:
+;;   https://www.reddit.com/r/lisp/comments/y24hel/lapacke_slacpy_works_correctly_in_c_but_lapack/
+(define-blas-wrapper la:copy-matrix
+    ("LACPY" lapacke:+lapack-col-major+ uplo m n x ldx out ldo)
+  :overwrite t
+  :input  ((x   :simple t))
+  :output ((out :simple t :default-form (nu:zeros-like x)))
+  :lisp-scalars ((part :full))
+  :blas-scalars ((layout (array-layout x))
+                 (uplo (ecase part
+                         ;; ascii code for 'U': 85
+                         ;; ascii code for 'L': 76
+                         ((:ut :upper :upper-triangular)
+                          (ecase layout
+                            (:row-major 76)
+                            (:column-major 85)))
+                         ((:lt :lower :lower-triangular)
+                          (ecase layout
+                            (:row-major 85)
+                            (:column-major 76)))
+                         ((:full nil)
+                          0)))
+                 (m (ecase layout
+                      (:row-major (array-dimension x 1))
+                      (:column-major (array-dimension x 0))))
+                 (n (ecase layout
+                      (:row-major (array-dimension x 0))
+                      (:column-major (array-dimension x 1))))
+                 (ldx (ecase layout
+                        (:row-major (array-dimension x 1))
+                        (:column-major (array-dimension x 0))))
+                 (ldo (ecase layout
+                        (:row-major (array-dimension out 1))
+                        (:column-major (array-dimension out 0)))))
+  ;; :constraints ((equal (narray-dimensions x)
+  ;;                      (narray-dimensions out)))
+  :documentation "Copies PART of X into OUT.
+  If PART is :UT, :UPPER, or :UPPER-TRIANGULAR,
+    then copies over the upper triangular part of X into OUT
+  If PART is :LT, :LOWER, or :LOWER-TRIANGULAR,
+    then copies over the lower triangular part of X into OUT
+  If PART is :FULL or NIL, copies over the full matrix X into OUT")
+
+(define-blas-wrapper la:upper ("LACPY" lapacke:+lapack-col-major+ uplo m n x ldx out ldo)
+  :overwrite t
+  :input  ((x   :simple t))
+  :output ((out :simple t :default-form (nu:zeros-like x)))
+  :blas-scalars ((layout (array-layout x))
+                 (uplo ;; ascii code for 'U': 85
+                       ;; ascii code for 'L': 76
+                       (ecase layout
+                         (:row-major 76)
+                         (:column-major 85)))
+                 (m (ecase layout
+                      (:row-major (array-dimension x 1))
+                      (:column-major (array-dimension x 0))))
+                 (n (ecase layout
+                      (:row-major (array-dimension x 0))
+                      (:column-major (array-dimension x 1))))
+                 (ldx (ecase layout
+                        (:row-major (array-dimension x 1))
+                        (:column-major (array-dimension x 0))))
+                 (ldo (ecase layout
+                        (:row-major (array-dimension out 1))
+                        (:column-major (array-dimension out 0)))))
+  :documentation "Copies upper triangular part of X into OUT.")
+
+(define-blas-wrapper la:lower ("LACPY" lapacke:+lapack-col-major+ uplo m n x ldx out ldo)
+  :overwrite t
+  :input  ((x   :simple t))
+  :output ((out :simple t :default-form (nu:zeros-like x)))
+  :blas-scalars ((layout (array-layout x))
+                 (uplo ;; ascii code for 'U': 85
+                       ;; ascii code for 'L': 76
+                       (ecase layout
+                         (:row-major 85)
+                         (:column-major 76)))
+                 (m (ecase layout
+                      (:row-major (array-dimension x 1))
+                      (:column-major (array-dimension x 0))))
+                 (n (ecase layout
+                      (:row-major (array-dimension x 0))
+                      (:column-major (array-dimension x 1))))
+                 (ldx (ecase layout
+                        (:row-major (array-dimension x 1))
+                        (:column-major (array-dimension x 0))))
+                 (ldo (ecase layout
+                        (:row-major (array-dimension out 1))
+                        (:column-major (array-dimension out 0)))))
+  :documentation "Copies lower triangular part of X into OUT.")
+
+;;; TODO: We should also have a "A" and "B" parameter similar to xROTG.
+;;; But otherwise, xROTGM, xROTG, xROTM are unused here.
+(define-blas-wrapper la:rotate-2d ("ROT" n out-sx incx out-sy incy c s)
+  :overwrite t
+  :input ((sx :dim-vars (n))
+          (sy :dim-vars (n)))
+  :output ((out-sx :stride-vars (incx))
+           (out-sy :stride-vars (incy)))
+  :lisp-scalars (sin cos radians degrees)
+  :binding-transformation-form (locally
+                                   (setq out-sx (if out-sx
+                                                    (nu:copy sx :out out-sx)
+                                                    (nu:copy sx)))
+                                 (setq out-sy (if out-sy
+                                                  (nu:copy sy :out out-sy)
+                                                  (nu:copy sy)))
+                                 :body)
+  :blas-scalars ((c (cl:coerce (cond ((and cos sin (null radians) (null degrees))
+                                      cos)
+                                     ((and (null cos) (null sin) radians (null degrees))
+                                      (cl:cos radians))
+                                     ((and (null cos) (null sin) (null radians) degrees)
+                                      (cl:cos (cl:* degrees (cl:/ cl:pi 180))))
+                                     (t
+                                      (cerror "Supply the value of COS"
+                                              "Expected exactly one of both COS RADIANS DEGREES to be non-null")
+                                      (read)))
+                               (array-element-type sx)))
+                 (s (cl:coerce (cond ((and sin cos (null radians) (null degrees))
+                                      sin)
+                                     ((and (null sin) (null cos) radians (null degrees))
+                                      (cl:sin radians))
+                                     ((and (null sin) (null cos) (null radians) degrees)
+                                      (cl:sin (cl:* degrees (cl:/ cl:pi 180))))
+                                     (t
+                                      (cerror "Supply the value of SIN"
+                                              "Expected exactly one of SIN RADIANS DEGREES to be non-null")
+                                      (read)))
+                               (array-element-type sx))))
+  :documentation "Rotate the points on the 2D XY plane in clockwise direction (FIXME: double verify!)
+
+  SX: the X coordinates of the points
+  SY: the Y coordinates of the points
+  SIN: sine of the angle by which to rotate
+  COS: cosine of the angle by which to rotate
+  RADIANS: angle in radian units by which to rotate
+  DEGREES: angle in degrees by which to rotate
+
+Exactly one of both (SIN COS), or RADIANS, or DEGREES must be supplied.")
+
+(defun matmul-compatible-arrays (a b out)
+  (declare (optimize speed)
+           (type array a b out))
+  (let ((ra (array-rank a))
+        (rb (array-rank b))
+        (ro (array-rank out)))
+    (cond ((= 2 ra rb ro)
+           (let ((a0 (array-dimension a 0))
+                 (a1 (array-dimension a 1))
+                 (b0 (array-dimension b 0))
+                 (b1 (array-dimension b 1))
+                 (o0 (array-dimension out 0))
+                 (o1 (array-dimension out 1)))
+             (and (= a0 o0) (= a1 b0) (= b1 o1))))
+          ((and (= 2 ra) (= 1 rb ro))
+           (let ((a0 (array-dimension a 0))
+                 (a1 (array-dimension a 1))
+                 (b0 (array-dimension b 0))
+                 (o0 (array-dimension out 0)))
+             (and (= a0 o0) (= a1 b0))))
+          (t
+           nil))))
+
+(define-blas-wrapper la:matmul
+    ("GEMV" :order cblas:+no-trans+ m n alpha a lda b incb beta out inco)
+  :overwrite t
+  :input ((a :dim-vars (m n) :simple t :ld-var lda)
+          (b :dim-vars (n) :stride-vars (incb)))
+  :output ((out :stride-vars (inco)
+                :dim-vars (m)
+                :default-form (nu:zeros (array-dimension a 0)
+                                        :type (array-element-type a))))
+  :blas-scalars ((beta  (cl:coerce 0 (array-element-type a)))
+                 (alpha (cl:coerce 1 (array-element-type a))))
+  :constraints (((matmul-compatible-arrays a b out)))
+  :documentation "Multiplies:
+  - two matrices A and B,
+  - or, a matrix A and a vector B assumed to be a column vector")
+
+
+;;; FIXME: See matmul.lisp for the tests: does not work correctly for mixed layouts
+(define-blas-wrapper la:matmul
+    ("GEMM" :order cblas:+no-trans+ cblas:+no-trans+ m n k alpha a lda b ldb beta out ldo)
+  :input ((a :dim-vars (m k) :simple t :ld-var lda)
+          (b :dim-vars (k n) :simple t :ld-var ldb))
+  :output ((out :dim-vars (m n) :ld-var ldo
+                :default-form (nu:zeros (array-dimension (the simple-array a) 0)
+                                        (array-dimension (the simple-array b) 1)
+                                        :type (array-element-type a))))
+  :lisp-scalars ()
+  :blas-scalars ((beta  (cl:coerce 0 (array-element-type a)))
+                 (alpha (cl:coerce 1 (array-element-type a))))
+  :constraints (((matmul-compatible-arrays a b out)))
+  :documentation "Multiplies:
+  - two matrices A and B,
+  - or, a matrix A and a vector B assumed to be a column vector")
+
+(define-blas-wrapper la:solve-linear ("GESV" :order n nrhs a lda ipiv x ldb)
+  :input ((a :dim-vars (n n)    :simple t :ld-var lda)
+          (b :dim-vars (n nrhs) :simple t :ld-var ldb))
+  :output ((x :dim-vars (n nrhs) :default-form (nu:zeros-like b) :simple t))
+  :documentation "Find X as the solutions of several systems of linear equations
+given by A*X = B,
+  where, A is a N-by-N matrix
+         B is a N-by-NRHS matrix,
+  with NRHS indicating the number of systems of equations.
+"
+  ;; FIXME: Don't modify A
+  :binding-transformation-form (locally
+                                 (setq x (if x
+                                             (nu:copy b :out x)
+                                             (nu:copy b)))
+                                 (cffi:with-foreign-pointer (ipiv (cl:* 4 (array-dimension a 0)))
+                                   :body)
+                                 x))
+
+(define-blas-wrapper la:minimize-lls ("GELS" :order cblas:+no-trans+ m n nrhs a lda b ldb)
+  :input ((a :dim-vars (m n)    :simple t :ld-var lda)
+          (b :dim-vars (m nrhs) :simple t :ld-var ldb))
+  :output ((x :dim-vars (n nrhs) :default-form (nu:zeros-like b) :simple t))
+  :documentation "Find X that minimizes norm2(B - A*X)
+  where, A is a M-by-N matrix
+         B is a M-by-NRHS matrix
+  with NRHS indicating the number of systems of equations.
+
+"
+  ;; FIXME: Don't modify A
+  ;; TODO: Document better
+  :binding-transformation-form (locally
+                                   (setq x (if x
+                                               (nu:copy b :out x)
+                                               (nu:copy b)))
+                                 :body
+                                 (aref x (list 0 :end (array-dimension a 1)))))
+
+
+(define-blas-wrapper qr-v-tau ("GEQRF" :order m n atmp lda tau)
+  :overwrite t
+  :input ((a :dim-vars (m n) :simple t :ld-var lda))
+  :output ((tau :simple t :default-form (nu:zeros (min (array-dimension a 0)
+                                                       (array-dimension a 1))
+                                                  :type (array-element-type a)))
+           (v :simple t :default-form (nu:zeros (array-dimension a 0)
+                                                (min (array-dimension a 0)
+                                                     (array-dimension a 1))
+                                                :type (array-element-type a)))
+           (r :simple t :default-form (nu:zeros (min (array-dimension a 0)
+                                                     (array-dimension a 1))
+                                                (array-dimension a 1)
+                                                :type (array-element-type a))))
+  :binding-transformation-form
+  (let ((copy-a (nu:copy a)))
+    ;; supplied array A will be overwritten; so make a copy
+    (cffi:with-pointer-to-vector-data (atmp (array-storage copy-a)) ; actually make the call to GEQRF
+      :body)
+      ;; copy over the R matrix
+    (la:copy-matrix copy-a :out r :part :upper)
+    (la:copy-matrix copy-a :out v :part :lower)
+    (let ((one (coerce 1 (array-element-type a))))
+      (dotimes (i (min (array-dimension a 0) (array-dimension a 1)))
+        (funcall #'(setf nu:aref) one v i i)))
+    (values v tau r))
+  :constraints (((cl:<= (array-dimension a 1)
+                        (array-dimension a 0))))
+  :documentation "Intermediate step in the QR decomposition of A:
+  returns: the matrix V containing elementary reflectors in its columns,
+           the vector TAU containing scalar factors of the elementary reflectors,
+           the matrix R corresponding to the QR decomposition
+")
+
+(define-blas-wrapper la:qr ("ORGQR" :order m n k q lda tau)
+  :overwrite t
+  :type-var <type>
+  :input ((a :dim-vars (m n) :simple t :ld-var lda))
+  :output ((q :simple t :default-form (nu:zeros (array-dimension a 0)
+                                                (array-dimension a 1)
+                                                :type (array-element-type a))
+              :rank 2)
+           (r :simple t :default-form (nu:zeros (min (array-dimension a 0)
+                                                     (array-dimension a 1))
+                                                (array-dimension a 1)
+                                                :type (array-element-type a))
+              :rank 2))
+  :binding-transformation-form
+  (let* ((k (min (array-dimension a 0)
+                 (array-dimension a 1)))
+         (tau (nu:zeros k :type (array-element-type a))))
+    (declare (type (unsigned-byte 32) k)
+             (type (simple-array <type> 1) tau))
+    (nu:copy a :out q)
+    (multiple-value-bind (v tau r) (qr-v-tau q :r r :tau tau)
+      (declare (type (simple-array <type> 2) q v)
+               (type (simple-array <type> 1) tau)
+               (optimize speed (safety 0)))
+      (loop :for i :of-type (unsigned-byte 32) :below (array-dimension a 0)
+            :do (loop :for j :of-type (unsigned-byte 32) :below k
+                      :do (funcall #'(setf nu:aref)
+                                   (nu:aref v i j)
+                                   q i j)))
+      (with-pointers-to-vectors-data ((tau (array-storage tau)))
+        :body)))
+  :documentation "")
+
+
+#|
+
+(defpolymorph rotate-2d
+    ((sy (array single-float 1)) (sx (array single-float 1)))
+    t
+  (let ((n (array-dimension sy 0)) (incx (array-stride sy 0)))
+    (declare (inline magicl.blas-cffi:%srot))
+    (let ((return-value4837 (magicl.blas-cffi:%srot n sx incx sy incy c s)))
+      (values sx sy))))
+
+|#

@@ -1,0 +1,73 @@
+(in-package :dense-numericals/linalg)
+
+(5am:in-suite :dense-numericals)
+
+(define-polymorphic-function pinv (array-like &key out) :overwrite t
+  :documentation "Calculate the psuedo inverse of 2D matrices given by ARRAY-LIKE")
+
+(defpolymorph out-shape-compatible-p ((name (eql pinv)) a out) boolean
+  (declare (ignore name)
+           (type simple-array a out)
+           (optimize speed))
+  (let ((rank (array-rank a)))
+    (and (cl:= rank (array-rank out))
+         (if (< rank 2)
+             nil
+             (and (loop :for d1 :of-type (integer 0 #.array-dimension-limit)
+                          :in (narray-dimensions a)
+                        :for d2 :of-type (integer 0 #.array-dimension-limit)
+                          :in (narray-dimensions out)
+                        :repeat (- rank 2)
+                        :always (cl:= d1 d2))
+                  (cl:= (array-dimension a (- rank 1))
+                        (array-dimension out (- rank 2)))
+                  (cl:= (array-dimension out (- rank 1))
+                        (array-dimension a (- rank 2))))))))
+
+(defpolymorph (pinv :inline t)
+    ((a (simple-array <type>)) &key ((out (simple-array <type>))))
+    (simple-array <type>)
+  (policy-cond:with-expectations (cl:= 0 safety)
+      ((assertion (out-shape-compatible-p 'pinv a out)
+                  ()
+                  "Cannot compute psuedo inverse of array of shape ~A~%into array of shape ~A."
+                  (narray-dimensions a) (narray-dimensions out)))
+    (let* ((c-size (c-size <type>))
+           (a-layout (eigen-array-layout a))
+           (o-layout (eigen-array-layout out))
+           (rank   (array-rank a))
+           (m (array-dimension a (- rank 2)))
+           (n (array-dimension a (- rank 1)))
+           (c-name (c-name <type> 'pinv)))
+      (flet ((pinv (a-size a-ptr a-dims o-ptr o-dims)
+               (declare (ignore a-size a-dims o-dims))
+               (inline-or-funcall c-name m n a-ptr a-layout o-ptr o-layout)))
+        (with-simple-array-broadcast (pinv 2 2) (a c-size) (out c-size)))
+      out)))
+
+(defpolymorph out-shape ((name (eql pinv)) a) list
+  (declare (ignore name)
+           (type simple-array a)
+           (optimize speed))
+  (let ((rank (array-rank a)))
+    (if (< rank 2)
+        (error "Computing psuedo inverse needs a matrix of rank at least 2~%but a matrix of shape ~A with rank ~D was supplied" (narray-dimensions a) rank)
+        (nconc (subseq (narray-dimensions a) 0 (- rank 2))
+               (list (array-dimension a (- rank 1))
+                     (array-dimension a (- rank 2)))))))
+
+(defpolymorph (pinv :inline t) ((a (simple-array <type>)) &key ((out null)))
+    (or number (simple-array <type>))
+  (declare (ignore out))
+  (pflet ((out (empty (out-shape 'pinv a) :type <type>)))
+    (declare (type (simple-array <type>) out))
+    (pinv a :out out)))
+
+(defpolymorph (pinv :inline t) ((a list) &key ((out null)))
+    (or number simple-array)
+  (declare (ignore out))
+  (pinv (asarray a :type *default-float-format*)))
+
+(defpolymorph (pinv :inline t) ((a list) &key ((out (simple-array <type>))))
+    (simple-array <type>)
+  (pinv (asarray a :type <type>) :out out))

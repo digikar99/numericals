@@ -1,8 +1,10 @@
-(defpackage :numericals.common
+(defpackage :numericals/common
   (:use :peltadot)
   (:import-from #:alexandria
                 #:switch
-                #:eswitch)
+                #:eswitch
+                #:once-only
+                #:define-constant)
   (:export #:compiler-in-package
            #:*compiler-package*
 
@@ -14,9 +16,23 @@
            #:type-zero
 
            #:inline-or-funcall
-           #:fref))
+           #:fref
 
-(in-package :numericals.common)
+           #:with-pointers-to-vectors-data
+           #:with-foreign-object
+           #:with-foreign-objects
+           #:blas-trans
+           #:ccall
+           #:max-type
+           #:upgraded-c-array-element-type
+
+           #:export-all-external-symbols))
+
+(uiop:define-package :dense-numericals/common
+  (:use :numericals/common)
+  (:reexport :numericals/common))
+
+(in-package :numericals/common)
 
 (defmacro compiler-in-package (package-variable)
   `(cl:in-package ,(package-name (find-package (symbol-value package-variable)))))
@@ -187,3 +203,110 @@
   #-(or sbcl ccl)
   (error "FREF does not know how to handle fixnums on ~A"
          (lisp-implementation-type)))
+
+(defmacro with-pointers-to-vectors-data (bindings &body body)
+  (if bindings
+      `(cffi:with-pointer-to-vector-data ,(first bindings)
+         (locally (declare (cl:type cffi-sys:foreign-pointer ,(caar bindings)))
+           (with-pointers-to-vectors-data ,(rest bindings) ,@body)))
+      `(progn ,@body)))
+
+(defmacro with-foreign-object ((var type &optional (value nil valuep)) &body body)
+  "A wrapper around CFFI:WITH-FOREIGN-OBJECT with an additional VALUE option."
+  (if valuep
+      (once-only (value)
+        `(cffi:with-foreign-object (,var ,type)
+           (setf (cffi:mem-ref ,var ,type) ,value)
+           ,@body))
+      `(cffi:with-foreign-object (,var ,type)
+         ,@body)))
+
+(defmacro with-foreign-objects (bindings &body body)
+  "A wrapper around CFFI:WITH-FOREIGN-OBJECTS with an additional VALUE option."
+  (if bindings
+      `(with-foreign-object ,(first bindings)
+         (with-foreign-objects ,(rest bindings)
+           ,@body))
+      `(locally ,@body)))
+
+(declaim (inline blas-trans))
+(defun blas-trans (array &optional invertedp)
+  (declare (optimize speed)
+           (type cl:array array)
+           (ignore array))
+  (if invertedp "N" "T"))
+
+(defmacro ccall (name &rest args)
+  "Calls CFFI:FOREIGN-FUNCALL on NAME with appropriate type declarations on args."
+  `(cffi:foreign-funcall
+    ,@(loop :for arg :in args
+            :appending `(once-only (arg)
+                          ((etypecase ,arg
+                             (cffi:foreign-pointer :pointer)
+                             (single-float :float)
+                             (double-float :double))
+                           ,arg)))))
+
+
+;;; Below functions are taken from DENSE-ARRAYS-PLUS-LITE
+
+(defun max-type (type-1 type-2)
+  (cond ((subtypep type-1 type-2)
+         type-2)
+        ((subtypep type-2 type-1)
+         type-1)
+        ((or (alexandria:type= type-1 'double-float)
+             (alexandria:type= type-2 'double-float))
+         'double-float)
+        ((or (alexandria:type= type-1 'single-float)
+             (alexandria:type= type-2 'single-float))
+         'single-float)
+        ;; At this point, none of the types are floats
+        ;; FIXME: Operate better on impl with other float types
+        ((and (subtypep type-1 '(unsigned-byte *))
+              (subtypep type-2 '(signed-byte *)))
+         (loop :for num-bits :in '(8 16 32 64)
+               :if (subtypep type-1 `(signed-byte ,num-bits))
+                 :do (return-from max-type `(signed-byte ,num-bits))
+               :finally (return-from max-type 'single-float)))
+        ((and (subtypep type-1 '(signed-byte *))
+              (subtypep type-2 '(unsigned-byte *)))
+         (loop :for num-bits :in '(8 16 32 64)
+               :if (subtypep type-2 `(signed-byte ,num-bits))
+                 :do (return-from max-type `(signed-byte ,num-bits))
+               :finally (return-from max-type 'single-float)))
+        (t
+         (error "Don't know how to find MAX-TYPE of ~S and ~S" type-1 type-2))))
+
+(define-constant +c-array-element-types+
+    '(single-float
+      double-float
+      (complex single-float)
+      (complex double-float)
+      (unsigned-byte 64)
+      (unsigned-byte 32)
+      (unsigned-byte 16)
+      (unsigned-byte 08)
+      (signed-byte 64)
+      (signed-byte 32)
+      (signed-byte 16)
+      (signed-byte 08))
+  :test #'equal)
+
+(defun upgraded-c-array-element-type (type)
+  (loop :for ctype :in +c-array-element-types+
+        :when (type= type ctype)
+          :do (return-from upgraded-c-array-element-type type))
+  (loop :for supertype :in +c-array-element-types+
+        :when (subtypep type supertype)
+        :do (return-from upgraded-c-array-element-type supertype)))
+
+(defun export-all-external-symbols (from to &optional exceptions)
+  "FROM - Package designator with existing external symbols
+TO - Package designator to which the existing symbols should be exported"
+  (use-package from to)
+  (let ((external-symbols nil))
+    (do-external-symbols (s from)
+      (unless (member s exceptions :test #'string=)
+        (push s external-symbols)))
+    (export external-symbols to)))
