@@ -55,10 +55,11 @@
 
 (defpackage :numericals/magicl/impl
   (:use :cl :numericals/utils)
-  (:local-nicknames (:nu/magicl :dense-numericals/magicl))
+  (:local-nicknames (:nu/magicl :numericals/magicl))
   (:import-from #:alexandria
                 #:make-gensym-list
-                #:parse-ordinary-lambda-list))
+                #:parse-ordinary-lambda-list
+                #:copy-array))
 
 (in-package :numericals/magicl/impl)
 
