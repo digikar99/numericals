@@ -70,7 +70,12 @@
            #:cl-array-offset
            #:array-storage
            #:array-type-element-type)
-  (:export #:coerce
+  (:export #:uint32
+           #:int64
+           #:int16
+           #:int8
+
+           #:coerce
 
            #:ones
            #:zeros
@@ -92,6 +97,8 @@
            #:reshape
            #:do-arrays
            #:macro-map-array
+
+           #:defun*
 
            #:define-c-translation
            #:pushnew-c-translations
@@ -116,7 +123,10 @@
            #:with-simple-array-broadcast
            #:with-thresholded-multithreading/cl
 
-           #:runtime-array-allocation))
+           #:runtime-array-allocation
+
+           #:out-shape-compatible-p
+           #:out-shape))
 
 (5am:def-suite :dense-numericals)
 

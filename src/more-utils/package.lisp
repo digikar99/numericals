@@ -14,7 +14,12 @@
   (:shadowing-import-exported-symbols #:iterate)
   (:shadow #:fill)
   (:reexport #:numericals/utils #:numericals/common)
-  (:export #:coerce
+  (:export #:uint32
+           #:int64
+           #:int16
+           #:int8
+
+           #:coerce
 
            #:ones
            #:zeros
@@ -36,6 +41,8 @@
            #:reshape
            #:do-arrays
            #:macro-map-array
+
+           #:defun*
 
            #:define-c-translation
            #:pushnew-c-translations
@@ -59,7 +66,10 @@
            #:ptr-iterate-but-inner
            #:with-simple-array-broadcast
 
-           #:runtime-array-allocation))
+           #:runtime-array-allocation
+
+           #:out-shape-compatible-p
+           #:out-shape))
 
 (5am:def-suite :numericals)
 

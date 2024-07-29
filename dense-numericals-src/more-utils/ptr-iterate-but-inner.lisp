@@ -112,15 +112,16 @@ the arrays were SIMPLE with same strides and offsets."
   "Each bindings is of the form (ELT-VAR ARRAY-EXPR &OPTIONAL ELT-TYPE)."
   (with-gensyms (broadcast-dimensions)
     `(let ((,broadcast-dimensions ,broadcast-dimensions-expr))
-       (do-arrays ,(loop :for (elt-var array-expr &optional elt-type) :in bindings
-                         :collect `(,elt-var (broadcast-array ,array-expr ,broadcast-dimensions)
-                                             ,(if elt-type
-                                                  `(array ,elt-type)
-                                                  (let ((form-type
-                                                          (cl-form-types:nth-form-type array-expr env 0)))
-                                                    (if (subtypep form-type 'array env)
-                                                        (abstract-arrays:array-type-element-type
-                                                         form-type
-                                                         env)
-                                                        t)))))
+       (do-arrays ,(mapcar (lambda (elt-var &optional array-expr elt-type)
+                             `(,elt-var (broadcast-array ,array-expr ,broadcast-dimensions)
+                                        ,(if elt-type
+                                             `(array ,elt-type)
+                                             (let ((form-type
+                                                     (cl-form-types:nth-form-type array-expr env 0)))
+                                               (if (subtypep form-type 'array env)
+                                                   (abstract-arrays:array-type-element-type
+                                                    form-type
+                                                    env)
+                                                   t)))))
+                           bindings)
          ,@body))))

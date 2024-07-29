@@ -22,7 +22,7 @@
         (with-pointers-to-vectors-data ((ptr sv))
           (inline-or-funcall c-name m ptr layout))))))
 
-(defun out-shape-compatible-for-det-p (a out)
+(defpolymorph out-shape-compatible-p ((name (eql det)) a out) boolean
   (declare (type simple-array a out)
            (optimize speed))
   (let ((rank (array-rank a)))
@@ -41,7 +41,7 @@
 (defpolymorph det ((a (simple-array <type>)) &key ((out (simple-array <type>))))
     (simple-array <type>)
   (policy-cond:with-expectations (cl:= 0 safety)
-      ((assertion (out-shape-compatible-for-det-p a out)
+      ((assertion (out-shape-compatible-p 'det a out)
                   ()
                   "Cannot compute determinant of array of shape ~A~%into array of shape ~A."
                   (narray-dimensions a) (narray-dimensions out)))

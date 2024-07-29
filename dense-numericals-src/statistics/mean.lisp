@@ -7,7 +7,7 @@
 (define-polymorphic-function nu:mean (array-like &key out axes keep-dims) :overwrite t
   :documentation "See https://numpy.org/doc/stable/reference/generated/numpy.mean.html")
 
-(defun out-shape-compatible-for-mean-p (out in axes keep-dims)
+(defpolymorph out-shape-compatible-p ((name (eql mean)) out in axes keep-dims) boolean
   (declare (optimize speed)
            (type nu:array out in)
            (type (integer 0 #.array-rank-limit) axes))
@@ -28,9 +28,7 @@
                           (cl:= d1 d2)))
             :do (unless (cl:= i axes) (setq out-dims rem-dims)))))
 
-(declaim (ftype (function (nu:array (integer 0 #.array-rank-limit) boolean) list)
-                out-shape-for-mean))
-(defun out-shape-for-mean (in-array axes keep-dims)
+(defpolymorph out-shape ((name (eql mean)) in-array axes keep-dims) list
   (declare (optimize speed)
            (type nu:array in-array)
            (type (integer 0 #.array-rank-limit) axes))
@@ -50,12 +48,12 @@
     (nu:simple-array <type>)
   (declare (ignorable keep-dims))
   (policy-cond:with-expectations (= safety 0)
-      ((assertion (out-shape-compatible-for-mean-p out array axes keep-dims)
+      ((assertion (out-shape-compatible-p 'mean out array axes keep-dims)
                   (array out)
                   "To mean an array of dimensions ~A on axes ~D~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
                   (narray-dimensions array)
                   axes
-                  (out-shape-for-mean array axes keep-dims)
+                  (out-shape 'mean array axes keep-dims)
                   keep-dims
                   (narray-dimensions out)))
     (pflet* ((c-name-add (c-name <type> 'nu:add))
@@ -109,7 +107,7 @@
      ((out null)))
     t
   (declare (ignore out))
-  (pflet* ((out (nu:zeros (out-shape-for-mean array axes keep-dims) :type <type>)))
+  (pflet* ((out (nu:zeros (out-shape 'mean array axes keep-dims) :type <type>)))
     (declare (type (simple-array <type>) out))
     (nu:mean array :out out :keep-dims keep-dims :axes axes)))
 

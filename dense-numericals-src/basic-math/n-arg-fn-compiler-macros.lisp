@@ -64,8 +64,7 @@
      (unless optim-speed (return-from ,name form))
      (let* ((arg-types (loop :for arg :in args
                              :collect (nth-form-type arg env 0 t t)))
-            (out-pos (loop :for arg :in args
-                           :for arg-type :in arg-types
+            (out-pos (loop :for arg-type :in arg-types
                            :for i :from 0
                            :if (subtypep arg-type '(eql :out))
                              :do (return (1+ i))

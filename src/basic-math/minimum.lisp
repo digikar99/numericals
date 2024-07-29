@@ -4,7 +4,7 @@
 
 (define-polymorphic-function nu:minimum (array-like &key out axes keep-dims) :overwrite t)
 
-(defun out-shape-compatible-for-minimum-p (out in axes keep-dims)
+(defpolymorph out-shape-compatible-p ((name (eql minimum)) out in axes keep-dims) boolean
   (declare (optimize speed)
            (type nu:array out in)
            (type (integer 0 #.array-rank-limit) axes))
@@ -32,7 +32,7 @@
     (nu:simple-array <type>)
   (declare (ignorable keep-dims))
   (policy-cond:with-expectations (= safety 0)
-      ((assertion (out-shape-compatible-for-minimum-p out array axes keep-dims)
+      ((assertion (out-shape-compatible-p 'minimum out array axes keep-dims)
                   (array out)
                   "To minimum an array of dimensions ~A on axes ~D~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
                   (narray-dimensions array)
@@ -81,9 +81,7 @@
           (array c-size) (out c-size))
         out))))
 
-(declaim (ftype (function (nu:array (integer 0 #.array-rank-limit) boolean) list)
-                out-shape-for-minimum))
-(defun out-shape-for-minimum (in-array axes keep-dims)
+(defpolymorph out-shape ((name (eql minimum)) in-array axes keep-dims) list
   (declare (optimize speed)
            (type nu:array in-array)
            (type (integer 0 #.array-rank-limit) axes))
@@ -97,21 +95,21 @@
               :collect d)))
 
 (defpolymorph (nu:minimum :inline t
-                      :suboptimal-note runtime-array-allocation)
+                          :suboptimal-note runtime-array-allocation)
     ((array (nu:simple-array <type>))
      &key ((axes integer))
      ((keep-dims boolean))
      ((out null)))
     t
   (declare (ignore out))
-  (pflet* ((out (nu:zeros (out-shape-for-minimum array axes keep-dims) :type <type>)))
+  (pflet* ((out (nu:zeros (out-shape 'minimum array axes keep-dims) :type <type>)))
     (declare (type (simple-array <type>) out))
     (nu:minimum array :out out :keep-dims keep-dims :axes axes)))
 
 (defpolymorph (nu:minimum :inline t) ((array (nu:simple-array <type>))
-                                  &key ((axes cons))
-                                  ((keep-dims boolean))
-                                  ((out null)))
+                                      &key ((axes cons))
+                                      ((keep-dims boolean))
+                                      ((out null)))
     t
   (declare (ignore out))
   (let ((axes (sort (copy-list axes) #'cl:<)))
@@ -123,9 +121,9 @@
           :finally (return array))))
 
 (defpolymorph (nu:minimum :inline t) ((array (nu:simple-array <type>))
-                                  &key ((axes null))
-                                  ((keep-dims null))
-                                  ((out null)))
+                                      &key ((axes null))
+                                      ((keep-dims null))
+                                      ((out null)))
     t
   (declare (ignore out keep-dims axes))
   (pflet ((c-name (c-name <type> 'nu:minimum))

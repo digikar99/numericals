@@ -1,5 +1,9 @@
 (in-package :dense-numericals/more-utils)
 
+(deftype uint32 () `(unsigned-byte 32))
+(deftype int64 () '(signed-byte 64))
+(deftype int16 () '(signed-byte 16))
+(deftype int8  () '(signed-byte 08))
 
 (defvar *default-float-format* 'single-float
   "Used for converting non-float arrays to float arrays for floating-point
@@ -36,8 +40,6 @@ This is only relevant for transcendental functions which uses lparallel for mult
                 (incf total-offset offset)
                 (setq array displaced-to))))
 
-(deftype uint32 () `(unsigned-byte 32))
-
 (define-condition runtime-array-allocation (suboptimal-polymorph-note)
   ()
   (:report (lambda (c s)
@@ -67,3 +69,9 @@ or MAGICL:TENSOR for arrays with :COLUMN-MAJOR or other layouts."))
     (if axis-p
         (elt dimensions axis)
         dimensions)))
+
+(define-polymorphic-function out-shape-compatible-p (function-name &rest args)
+  :overwrite t)
+
+(define-polymorphic-function out-shape (function-name &rest args)
+  :overwrite t)

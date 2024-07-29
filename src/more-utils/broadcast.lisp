@@ -18,9 +18,6 @@
                                        (t (incompatible)))
                                  :do (setq s (* d s)))))))))
 
-(defun strides (dimensions)
-  (strides-for-broadcast dimensions dimensions))
-
 (defun %broadcast-compatible-p (dimensions-a dimensions-b)
   "Returns two values:
   The first value is a generalized boolean indicating whether the two dimensions are broadcast compatible.
@@ -42,7 +39,6 @@
           into broadcast-dimensions-reversed)
         (finally (return (values t
                                  (nreverse broadcast-dimensions-reversed)))))))
-
 
 (defun broadcast-compatible-p (&rest arrays)
   "Returns two values:

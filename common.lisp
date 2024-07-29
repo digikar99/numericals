@@ -239,6 +239,7 @@
 (defmacro ccall (name &rest args)
   "Calls CFFI:FOREIGN-FUNCALL on NAME with appropriate type declarations on args."
   `(cffi:foreign-funcall
+    ,name
     ,@(loop :for arg :in args
             :appending `(once-only (arg)
                           ((etypecase ,arg

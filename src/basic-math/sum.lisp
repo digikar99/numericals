@@ -4,7 +4,7 @@
 
 (define-polymorphic-function nu:sum (array-like &key out axes keep-dims) :overwrite t)
 
-(defun out-shape-compatible-for-sum-p (out in axes keep-dims)
+(defpolymorph out-shape-compatible-p ((name (eql sum)) out in axes keep-dims) boolean
   (declare (optimize speed)
            (type nu:array out in)
            (type (integer 0 #.array-rank-limit) axes))
@@ -32,7 +32,7 @@
     (nu:simple-array <type>)
   (declare (ignorable keep-dims))
   (policy-cond:with-expectations (= safety 0)
-      ((assertion (out-shape-compatible-for-sum-p out array axes keep-dims)
+      ((assertion (out-shape-compatible-p 'sum out array axes keep-dims)
                   (array out)
                   "To sum an array of dimensions ~A on axes ~D~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
                   (narray-dimensions array)
@@ -80,9 +80,7 @@
           (array c-size) (out c-size))
         out))))
 
-(declaim (ftype (function (nu:array (integer 0 #.array-rank-limit) boolean) list)
-                out-shape-for-sum))
-(defun out-shape-for-sum (in-array axes keep-dims)
+(defpolymorph out-shape ((name (eql sum)) in-array axes keep-dims) list
   (declare (optimize speed)
            (type nu:array in-array)
            (type (integer 0 #.array-rank-limit) axes))
@@ -103,7 +101,7 @@
      ((out null)))
     t
   (declare (ignore out))
-  (pflet* ((out (nu:zeros (out-shape-for-sum array axes keep-dims) :type <type>)))
+  (pflet* ((out (nu:zeros (out-shape 'sum array axes keep-dims) :type <type>)))
     (declare (type (simple-array <type>) out))
     (nu:sum array :out out :keep-dims keep-dims :axes axes)))
 

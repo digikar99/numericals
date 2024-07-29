@@ -2,13 +2,12 @@
 
 (5am:in-suite :dense-numericals)
 
-(deftype int64 () '(signed-byte 64))
-
 (define-polymorphic-function nu:arg-minimum
     (array-like &key out axis keep-dims) :overwrite t
   :documentation "Find the index of the minimum element along the AXIS.")
 
-(defun out-shape-compatible-for-arg-minimum-p (out in axis keep-dims)
+(defpolymorph out-shape-compatible-p ((name (eql arg-minimum)) out in axis keep-dims)
+    boolean
   (declare (optimize speed)
            (type nu:array out in)
            (type (integer 0 #.array-rank-limit) axis))
@@ -36,7 +35,7 @@
     (nu:simple-array (signed-byte 64))
   (declare (ignorable keep-dims))
   (policy-cond:with-expectations (= safety 0)
-      ((assertion (out-shape-compatible-for-arg-minimum-p out array axis keep-dims)
+      ((assertion (out-shape-compatible-p 'arg-minimum out array axis keep-dims)
                   (array out)
                   "To find arg-minimum of an array of dimensions ~A on axis ~D~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
                   (narray-dimensions array)
@@ -80,9 +79,7 @@
           (array c-size) (out 8))
         out))))
 
-(declaim (ftype (function (nu:array (integer 0 #.array-rank-limit) boolean) list)
-                out-shape-for-arg-minimum))
-(defun out-shape-for-arg-minimum (in-array axis keep-dims)
+(defpolymorph out-shape ((name (eql arg-minimum)) in-array axis keep-dims) list
   (declare (optimize speed)
            (type nu:array in-array)
            (type (integer 0 #.array-rank-limit) axis))
@@ -103,7 +100,7 @@
      ((out null)))
     t
   (declare (ignore out))
-  (pflet* ((out (nu:zeros (out-shape-for-arg-minimum array axis keep-dims)
+  (pflet* ((out (nu:zeros (out-shape 'arg-minimum array axis keep-dims)
                           :type '(signed-byte 64))))
     (declare (type (simple-array (signed-byte 64)) out))
     (nu:arg-minimum array :out out :keep-dims keep-dims :axis axis)))

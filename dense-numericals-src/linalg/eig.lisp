@@ -59,7 +59,7 @@ given by ARRAY-LIKE.")
   (def ceigen-lite:seigvals single-float 4)
   (def ceigen-lite:deigvals double-float 8))
 
-(defun float-type-from-complex-type (complex-type)
+(defun* float-type-from-complex-type (complex-type)
   (declare (optimize speed))
   (cond ((cl:subtypep complex-type '(complex single-float))
          'single-float)

@@ -6,7 +6,8 @@
   :overwrite t
   :documentation "See https://numpy.org/doc/stable/reference/generated/numpy.var.html")
 
-(defun out-shape-compatible-for-variance-p (out in axes keep-dims)
+(defpolymorph out-shape-compatible-p ((name (eql variance)) out in axes keep-dims)
+    boolean
   (declare (optimize speed)
            (type nu:array out in)
            (type (integer 0 #.array-rank-limit) axes))
@@ -34,12 +35,12 @@
                            ((ddof integer) 0))
     (nu:simple-array <type>)
   (policy-cond:with-expectations (= 0 safety)
-      ((assertion (out-shape-compatible-for-variance-p out array axes keep-dims)
+      ((assertion (out-shape-compatible-p 'variance out array axes keep-dims)
                   (array out)
                   "To variance an array of dimensions ~A on axes ~D~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
                   (narray-dimensions array)
                   axes
-                  (out-shape-for-mean array axes keep-dims)
+                  (out-shape 'mean array axes keep-dims)
                   keep-dims
                   (narray-dimensions out)))
     (pflet* ((axis-size (etypecase axes

@@ -104,10 +104,9 @@ References:
       (pflet ((sv (array-storage s)))
         (declare (type (cl:simple-array <type> 1) sv))
         (dotimes (i (min m n))
-          (funcall #'(setf aref) (aref sv i)
-                   s i i)
+          (setf (aref s i i) (aref sv i))
           (unless (zerop i)
-            (funcall #'(setf aref) zero sv i)))))
+            (setf (aref sv i) zero)))))
     (values u s v)))
 
 (defpolymorph out-shape ((name (eql svd)) a) (values list list list &optional)

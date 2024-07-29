@@ -28,6 +28,7 @@
   :serial t
   :components ((:file "package")
                (:file "more-utils")
+               (:file "asarray")
                (:file "translations")
                (:file "aref")
                (:file "broadcast")
