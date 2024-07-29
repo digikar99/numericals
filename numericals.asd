@@ -186,6 +186,8 @@
                "numericals/transcendental/tests")
   :perform (test-op (o c)
              (declare (ignore o c))
-             (eval (read-from-string "(LET ((5AM:*ON-ERROR* :DEBUG)
-                                            (5AM:*ON-FAILURE* :DEBUG))
-                                       (5AM:RUN! :NUMERICALS))"))))
+             (eval (read-from-string
+                    "(LET ((5AM:*ON-ERROR* :DEBUG)
+                           (5AM:*ON-FAILURE* :DEBUG)
+                           (COMPILER-MACRO-NOTES:*MUFFLED-NOTES-TYPE* T))
+                       (5AM:RUN! :NUMERICALS))"))))
