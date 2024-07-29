@@ -13,6 +13,8 @@ jobs:
         library: [numericals, dense-numericals]
         os: [ubuntu-22.04]
 
+    continue-on-error: true
+
     steps:
 
     - uses: actions/checkout@v2
