@@ -6,11 +6,12 @@ jobs:
 
     name: ${{ matrix.library }} ${{ matrix.lisp }}
 
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         lisp: [sbcl, ccl]
         library: [numericals, dense-numericals]
-    runs-on: ubuntu-22.04
+        os: [ubuntu-22.04]
 
     steps:
 
@@ -26,6 +27,7 @@ jobs:
     - name: Download implementation
       env:
         LISP: ${{ matrix.lisp }}
+        OS: ${{ matrix.os }}
       run: |
         pwd
         ls -l
