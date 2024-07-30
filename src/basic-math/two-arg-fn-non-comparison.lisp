@@ -70,7 +70,7 @@
 ;; arbitrary arrays
 
 (defpolymorph (two-arg-fn/non-comparison :suboptimal-note runtime-array-allocation
-                                         :inline t)
+                                         :inline nil)
     ((name symbol) (x array) (y array)
      &key ((out null)) (broadcast nu:*broadcast-automatically*))
     (values array &optional)
@@ -88,7 +88,7 @@
       (two-arg-fn/non-comparison name x y :broadcast broadcast :out nil))))
 
 (defpolymorph (two-arg-fn/non-comparison :suboptimal-note runtime-array-allocation
-                                         :inline t)
+                                         :inline nil)
     ((name symbol) (x array) (y array)
      &key ((out array)) (broadcast nu:*broadcast-automatically*))
     (values array &optional)
