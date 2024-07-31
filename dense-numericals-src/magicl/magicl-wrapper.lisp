@@ -54,7 +54,7 @@
 
 (peltadot/utils:defpackage :dense-numericals/magicl/impl
   (:use :peltadot)
-  (:shadowing-import-exported-symbols :dense-numericals/more-utils)
+  (:shadowing-import-exported-symbols :dense-numericals/utils)
   (:local-nicknames (:nu/magicl :dense-numericals/magicl))
   (:import-from #:alexandria
                 #:make-gensym-list

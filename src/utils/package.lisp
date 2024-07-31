@@ -1,5 +1,5 @@
-(peltadot/utils:defpackage :numericals/more-utils
-  (:use :peltadot :numericals/utils :numericals/common)
+(peltadot/utils:defpackage :numericals/utils
+  (:use :peltadot :numericals/basic-utils :numericals/common)
   (:import-from #:alexandria
                 #:lastcar
                 #:with-gensyms
@@ -13,7 +13,7 @@
                 #:element-type)
   (:shadowing-import-exported-symbols #:iterate)
   (:shadow #:fill)
-  (:reexport #:numericals/utils #:numericals/common)
+  (:reexport #:numericals/basic-utils #:numericals/common)
   (:export #:uint32
            #:int64
            #:int16
@@ -73,4 +73,4 @@
 
 (5am:def-suite :numericals)
 
-(numericals/common:export-all-external-symbols :numericals/more-utils :numericals)
+(numericals/common:export-all-external-symbols :numericals/utils :numericals)

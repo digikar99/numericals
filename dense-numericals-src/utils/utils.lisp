@@ -1,4 +1,4 @@
-(in-package :dense-numericals/more-utils)
+(in-package :dense-numericals/utils)
 
 (deftype uint32 () `(unsigned-byte 32))
 (deftype int64 () '(signed-byte 64))

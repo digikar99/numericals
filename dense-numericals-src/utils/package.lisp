@@ -1,4 +1,4 @@
-(uiop:define-package :dense-numericals/more-utils
+(uiop:define-package :dense-numericals/utils
   (:mix :dense-arrays-plus-lite :iterate :peltadot :alexandria)
   (:use :dense-numericals/common :abstract-arrays)
   (:reexport :dense-arrays-plus-lite :dense-numericals/common)
@@ -130,11 +130,11 @@
 
 (5am:def-suite :dense-numericals)
 
-(in-package :dense-numericals/more-utils)
+(in-package :dense-numericals/utils)
 
 (trivial-package-local-nicknames:add-package-local-nickname
  :cl-form-types :peltadot/form-types)
 (trivial-package-local-nicknames:add-package-local-nickname
  :polymorphic-functions :peltadot/polymorphic-functions)
 
-(numericals/common:export-all-external-symbols :dense-numericals/more-utils :dense-numericals)
+(numericals/common:export-all-external-symbols :dense-numericals/utils :dense-numericals)

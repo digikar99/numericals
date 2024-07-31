@@ -1,6 +1,6 @@
 (peltadot/utils:defpackage :numericals/transcendental
-  (:shadowing-import-exported-symbols :numericals/more-utils)
-  (:reexport :numericals/more-utils)
+  (:shadowing-import-exported-symbols :numericals/utils)
+  (:reexport :numericals/utils)
   (:use)
   (:export
 
@@ -44,7 +44,7 @@
 (numericals/common:export-all-external-symbols :numericals/transcendental :numericals)
 
 (peltadot/utils:defpackage :numericals/transcendental/impl
-  (:shadowing-import-exported-symbols :numericals/more-utils)
+  (:shadowing-import-exported-symbols :numericals/utils)
   (:use
    :peltadot
    :numericals/basic-math/impl)

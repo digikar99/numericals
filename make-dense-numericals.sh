@@ -3,10 +3,10 @@
 # Make backup and copy from backup
 mv dense-numericals-src dense-numericals-src.bak
 mkdir dense-numericals-src
-cp -r dense-numericals-src.bak/more-utils dense-numericals-src/
+cp -r dense-numericals-src.bak/utils dense-numericals-src/
 
 # Copy common files from numericals
-# This excludes: utils more-utils
+# This excludes: utils basic-utils
 for dir in basic-math transcendental linalg random statistics magicl
 do
     cp -r src/$dir dense-numericals-src/

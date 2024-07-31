@@ -10,8 +10,8 @@
                "peltadot-traits-library")
   :components ((:file "common")))
 
-(defsystem "dense-numericals/more-utils"
-  :pathname "dense-numericals-src/more-utils/"
+(defsystem "dense-numericals/utils"
+  :pathname "dense-numericals-src/utils/"
   :depends-on ("dense-arrays-plus-lite"
                "dense-numericals/common"
                "iterate"
@@ -22,7 +22,7 @@
   :description "More utilities for dense-numericals. These require PELTADOT."
   :serial t
   :components ((:file "package")
-               (:file "more-utils")
+               (:file "utils")
                (:file "primitives")
                (:file "translations")
                (:file "lparallel")
@@ -31,7 +31,7 @@
 
 (defsystem "dense-numericals/basic-math"
   :pathname "dense-numericals-src/basic-math/"
-  :depends-on ("dense-numericals/more-utils"
+  :depends-on ("dense-numericals/utils"
                "bmas"
                "iterate")
   :serial t
@@ -99,7 +99,7 @@
 
 (defsystem "dense-numericals/linalg"
   :pathname "dense-numericals-src/linalg/"
-  :depends-on ("dense-numericals/more-utils"
+  :depends-on ("dense-numericals/utils"
                "bmas"
                "ceigen-lite")
   :serial t
@@ -120,7 +120,7 @@
 
 (defsystem "dense-numericals/random"
   :pathname "dense-numericals-src/random/"
-  :depends-on ("dense-numericals/more-utils"
+  :depends-on ("dense-numericals/utils"
                "ceigen-lite")
   :components ((:file "package")
                (:file "seed")
@@ -153,7 +153,7 @@
 
 (defsystem "dense-numericals/magicl"
   :pathname "dense-numericals-src/magicl/"
-  :depends-on ("dense-numericals/more-utils"
+  :depends-on ("dense-numericals/utils"
                "magicl")
   :components ((:file "magicl-wrapper")
                (:file "magicl")))

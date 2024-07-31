@@ -1,4 +1,4 @@
-(in-package :numericals/more-utils)
+(in-package :numericals/utils)
 
 ;;; TODO: Change &KEY TYPE to &KEY (TYPE DEFAULT-ELEMENT-TYPE)
 ;;; Requires changes to polymorphic-functions

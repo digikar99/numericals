@@ -54,7 +54,7 @@
   (:reexport :magicl))
 
 (defpackage :numericals/magicl/impl
-  (:use :cl :numericals/utils)
+  (:use :cl :numericals/basic-utils)
   (:local-nicknames (:nu/magicl :numericals/magicl))
   (:import-from #:alexandria
                 #:make-gensym-list

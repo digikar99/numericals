@@ -10,16 +10,16 @@
                "peltadot-traits-library")
   :components ((:file "common")))
 
-(defsystem "numericals/utils"
-  :pathname "src/utils/"
+(defsystem "numericals/basic-utils"
+  :pathname "src/basic-utils/"
   :depends-on ("alexandria")
   :description "A collection of minimal-dependency utilities for numericals. These do not require PELTADOT."
-  :components ((:file "utils")))
+  :components ((:file "basic-utils")))
 
-(defsystem "numericals/more-utils"
-  :pathname "src/more-utils/"
+(defsystem "numericals/utils"
+  :pathname "src/utils/"
   :depends-on ("numericals/common"
-               "numericals/utils"
+               "numericals/basic-utils"
                "iterate"
                ;; This system does not require policy-cond itself,
                ;; but most of who depend on it do require it.
@@ -27,7 +27,7 @@
   :description "More utilities for numericals. These require PELTADOT."
   :serial t
   :components ((:file "package")
-               (:file "more-utils")
+               (:file "utils")
                (:file "asarray")
                (:file "translations")
                (:file "aref")
@@ -38,7 +38,7 @@
 
 (defsystem "numericals/basic-math"
   :pathname "src/basic-math/"
-  :depends-on ("numericals/more-utils"
+  :depends-on ("numericals/utils"
                "bmas"
                "iterate")
   :serial t
@@ -109,7 +109,7 @@
 
 (defsystem "numericals/linalg"
   :pathname "src/linalg/"
-  :depends-on ("numericals/more-utils"
+  :depends-on ("numericals/utils"
                "bmas"
                "ceigen-lite")
   :serial t
@@ -130,7 +130,7 @@
 
 (defsystem "numericals/random"
   :pathname "src/random/"
-  :depends-on ("numericals/more-utils"
+  :depends-on ("numericals/utils"
                "ceigen-lite")
   :components ((:file "package")
                (:file "seed")
@@ -163,7 +163,7 @@
 
 (defsystem "numericals/magicl"
   :pathname "src/magicl/"
-  :depends-on ("numericals/utils"
+  :depends-on ("numericals/basic-utils"
                "magicl")
   :components ((:file "magicl-wrapper")
                (:file "magicl")))

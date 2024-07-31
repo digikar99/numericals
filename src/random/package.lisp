@@ -1,6 +1,6 @@
 (peltadot/utils:defpackage :numericals/random
   (:use :peltadot)
-  (:shadowing-import-exported-symbols :numericals/more-utils)
+  (:shadowing-import-exported-symbols :numericals/utils)
   (:documentation "Contains functions that provide arrays of random numbers sampled from various distributions")
   (:export ;; real / float types
    #:seed

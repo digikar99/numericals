@@ -1,165 +1,251 @@
-(defpackage :numericals/utils
-  (:use :cl :alexandria)
-  (:export #:size
-           #:the-size
-           #:int-index
-           #:the-int-index
-           #:lm
-
-           #:*default-float-format*
-           #:*broadcast-automatically*
-           #:*array-layout*
-           #:*array-element-type*
-           #:*array-element-type-alist*
-           #:default-element-type
-           #:*multithreaded-threshold*
-           #:*inline-with-multithreading*
-
-           #:array
-           #:simple-array
-           #:array-rank
-           #:array-dimensions
-           #:narray-dimensions
-           #:array-element-type
-           #:array-total-size
-           #:array-stride
-           #:array-layout
-           #:cl-array-offset
-           #:array-storage
-           #:array-type-element-type))
-
 (in-package :numericals/utils)
 
-(deftype size () `(unsigned-byte 62))
-(defmacro the-size (form)
-  #+sbcl `(sb-ext:truly-the size ,form)
-  #-sbcl `(the size ,form))
+(define-type size () `(unsigned-byte 62))
+(define-type int-index () `(signed-byte 62))
 
-(deftype int-index () `(signed-byte 62))
-(defmacro the-int-index (form)
-  `(#+sbcl sb-ext:truly-the
-    #-sbcl the
-    int-index ,form))
-
-(defmacro lm (&rest var-body)
-  `(lambda ,(butlast var-body)
-     ,@(last var-body)))
-
-(defvar *default-float-format* 'single-float
-  "Used for converting non-float arrays to float arrays for floating-point
-operations like trigonometric functions.")
-(declaim (type (member single-float double-float) *default-float-format*))
-
-(defvar *broadcast-automatically* t
-  "If non-NIL, operations automatically perform broadcasting as necessary.
-If NIL, broadcasting is expected to be performed by the user. Such strictness
-can be helpful to locate bugs.")
+(deftype uint32 () `(unsigned-byte 32))
+(deftype int64 () '(signed-byte 64))
+(deftype int16 () '(signed-byte 16))
+(deftype int8  () '(signed-byte 08))
 
 
-(defvar *array-element-type*)
+(define-condition runtime-array-allocation (suboptimal-polymorph-note)
+  ()
+  (:report (lambda (c s)
+             (declare (ignore c))
+             (format s "Unable to avoid array allocation at run time. Consider supplying
+the OUT argument, and/or ensuring all the appropriate arguments are
+arrays of appropriate types."))))
 
-(setf (documentation '*array-element-type* 'variable)
-      "If BOUND, this is the default value of the ELEMENT-TYPE or TYPE argument.
-Overrides *ARRAY-ELEMENT-TYPE-ALIST*.
-Is overriden by explicitly passing an ELEMENT-TYPE or TYPE argument.")
+(defmacro defun* (name lambda-list &body body)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (defun ,name ,lambda-list ,@body)))
 
-(defvar *array-element-type-alist* nil
-  "An ALIST mapping package to the default element-type used in that package.
-(Inspired from SWANK:*READTABLE-ALIST*)
-Overrides none.
-Is overriden by *ARRAY-ELEMENT-TYPE* when bound, or by explicitly passing an
-  ELEMENT-TYPE or TYPE argument.")
+(defun split-at-keywords (args)
+  "Example: (1 2 3 :a 2 :b 3) => ((1 2 3) :a 2 :b 3)"
+  (if args
+      (if (keywordp (car args))
+          (cons () args)
+          (destructuring-bind (non-keyword-args &rest keyword-args)
+              (split-at-keywords (cdr args))
+            (append (list (cons (car args) non-keyword-args))
+                    keyword-args)))
+      '(nil)))
 
-(define-symbol-macro package-local-element-type
-    (cdr (assoc *package* *array-element-type-alist*)))
-
-(define-symbol-macro default-element-type
-    (or (when (boundp '*array-element-type*)
-          *array-element-type*)
-        package-local-element-type
-        t))
-
-(defvar *array-layout* :row-major
-  "Dummy variable provided so that code written for NUMERICALS may be easily
-upgradeable to DENSE-NUMERICALS")
-
-(defparameter *inline-with-multithreading* nil
-  "Inlining is usually necessary for smaller arrays; for such arrays multithreading
-becomes unnecessary. If this parameter is non-NIL, code using multithreading
-would be emitted; otherwise, the code would be skipped.
-
-This is only relevant for transcendental functions which uses lparallel for multithreading.")
-
-(defparameter *multithreaded-threshold* 80000)
-(declaim (type fixnum *multithreaded-threshold*))
+(defmacro ensure-row-major-layout ()
+  `(assert (eq layout :row-major)
+           (layout)
+           "CL:ARRAY can only have :ROW-MAJOR layout. See DENSE-ARRAYS:ARRAY
+or MAGICL:TENSOR for arrays with :COLUMN-MAJOR or other layouts."))
 
 
-(declaim (inline narray-dimensions))
-(declaim (cl:ftype (cl:function (cl:array) list) narray-dimensions))
-(defun narray-dimensions (array)
-  (declare (type cl:array array)
-           (optimize speed))
-  (array-dimensions array))
+(macrolet
+    ((def (name initial-value)
+       `(progn
+          (declaim (inline ,name))
+          (defun ,name (&rest args)
+            ,(format nil "ARGS: (&rest array-dimensions &key (type default-element-type))
+Examples:
+  (~D 2 3)
+  (~D '(5 5))
+  (~D 3 3 :type 'fixnum)"
+                     (string-downcase name)
+                     (string-downcase name)
+                     (string-downcase name))
+            (destructuring-bind (shape &key (type default-element-type) (layout :row-major))
+                (split-at-keywords args)
+              (when (listp (first shape))
+                (assert (null (rest shape)) (shape)
+                        "Expected (REST SHAPE) to be NULL but is ~S" (rest shape))
+                (setq shape (first shape)))
+              (ensure-row-major-layout)
+              (make-array shape :element-type type
+                                :initial-element (coerce ,initial-value type))))
 
-(declaim (inline array-stride))
-(defun array-stride (array axis)
-  (declare (optimize speed)
-           (type size axis))
-  (loop :for d :of-type size :in (subseq (narray-dimensions array) (1+ axis))
-        :with stride :of-type size := 1
-        :do (setq stride (* d stride))
-        :finally (return stride)))
+          (define-compiler-macro ,name (&whole form &rest args &environment env)
+            (let ((arg-types
+                    (mapcar (lm arg (peltadot/form-types:nth-form-type
+                                     arg env 0 t t))
+                            args)))
+              (let* ((first-type  (first arg-types))
+                     (second-type (second arg-types))
+                     (args-length (length args))
+                     (second-last-type (when (>= args-length 2)
+                                         (nth (- args-length 2) arg-types))))
+                (cond ((or (subtypep first-type 'list)
+                           (and (subtypep first-type 'size)
+                                (or (null (rest args))
+                                    (and (subtypep second-type '(eql :type))
+                                         (= 3 args-length)))))
+                       (return-from ,name
+                         `((cl:lambda (shape &key (type default-element-type))
+                             (make-array shape :element-type type))
+                           ,@args)))
+                      ((every (lm type (subtypep type 'size)) arg-types)
+                       (return-from ,name
+                         `((cl:lambda (shape &key (type default-element-type))
+                             (make-array shape :element-type type))
+                           (list ,@args))))
+                      ((and (>= args-length 2)
+                            (every (lm type (subtypep type 'size))
+                                   (subseq arg-types 0 (- args-length 2)))
+                            (subtypep second-last-type '(eql :type)))
+                       (return-from ,name
+                         `((cl:lambda (shape &key (type default-element-type))
+                             (make-array shape :element-type type))
+                           (list ,@(subseq args 0 (- args-length 2)))
+                           :type ,(lastcar args))))
+                      (t
+                       form))))))))
+  (def zeros 0)
+  (def ones 1)
+  (def empty 0))
 
-(declaim (inline array-layout))
-(defun array-layout (array)
-  (declare (type array array)
-           (ignore array))
-  :row-major)
+(defun rand (&rest args)
+  "Lambda List: (shape &key (type default-element-type) (min 0) (max 1))"
+  (destructuring-bind
+      (shape &key (type default-element-type) (min (coerce 0 type)) (max (coerce 1 type))
+               (layout :row-major))
+      (split-at-keywords args)
+    (when (listp (first shape))
+      (assert (null (rest shape)))
+      (setq shape (first shape)))
+    (ensure-row-major-layout)
+    (let* ((a (zeros (the list shape) :type type))
+           (asv (array-storage a))
+           (range (- max min))
+           (min (coerce min type)))
+      (declare (type (cl:simple-array * 1) asv))
+      ;; A good use of specialized function :)
+      (specializing (asv min range a)
+        (dotimes (index (array-total-size a))
+          (setf (row-major-aref asv index)
+                (+ min (random range)))))
+      a)))
 
-(declaim (inline cl-array-offset))
-(declaim (ftype (function (cl:array) size) cl-array-offset))
-(defun cl-array-offset (array)
-  (declare (optimize speed)
-           (type cl:array array))
-  (loop :with total-offset :of-type (signed-byte 61) := 0
-        :if (typep array 'cl:simple-array)
-          :do (return total-offset)
-        :else
-          :do (multiple-value-bind (displaced-to offset)
-                  (cl:array-displacement array)
-                (declare (type (signed-byte 61) offset))
-                (incf total-offset offset)
-                (setq array displaced-to))))
+(defun full (&rest args)
+  "Lambda List: (shape &key value (type default-element-type))"
+  (destructuring-bind (shape &key value (type default-element-type) (layout :row-major))
+      (split-at-keywords args)
+    (when (listp (first shape))
+      (assert (null (rest shape)) (shape)
+              "expected (rest shape) to be null but is ~s" (rest shape))
+      (setq shape (first shape)))
+    (ensure-row-major-layout)
+    (make-array shape :element-type type :initial-element (coerce value type))))
 
-(declaim (inline array-storage)
-         (ftype (function (cl:array) (cl:simple-array * 1))))
-(defun array-storage (array)
-  (declare (ignorable array)
-           (optimize speed))
-  (loop :with array := array
-        :do (locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note))
-              (typecase array
-                ((cl:simple-array * (*)) (return array))
-                (cl:simple-array (return #+sbcl (sb-ext:array-storage-vector array)
-                                         #+ccl (ccl::%array-header-data-and-offset array)
-                                         #-(or sbcl ccl)
-                                         (error "Don't know how to obtain ARRAY-STORAGE on ~S"
-                                                (lisp-implementation-type))))
-                (t (setq array (cl:array-displacement array)))))))
+(declaim (inline fill))
+(defun fill (array value)
+  (let* ((type  (array-element-type array))
+         (value (coerce value type))
+         (size  (array-total-size array))
+         (storage (array-storage array))
+         (offset  (cl-array-offset array)))
+    (cl:fill storage value :start offset :end (+ offset size))
+    array))
 
+(declaim (inline empty-like zeros-like ones-like rand-like full-like))
+(defun empty-like (array)
+  ;; FIXME: Expand this to array-like
+  (declare (type cl:array array))
+  (empty (array-dimensions array) :type (array-element-type array)))
+(defun zeros-like (array)
+  ;; FIXME: Expand this to array-like
+  (declare (type cl:array array))
+  (zeros (array-dimensions array) :type (array-element-type array)))
+(defun ones-like (array)
+  ;; FIXME: Expand this to array-like
+  (declare (type cl:array array))
+  (ones (array-dimensions array) :type (array-element-type array)))
+(defun rand-like (array)
+  ;; FIXME: Expand this to array-like
+  (declare (type cl:array array))
+  (rand (array-dimensions array) :type (array-element-type array)))
+(defun full-like (array value)
+  (declare (type cl:array array))
+  (full (array-dimensions array) :value value
+           :type (array-element-type array)))
 
-(defun array-type-element-type (array-type &optional env)
-  (loop :for type :in '(t
-                        single-float
-                        double-float
-                        fixnum
-                        (unsigned-byte 64)
-                        (unsigned-byte 32)
-                        (unsigned-byte 16)
-                        (unsigned-byte 08)
-                        (signed-byte 64)
-                        (signed-byte 32)
-                        (signed-byte 16)
-                        (signed-byte 08))
-        :if (cl:subtypep array-type `(cl:array ,type) env)
-          :do (return type)))
+(defun shape (array-like &optional (axis nil axis-p))
+  ;; This is a potentially domain specific functionality; since
+  ;; there exists the ambiguity of what should one do with strings
+  (let ((dimensions (typecase array-like
+                      (sequence (cons (length array-like)
+                                      (shape (elt array-like 0))))
+                      (array (array-dimensions array-like))
+                      (t nil))))
+    (if axis-p
+        (elt dimensions axis)
+        dimensions)))
+
+(declaim (inline reshape))
+(defun reshape (array new-dimensions)
+  (make-array new-dimensions
+              :element-type (array-element-type array)
+              :displaced-to (array-storage array)
+              :displaced-index-offset (cl-array-offset array)))
+
+(defpolymorph array= ((array1 cl:array) (array2 cl:array) &key (test #'cl:=)) boolean
+  (and (equalp (array-dimensions array1)
+               (array-dimensions array2))
+       (loop :for i :below (array-total-size array1)
+             :always (funcall test
+                              (row-major-aref array1 i)
+                              (row-major-aref array2 i)))))
+
+(defmacro do-arrays (bindings &body body)
+  "Each element of BINDINGS is of the form (VAR ARRAY-EXPR &OPTIONAL ELEMENT-TYPE)"
+  (let* ((variables   (mapcar #'first bindings))
+         (array-exprs (mapcar #'second bindings))
+         (num-vars    (length variables))
+         (array-vars  (make-gensym-list num-vars "ARRAY"))
+         (storages    (make-gensym-list num-vars "ARRAY-STORAGE"))
+         (indices     (make-gensym-list num-vars "INDEX")))
+    `(let (,@(mapcar (lm v e `(,v ,e))
+                     array-vars array-exprs))
+       ,@(if (< num-vars 2)
+             ()
+             (mapcar (lm v `(assert (equalp (narray-dimensions ,v)
+                                            (narray-dimensions ,(first array-vars)))
+                                    (,v ,(first array-vars))
+                                    "DO-ARRAYS expects equal dimensions, but are ~S and ~S"
+                                    (narray-dimensions ,v)
+                                    (narray-dimensions ,(first array-vars))))
+                     array-vars))
+       (let (,@(mapcar (lm s v `(,s (array-storage ,v)))
+                       storages array-vars)
+             ,@(mapcar (lm i v `(,i (cl-array-offset ,v)))
+                       indices array-vars))
+         (symbol-macrolet (,@(mapcar (lm v s i `(,v (cl:aref ,s ,i)))
+                                     variables storages indices))
+           ,(when array-vars
+              `(loop :repeat (array-total-size ,(first array-vars))
+                     :do (locally ,@body)
+                     ,@(mapcar (lm i `(incf ,i)) indices))))))))
+
+(defmacro macro-map-array (result-array function &rest arrays)
+  (alexandria:with-gensyms (result i result-type)
+    (let ((array-syms (alexandria:make-gensym-list (length arrays) "ARRAY"))
+          (function   (cond ((eq 'quote (first function)) (second function))
+                            ((eq 'function (first function)) (second function))
+                            (t (error "Unexpected")))))
+      `(let (,@(loop :for sym :in array-syms
+                     :for array-expr :in arrays
+                     :collect `(,sym ,array-expr)))
+         (declare (type array ,@array-syms))
+         ;; TODO: Optimize this
+         (let* ((,result (or ,result-array (zeros-like ,(first array-syms))))
+                (,result-type (array-element-type ,result)))
+           (dotimes (,i (array-total-size ,(first array-syms)))
+             (setf (row-major-aref ,result ,i)
+                   (coerce
+                    (,function ,@(mapcar (lm array-sym `(row-major-aref ,array-sym ,i))
+                                         array-syms))
+                    ,result-type)))
+           ,result)))))
+
+(define-polymorphic-function out-shape-compatible-p (function-name &rest args)
+  :overwrite t)
+
+(define-polymorphic-function out-shape (function-name &rest args)
+  :overwrite t)

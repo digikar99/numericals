@@ -1,4 +1,4 @@
-(in-package :numericals/more-utils)
+(in-package :numericals/utils)
 
 (defmacro ptr-iterate-but-inner (broadcast-dimensions-expr n-var &body (bindings &rest expression))
   "Each bindings is of the form (PTR-VAR ELT-SIZE INNER-STRIDE-VAR ARRAY-EXPR)."

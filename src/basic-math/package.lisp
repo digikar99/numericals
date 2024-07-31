@@ -1,7 +1,7 @@
 (peltadot/utils:defpackage :numericals/basic-math
   (:use)
-  (:shadowing-import-exported-symbols :numericals/more-utils)
-  (:reexport :numericals/more-utils)
+  (:shadowing-import-exported-symbols :numericals/utils)
+  (:reexport :numericals/utils)
   (:documentation "Vectorized basic math functionality for CL:ARRAY")
   (:export
 
@@ -87,12 +87,12 @@
 
 (peltadot/utils:defpackage :numericals/basic-math/impl
   (:use :peltadot)
-  (:shadowing-import-exported-symbols :numericals/more-utils)
+  (:shadowing-import-exported-symbols :numericals/utils)
   (:import-from #:alexandria
                 #:define-constant
                 #:with-gensyms
                 #:make-gensym-list)
-  (:import-from #:numericals/more-utils
+  (:import-from #:numericals/utils
                 #:split-at-keywords)
   (:import-from #:introspect-environment
                 #:constant-form-value)

@@ -1,4 +1,4 @@
-(in-package :numericals/more-utils)
+(in-package :numericals/utils)
 
 (5am:in-suite :numericals)
 

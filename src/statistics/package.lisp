@@ -1,6 +1,6 @@
 (peltadot/utils:defpackage :numericals/statistics
   (:use :peltadot)
-  (:shadowing-import-exported-symbols :numericals/more-utils)
+  (:shadowing-import-exported-symbols :numericals/utils)
   (:export #:mean
            #:variance
            #:std)

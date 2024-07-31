@@ -1,4 +1,4 @@
-(in-package :numericals/more-utils)
+(in-package :numericals/utils)
 
 ;; Numpy uses an array wrapper, and a slice of the matrix
 ;; is actually a part of the original matrix - meaning, writing to the

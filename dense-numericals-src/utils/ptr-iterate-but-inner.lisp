@@ -1,4 +1,4 @@
-(in-package :dense-numericals/more-utils)
+(in-package :dense-numericals/utils)
 
 (declaim (inline array-total-offset))
 (defun array-total-offset (array)

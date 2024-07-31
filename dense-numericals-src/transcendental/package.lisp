@@ -1,6 +1,6 @@
 (peltadot/utils:defpackage :dense-numericals/transcendental
-  (:shadowing-import-exported-symbols :dense-numericals/more-utils)
-  (:reexport :dense-numericals/more-utils)
+  (:shadowing-import-exported-symbols :dense-numericals/utils)
+  (:reexport :dense-numericals/utils)
   (:use)
   (:export
 
@@ -44,7 +44,7 @@
 (numericals/common:export-all-external-symbols :dense-numericals/transcendental :dense-numericals)
 
 (peltadot/utils:defpackage :dense-numericals/transcendental/impl
-  (:shadowing-import-exported-symbols :dense-numericals/more-utils)
+  (:shadowing-import-exported-symbols :dense-numericals/utils)
   (:use
    :peltadot
    :dense-numericals/basic-math/impl)

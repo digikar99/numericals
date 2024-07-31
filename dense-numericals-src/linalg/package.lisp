@@ -1,6 +1,6 @@
 (peltadot/utils:defpackage :dense-numericals/linalg
   (:use :peltadot)
-  (:shadowing-import-exported-symbols :dense-numericals/more-utils)
+  (:shadowing-import-exported-symbols :dense-numericals/utils)
   (:export #:vdot
            #:inner
            #:outer
