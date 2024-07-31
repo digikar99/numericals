@@ -75,7 +75,7 @@ jobs:
                      (print ql:*local-project-directories*)
                      (print (ql:where-is-system "'$LIBRARY'/magicl"))
                      (ql:quickload "'$LIBRARY'/magicl" :verbose t)
-                     (ql:quickload "'$LIBRARY'/more-utils" :verbose t)
+                     (ql:quickload "'$LIBRARY'/utils" :verbose t)
                      (eval
                        (read-from-string
                         "(PRINT
