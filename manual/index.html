@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Manual - (dense-)numericals</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Manual";
+        var mkdocs_page_input_path = "manual.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/lisp.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> (dense-)numericals
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Introduction</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../common-lisp-and-numericals/">Writing Fast Code Fast</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../install/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../comparison/">Current State</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Manual</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#utilities">Utilities</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#configuration">Configuration</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#array-element-type">*array-element-type*</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#array-element-type-alist">*array-element-type-alist*</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#array-layout">*array-layout*</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#broadcast-automatically">*broadcast-automatically*</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#default-float-format">*default-float-format*</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#inline-with-multithreading">*inline-with-multithreading*</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#multithreaded-threshold">*multithreaded-threshold*</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#generating-arrays">Generating arrays</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#from-lists-of-elements-asarray">From lists of elements: asarray</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#direct-ways-avoid-list-allocation">Direct ways (avoid list allocation)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#modifying-arrays">Modifying arrays</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#fill">fill</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#aref">aref*</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transforming-arrays">Transforming arrays</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#transpose">transpose</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#reshape">reshape</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#element-wise-operators">Element-wise operators</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#array-reduction-operators">Array reduction operators</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#basic-math">Basic Math</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#utilities-and-array-operations">Utilities and array operations</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#standard-arithmetic-operations">Standard arithmetic operations</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#comparison-operations">Comparison operations</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#rounding-operations">Rounding operations</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#arg-maximum">arg-maximum</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#arg-minimum">arg-minimum</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#other-basic-operations">Other basic operations</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#transcendental-operations">Transcendental Operations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#linear-algebra">Linear Algebra</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#cholesky">cholesky</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#det">det</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#eigvals">eigvals</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#eigvecs">eigvecs</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#inv">inv</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#lu">lu</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#norm2">norm2</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#outer">outer</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pinv">pinv</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#qr">qr</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#rank">rank</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#solve">solve</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#svd">svd</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#vdot">vdot</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#random">Random</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#statistics">Statistics</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#magicl">magicl</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#tests">tests</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../old-index.html">Old Documentation</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">(dense-)numericals</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Manual</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="manual">Manual</h1>
+<p>There are two main asdf systems:</p>
+<ul>
+<li><code>numericals</code> is designed to work with <code>cl:array</code> so that interfacing with the rest of the lisp ecosystem is trivial.</li>
+<li><code>dense-numericals</code> is designed to work with <a href="https://github.com/digikar99/dense-arrays">dense-arrays:array</a></li>
+</ul>
+<p>Each of these has a number of systems and corresponding packages:</p>
+<ul>
+<li>utils</li>
+<li>basic-math</li>
+<li>transcendental</li>
+<li>statistics</li>
+<li>linalg</li>
+<li>random</li>
+</ul>
+<p>These can be loaded individually. For example <code>(asdf:load-system "numericals/random")</code>.</p>
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+<p><strong>Table of Contents</strong></p>
+<ul>
+<li><a href="#utilities">Utilities</a><ul>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#generating-arrays">Generating arrays</a></li>
+<li><a href="#modifying-arrays">Modifying arrays</a></li>
+<li><a href="#transforming-arrays">Transforming arrays</a></li>
+<li><a href="#element-wise-operators">Element-wise operators</a></li>
+<li><a href="#array-reduction-operators">Array reduction operators</a></li>
+</ul>
+</li>
+<li><a href="#basic-math">Basic Math</a><ul>
+<li><a href="#utilities-and-array-operations">Utilities and array operations</a></li>
+<li><a href="#standard-arithmetic-operations">Standard arithmetic operations</a></li>
+<li><a href="#comparison-operations">Comparison operations</a></li>
+<li><a href="#rounding-operations">Rounding operations</a></li>
+<li><a href="#arg-maximum">arg-maximum</a></li>
+<li><a href="#arg-minimum">arg-minimum</a></li>
+<li><a href="#other-basic-operations">Other basic operations</a></li>
+</ul>
+</li>
+<li><a href="#transcendental-operations">Transcendental Operations</a></li>
+<li><a href="#linear-algebra">Linear Algebra</a></li>
+<li><a href="#random">Random</a></li>
+<li><a href="#statistics">Statistics</a></li>
+<li><a href="#magicl">magicl</a></li>
+<li><a href="#tests">tests</a></li>
+</ul>
+<!-- markdown-toc end -->
+
+<h2 id="utilities">Utilities</h2>
+<p>Package: <code>numericals/utils</code> or <code>dense-numericals/utils</code></p>
+<h3 id="configuration">Configuration</h3>
+<p><code>numericals</code> and <code>dense-numericals</code> come with a number of dynamically bound configuration variables that are put to use in non-inlined code. These include:</p>
+<h4 id="array-element-type">*array-element-type*</h4>
+<pre><code class="language-lisp">Variable
+Default Unbound
+</code></pre>
+<p>If BOUND, this is the default value of the or TYPE (or also ELEMENT-TYPE for DENSE-ARRAYS) argument. Overrides <a href="#array-element-type-alist">*array-element-type-alist*</a>.
+Is overriden by explicitly passing an TYPE (or also ELEMENT-TYPE for DENSE-ARRAYS) argument.</p>
+<h4 id="array-element-type-alist">*array-element-type-alist*</h4>
+<pre><code class="language-lisp">Variable
+Default Value: NIL
+</code></pre>
+<p>An ALIST mapping package to the default element-type used in that package.</p>
+<ul>
+<li>Inspired from <code>SWANK:*READTABLE-ALIST*</code></li>
+<li>Overrides none.</li>
+<li>Is overriden by <a href="#array-element-type">*array-element-type*</a> when bound, or by explicitly passing an TYPE (or also ELEMENT-TYPE for DENSE-ARRAYS) argument.</li>
+</ul>
+<h4 id="array-layout">*array-layout*</h4>
+<pre><code class="language-lisp">Variable
+Default Value: :ROW-MAJOR
+</code></pre>
+<p>For <code>dense-numericals</code> this specifies the default layout constructed by <code>make-array</code> and
+constructor functions like <a href="#asarray">asarray</a>, <a href="#zeros">zeros</a>, <a href="#ones">ones</a>, etc in the
+DENSE-ARRAYS-PLUS-LITE package.</p>
+<p>For <code>numericals</code>, this is a dummy variable provided so that code written for <code>numericals</code> may be easily upgradeable to <code>dense-numericals</code>.</p>
+<h4 id="broadcast-automatically">*broadcast-automatically*</h4>
+<pre><code class="language-lisp">Variable
+Default Value: T
+</code></pre>
+<p>If non-NIL, operations automatically perform broadcasting as necessary.
+If NIL, broadcasting is expected to be performed by the user. Such strictness
+can be helpful to locate bugs. Broadcasting follows the <a href="https://numpy.org/doc/stable/user/basics.broadcasting.html">numpy broadcasting semantics</a>.</p>
+<h4 id="default-float-format">*default-float-format*</h4>
+<pre><code class="language-lisp">Variable
+Default Value: SINGLE-FLOAT
+</code></pre>
+<p>Used for converting non-float arrays to float arrays for floating-point
+operations like trigonometric functions.</p>
+<h4 id="inline-with-multithreading">*inline-with-multithreading*</h4>
+<pre><code class="language-lisp">Variable
+Default Value: NIL
+</code></pre>
+<p>Inlining is usually necessary for smaller arrays; for such arrays multithreading
+becomes unnecessary. If this parameter is non-NIL, code using multithreading
+would be emitted; otherwise, the code would be skipped.</p>
+<p>This is only relevant for transcendental functions which uses lparallel for multithreading.</p>
+<h4 id="multithreaded-threshold">*multithreaded-threshold*</h4>
+<pre><code class="language-lisp">Variable
+Default Value: 80000
+</code></pre>
+<p>The lower bound of the array size beyond which LPARALLEL is used for distributing
+[transcendental] operations across multiple threads.</p>
+<p>NOTE: It is not defined if this bound is inclusive or exclusive.</p>
+<h3 id="generating-arrays">Generating arrays</h3>
+<p>Beyond the <code>cl:make-array</code> and <code>dense-arrays:make-array</code>, a number of utilities are provided to  generate arrays:</p>
+<h4 id="from-lists-of-elements-asarray">From lists of elements: asarray</h4>
+<pre><code class="language-lisp">Function: (asarray array-like &amp;key out type layout)
+</code></pre>
+<ul>
+<li><code>array-like</code> can be a list, nested lists, with the nodes ultimately containing numbers or arrays.</li>
+<li><code>type</code> indicates the element-type of the array to be generated. The elements from <code>array-like</code> will be coerced to this <code>type</code><ul>
+<li><code>type</code> can also be <code>auto</code>, in which case, the element type of the array to be generated will be guessed from the element types of <code>array-like</code></li>
+</ul>
+</li>
+<li><code>layout</code> is either <code>:row-major</code> or <code>:column-major</code>. However, <code>cl:array</code> can only be <code>:row-major</code>, thus, <code>:column-major</code> is only applicable for <code>dense-arrays:array</code>.</li>
+</ul>
+<h4 id="direct-ways-avoid-list-allocation">Direct ways (avoid list allocation)</h4>
+<p>More direct ways to generate arrays (without allocating lists) include the functions <code>zeros</code> and <code>ones</code>. Both have the common lambda list: </p>
+<pre><code class="language-lisp">(shape &amp;key type layout)
+</code></pre>
+<p>The <code>shape</code> is a list of numbers, but it can also be a spliced list of numbers.</p>
+<pre><code class="language-lisp">(numericals:zeros 3 :type 'single-float) ;=&gt; #(0.0 0.0 0.0)
+(numericals:zeros 2 3 :type 'double-float)
+;=&gt; #2A((0.0d0 0.0d0 0.0d0) (0.0d0 0.0d0 0.0d0))
+(numericals:zeros '(2 3) :type 'double-float)
+;=&gt; #2A((0.0d0 0.0d0 0.0d0) (0.0d0 0.0d0 0.0d0))
+(numericals:ones '(2 3) :type 'double-float)
+;=&gt; #2A((1.0d0 1.0d0 1.0d0) (1.0d0 1.0d0 1.0d0))
+</code></pre>
+<p>In cases where prefilling an array with <code>0</code> or <code>1</code> is not important, there is also the <code>empty</code> function.</p>
+<p>A generalization of <code>ones</code> is the <code>full</code> function, which takes in the additional keyword argument <code>value</code>.</p>
+<pre><code class="language-lisp">(numericals:full 4 :type 'double-float :value 42)
+;=&gt; #(42.0d0 42.0d0 42.0d0 42.0d0)
+</code></pre>
+<p>In addition to these, arrays with uniform random numbers can be generated using the <code>rand</code> function. The lambda list for this is similar to <code>zeros</code> or <code>ones</code> but it has the additional keyword arguments <code>min</code> and <code>max</code> indicating the range of the uniform number distribution. These have the default values <code>0</code> and <code>1</code> respectively.</p>
+<pre><code class="language-lisp">(numericals:rand 3 :type 'single-float)
+;=&gt; #(0.90184736 0.7570008 0.094017744)
+(numericals:rand 3 :type 'single-float :min -10.0 :max 10.0)
+;=&gt; #(8.339874 1.0285072 2.144558)
+</code></pre>
+<p>All of these have a XXX<code>-like</code> counterpart which takes in an existing array and generates an array with shape and element-type similar to the input array.</p>
+<h3 id="modifying-arrays">Modifying arrays</h3>
+<h4 id="fill">fill</h4>
+<h4 id="aref">aref*</h4>
+<h3 id="transforming-arrays">Transforming arrays</h3>
+<p><code>numericals/utils</code> and <code>dense-numericals/utils</code> only provides <code>transpose</code> and <code>reshape</code>. The other tranformation function <code>concat</code> is provided by [basic-math].</p>
+<h4 id="transpose">transpose</h4>
+<p>Transposes an array along one or more axes. </p>
+<h4 id="reshape">reshape</h4>
+<h3 id="element-wise-operators">Element-wise operators</h3>
+<ul>
+<li>abs </li>
+</ul>
+<p>Miscellaneous:</p>
+<ul>
+<li>two-arg-max</li>
+<li>two-arg-min</li>
+</ul>
+<h3 id="array-reduction-operators">Array reduction operators</h3>
+<p>Package: <code>numericals</code> or <code>dense-numericals</code></p>
+<ul>
+<li>sum</li>
+<li>vdot</li>
+<li>maximum</li>
+<li>minimum</li>
+<li>arg-maximum</li>
+<li>arg-minimum</li>
+</ul>
+<h2 id="basic-math">Basic Math</h2>
+<p>This functionality is provided by the <code>numericals/basic-math</code> or <code>dense-numericals/basic-math</code> systems and packages. Broadly, These can be divided into the following groups.</p>
+<h3 id="utilities-and-array-operations">Utilities and array operations</h3>
+<ul>
+<li>copy</li>
+<li>coerce</li>
+<li>astype</li>
+<li>concat</li>
+<li>shape</li>
+<li>reshape</li>
+</ul>
+<h3 id="standard-arithmetic-operations">Standard arithmetic operations</h3>
+<p>Binary operations that take in two arguments and return a new result:</p>
+<pre><code>add subtract multiply divide
+</code></pre>
+<p>Their common lambda list can be given by:</p>
+<pre><code class="language-lisp">Lambda List: (x y &amp;key broadcast out)
+</code></pre>
+<ul>
+<li>
+<p>The inputs <code>X</code> and <code>Y</code> to these functions can be numbers, arrays, or array-like objects (such as lists or lists of lists).</p>
+</li>
+<li>
+<p>The keyword <code>OUT</code> argument can be supplied to use an existing pre-allocated array and avoid array allocation.</p>
+</li>
+<li>The default value of <code>BROADCAST</code> is given by <a href="#broadcast-automatically">*broadcast-automatically*</a> but can be overriden by supplying the keyword <code>BROADCAST</code> argument. When this is NIL, arguments must be of the same shape.</li>
+</ul>
+<p>Equivalent operations which modify the first argument assuming it is an array end with a '!'.</p>
+<pre><code>add! subtract! divide! multiply!
+</code></pre>
+<ul>
+<li>In contrast to their non-destructive counterparts, their lambda lists do not contain the <code>OUT</code> argument. The first argument is implicitly taken as the <code>OUT</code>.</li>
+</ul>
+<pre><code class="language-lisp">Lambda List: (x y &amp;key broadcast)
+</code></pre>
+<p>Finally, there are the n-ary operations corresponding to the lisp functions.</p>
+<pre><code>+ - / *
+</code></pre>
+<p>These take in any number of arguments, which can be number, arrays, lists or nested lists, and also an optional keyword argument <code>OUT</code>.</p>
+<p>In cases where the arguments are non-arrays,</p>
+<ul>
+<li>for binary operations, they are converted to a type given by</li>
+</ul>
+<pre><code class="language-lisp">(or (when (boundp '*array-element-type*)
+      *array-element-type*)
+    (cdr (assoc *package* *array-element-type-alist*))
+    t)
+</code></pre>
+<ul>
+<li>for n-ary operations, the types are upgraded according to the function <a href="https://github.com/digikar99/numericals/blob/master/src/basic-math/n-arg-fn.lisp">numericals/basic-math/impl::normalize-arguments/dmas</a>.</li>
+</ul>
+<p>The type upgradation also occurs if the arrays are of heterogeneous types and the <code>OUT</code> argument is unsupplied. This upgradation is performed by <a href="https://github.com/digikar99/numericals/blob/master/common.lisp">numericals/common:max-type</a>.</p>
+<p>When compiled with <code>(optimize speed)</code>, an attempt is made using compiler macros to convert calls to n-ary operations into the binary operations. However, this can be fragile, and for performance reasons, users are recommended to use the binary operations.</p>
+<h3 id="comparison-operations">Comparison operations</h3>
+<p>Similar to the <a href="#standard-arithmetic-operations">arithmetic</a>, these operations can again be grouped into functions that take in two arguments: </p>
+<ul>
+<li>two-arg-&lt;</li>
+<li>two-arg-&lt;=</li>
+<li>two-arg-=</li>
+<li>two-arg-/=</li>
+<li>two-arg-&gt;</li>
+<li>two-arg-&gt;=</li>
+</ul>
+<p>Their lambda lists is exactly identical to the arithmetic operations.</p>
+<pre><code class="language-lisp">Lambda List: (x y &amp;key broadcast out)
+</code></pre>
+<p>CL counterparts that take in two or more than two arguments are given by:</p>
+<ul>
+<li>&lt;</li>
+<li>&lt;=</li>
+<li>=</li>
+<li>/=</li>
+<li>></li>
+<li>>=</li>
+</ul>
+<p>In contrast to their CL counterparts, these functions return a <code>0</code> or a <code>1</code> instead of <code>NIL</code> or <code>T</code> respectively when their arguments are scalar. When the arguments are arrays or array-like, the output is an array of element type <code>(unsigned-byte 8)</code>.</p>
+<p>This makes it easy to use SIMD-accelerated operations from <a href="https://github.com/digikar99/bmas">BMAS</a> and can make a massive difference in performance. Note below that <code>numericals:two-arg-&lt;</code> is about 25 times faster than <code>cl:&lt;</code>.</p>
+<pre><code class="language-lisp">CL-USER&gt; (let ((a (numericals:rand 10 10 :type 'single-float))
+               (b (numericals:rand 10 10 :type 'single-float))
+               (c (numericals:rand 10 10 :type t)))
+           (declare (optimize speed)
+                    (type (simple-array single-float (10 10)) a b)
+                    (type (simple-array t (10 10)) c))
+           (time (loop repeat 1000000
+                       do (loop for i below 10
+                                do (loop for j below 10
+                                         do (setf (aref c i j)
+                                                  (cl:&lt; (aref a i j)
+                                                        (aref b i j))))))))
+Evaluation took:
+  4.939 seconds of real time
+  4.938077 seconds of total run time (4.938077 user, 0.000000 system)
+  99.98% CPU
+  13,843,343,776 processor cycles
+  0 bytes consed
+
+NIL
+CL-USER&gt; (let ((a (numericals:rand 10 10 :type 'single-float))
+               (b (numericals:rand 10 10 :type 'single-float))
+               (c (numericals:rand 10 10 :type '(unsigned-byte 8))))
+           (declare (optimize speed)
+                    (type (simple-array single-float (10 10)) a b)
+                    (type (simple-array (unsigned-byte 8) (10 10)) c))
+           (time (loop repeat 1000000
+                       do (numericals:two-arg-&lt; a b :out c :broadcast nil))))
+Evaluation took:
+  0.187 seconds of real time
+  0.187028 seconds of total run time (0.187028 user, 0.000000 system)
+  100.00% CPU
+  524,357,913 processor cycles
+  144,019,840 bytes consed
+
+NIL
+</code></pre>
+<h3 id="rounding-operations">Rounding operations</h3>
+<p>CL has four rounding operations. Their counterparts are given by the following shadowing symbols in <code>numericals/basic-math</code> or <code>dense-numericals/basic-math</code>.</p>
+<ul>
+<li>ffloor</li>
+<li>fceiling</li>
+<li>fround</li>
+<li>ftruncate</li>
+</ul>
+<pre><code class="language-lisp">Lambda List: (value &amp;key broadcast out)
+</code></pre>
+<p>Similar to the <a href="#standard-arithmetic-operations">arithmetic functions</a>, these also have the in-place counterparts which assume that the first argument is an array and is the implicit <code>OUT</code> argument.</p>
+<ul>
+<li>ffloor!</li>
+<li>fceiling!</li>
+<li>fround!</li>
+<li>ftruncate!</li>
+</ul>
+<h3 id="arg-maximum">arg-maximum</h3>
+<pre><code class="language-lisp">Polymorphic Function: (arg-maximum array-like &amp;rest args923 &amp;key
+                       (axis NIL axis924) (keep-dims NIL keep-dims925)
+                       (out NIL out926))
+</code></pre>
+<p>Find the index of the maximum element along the <code>axis</code>.</p>
+<h3 id="arg-minimum">arg-minimum</h3>
+<pre><code class="language-lisp">Polymorphic Function: (arg-minimum array-like &amp;rest args932 &amp;key
+                       (axis NIL axis933) (keep-dims NIL keep-dims934)
+                       (out NIL out935))
+</code></pre>
+<p>Find the index of the minimum element along the <code>axis</code>.</p>
+<h3 id="other-basic-operations">Other basic operations</h3>
+<ul>
+<li>abs!</li>
+<li>matmul</li>
+<li>two-arg-matmul</li>
+<li>dot</li>
+<li>max</li>
+<li>two-arg-max</li>
+<li>min</li>
+<li>two-arg-min</li>
+<li>sum</li>
+<li>maximum</li>
+<li>
+<p>minimum</p>
+</li>
+<li>
+<p>logand</p>
+</li>
+<li>two-arg-logand</li>
+<li>logior</li>
+<li>two-arg-logior</li>
+<li>logxor</li>
+<li>
+<p>two-arg-logxor</p>
+</li>
+<li>
+<p>lognot</p>
+</li>
+<li>logandc1</li>
+<li>logandc2</li>
+<li>lognand</li>
+<li>lognor</li>
+<li>logorc1</li>
+<li>logorc2
+   ;; #:logtest
+   ;; #:logbitp
+   ;; #:logcount</li>
+</ul>
+<h2 id="transcendental-operations">Transcendental Operations</h2>
+<h2 id="linear-algebra">Linear Algebra</h2>
+<p>Package: <code>numericals/linalg</code> or <code>dense-numericals/linalg</code></p>
+<p>The functions in these packages use the <a href="https://eigen.tuxfamily.org/index.php?title=Main_Page">Eigen</a> library of C++. In actuality, a <a href="https://github.com/digikar99/ceigen_lite/">lite C interface</a> is used. </p>
+<h3 id="cholesky">cholesky</h3>
+<pre><code class="language-lisp">Function: (cholesky array-like &amp;key out)
+</code></pre>
+<p>Compute the cholesky decomposition of positive definite 2D
+matrices given by <code>array-like</code>. This uses the <code>Eigen::LLT</code> to perform the computation.</p>
+<p>For a matrix A, it returns L such that <code>A = L * L^C</code> where L is lower triangular, and
+<code>L^C</code> is the conjugate of L.</p>
+<p>References:</p>
+<ul>
+<li>http://www.eigen.tuxfamily.org/dox/classEigen_1_1LLT.html</li>
+</ul>
+<h3 id="det">det</h3>
+<pre><code class="language-lisp">Function: (det array-like &amp;key out)
+</code></pre>
+<p>Calculate the determinant of 2D matrices given by <code>array-like</code></p>
+<h3 id="eigvals">eigvals</h3>
+<pre><code class="language-lisp">Function: (eigvals array-like &amp;key eigvals)
+</code></pre>
+<p>Use <code>Eigen::EigenSolver</code> to compute the eigenvalues of the 2D square matrix
+given by <code>array-like</code>.</p>
+<h3 id="eigvecs">eigvecs</h3>
+<pre><code class="language-lisp">Function: (eigvecs array-like &amp;key eigvals eigvecs)
+</code></pre>
+<p>Use <code>Eigen::EigenSolver</code> to compute the eigenvalues and
+eigvectors of the 2D square matrix given by <code>array-like</code>.</p>
+<h3 id="inv">inv</h3>
+<pre><code class="language-lisp">Function: (inv array-like &amp;key out)
+</code></pre>
+<p>Calculate the inverse of 2D matrices given by <code>array-like</code></p>
+<h3 id="lu">lu</h3>
+<pre><code class="language-lisp">Function: (lu array-like &amp;key lu p q)
+</code></pre>
+<p>Calculate the <code>lu</code> decomposition of <code>array-like</code> using <code>Eigen::FullPivLU</code>.</p>
+<p>For input A, it returns three matrices <code>p</code>, <code>lu</code>, and <code>q</code> such that</p>
+<pre><code>                     A=P^{−1} L U Q^{−1}
+</code></pre>
+<p>where L is unit-lower-triangular, U is upper-triangular, and <code>p</code> and <code>q</code> are permutation matrices.
+The matrix <code>lu</code> contains L below the diagonal and U above the diagonal.</p>
+<p>TODO: matmul seems missing.</p>
+<p>The following code illustrates the decomposition and the reconstruction</p>
+<pre><code class="language-lisp">    (let ((a (asarray '((1 2 3) (4 5 6)) :type 'single-float)))
+      (multiple-value-bind (p lu q) (lu a)
+        (print lu)
+        (matmul (inv p)
+                   (asarray '((1 0 0) (0.5 1 0)) :type 'single-float)   ; unit lower triangular
+                   (asarray '((6 4 5) (0 -1 -0.5)) :type 'single-float) ; upper triangular
+                   (inv q))))
+
+    #|
+
+    #&lt;STANDARD-DENSE-ARRAY :ROW-MAJOR 2x3 SINGLE-FLOAT
+      (  6.000       4.000       5.000    )
+      (  0.500      -1.000      -0.500    )
+       {101110E403}&gt;
+    #&lt;STANDARD-DENSE-ARRAY :ROW-MAJOR 2x3 SINGLE-FLOAT
+      (  1.000       2.000       3.000    )
+      (  4.000       5.000       6.000    )
+       {101110E893}&gt;
+
+    |#
+</code></pre>
+<p>References:</p>
+<ul>
+<li><a href="https://eigen.tuxfamily.org/dox/classEigen_1_1FullPivLU.html">https://eigen.tuxfamily.org/dox/classEigen_1_1FullPivLU.html</a></li>
+</ul>
+<h3 id="norm2">norm2</h3>
+<pre><code class="language-lisp">Function: (norm2 array-like)
+</code></pre>
+<p>Calculate the L2 norm of vectors or the frobenius norm of 2D matrix.</p>
+<h3 id="outer">outer</h3>
+<p>No documentation found for <code>outer</code></p>
+<h3 id="pinv">pinv</h3>
+<pre><code class="language-lisp">Function: (pinv array-like &amp;key out)
+</code></pre>
+<p>Calculate the psuedo inverse of 2D matrices given by <code>array-like</code>.</p>
+<h3 id="qr">qr</h3>
+<pre><code class="language-lisp">Function: (qr array-like &amp;key q r)
+</code></pre>
+<p>Calculate the <code>qr</code> decomposition of <code>array-like</code>.</p>
+<h3 id="rank">rank</h3>
+<pre><code class="language-lisp">Function: (rank array-like &amp;key out tol)
+</code></pre>
+<p>Use <code>Eigen::ColPivHouseholderQR</code> to calculate the rank of the matrix given by <code>array-like</code>.</p>
+<p>The tolerance or threshold is given by <code>tol</code>. If not supplied or given as zero,
+it is the default value set by the eigen's methods.</p>
+<h3 id="solve">solve</h3>
+<pre><code class="language-lisp">Function: (solve a b &amp;rest args987 &amp;key (out NIL out988))
+</code></pre>
+<p>Solves a system of linear equation A*X = <code>b</code> and returns X as the output.
+At the time of this writing, it uses the <code>Eigen::partialPivQr</code> for square matrices <code>Eigen::householderQR</code> for non-square matrices.</p>
+<p>References:</p>
+<ol>
+<li>
+<p><a href="https://eigen.tuxfamily.org/dox/classEigen_1_1ColPivHouseholderQR.html#ad4825c3d43dffdf0c883de09ba891646">Eigen::ColPivHouseholderQR documentation</a> for more details</p>
+</li>
+<li>
+<p><a href="https://eigen.tuxfamily.org/dox/group__TutorialLinearAlgebra.html">Eigen Linear Algebra Tutorial</a></p>
+</li>
+</ol>
+<h3 id="svd">svd</h3>
+<pre><code class="language-lisp">Function: (svd array-like s u v)
+</code></pre>
+<p>Calculate the <code>svd</code> decomposition of <code>array-like</code> using <code>Eigen::BDCSVD</code>.
+For input m-by-n input A, it returns <code>u</code>, <code>s</code>, and <code>v</code> such that</p>
+<pre><code>                     A = U S V^H
+</code></pre>
+<p>where</p>
+<ul>
+<li><code>u</code> is a m-by-m unitary,</li>
+<li><code>v</code> is a n-by-n unitary,</li>
+<li>and <code>s</code> is a m-by-n real positive matrix which is zero outside of its main diagonal</li>
+</ul>
+<p>The diagonal entries of <code>s</code> are known as the singular values of A and the columns of <code>u</code> and <code>v</code> are known as the left and right singular vectors of A respectively.</p>
+<p>The following code illustrates the decomposition and the reconstruction (FIXME: Update):</p>
+<pre><code class="language-lisp">    (let ((a (asarray '((1 2 3) (4 5 6)) :type 'single-float)))
+      (multiple-value-bind (p lu q) (lu a)
+        (print lu)
+        (matmul (inv p)
+                   (asarray '((1 0 0) (0.5 1 0)) :type 'single-float)   ; unit lower triangular
+                   (asarray '((6 4 5) (0 -1 -0.5)) :type 'single-float) ; upper triangular
+                   (inv q))))
+
+    #|
+
+    #&lt;STANDARD-DENSE-ARRAY :ROW-MAJOR 2x3 SINGLE-FLOAT
+      (  6.000       4.000       5.000    )
+      (  0.500      -1.000      -0.500    )
+       {101110E403}&gt;
+    #&lt;STANDARD-DENSE-ARRAY :ROW-MAJOR 2x3 SINGLE-FLOAT
+      (  1.000       2.000       3.000    )
+      (  4.000       5.000       6.000    )
+       {101110E893}&gt;
+
+    |#
+</code></pre>
+<p>References:</p>
+<ul>
+<li><a href="https://eigen.tuxfamily.org/dox/classEigen_1_1BDCSVD.html">https://eigen.tuxfamily.org/dox/classEigen_1_1BDCSVD.html</a></li>
+<li><a href="https://eigen.tuxfamily.org/dox/classEigen_1_1JacobiSVD.html">https://eigen.tuxfamily.org/dox/classEigen_1_1JacobiSVD.html</a></li>
+</ul>
+<h3 id="vdot">vdot</h3>
+<pre><code class="language-lisp">Function: (vdot a b)
+</code></pre>
+<p>Treat the two input arrays as 1D vectors and calculate their dot product.</p>
+<h2 id="random">Random</h2>
+<h2 id="statistics">Statistics</h2>
+<h2 id="magicl">magicl</h2>
+<p>The following two systems provide packages for using <code>magicl</code> functions:</p>
+<ul>
+<li><code>numericals/magicl</code></li>
+<li>and <code>dense-numericals/magicl</code></li>
+</ul>
+<p>Functions in the <code>numericals/magicl</code> and the <code>dense-numericals/magicl</code> package are essentially wrappers around <a href="https://github.com/quil-lang/magicl">magicl</a> and return <code>cl:array</code> and <code>dense-arrays:array</code> respectively. This can be helpful for using magicl with other lisp packages such as numcl or lisp-stat.</p>
+<h2 id="tests">tests</h2>
+<p>Run <code>(asdf:test-system "numericals")</code> or <code>(asdf:test-system "dense-numericals")</code>. This will load the <code>"numericals/tests"</code> or <code>"dense-numericals/tests"</code> system respectively and run the tests.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../comparison/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../old-index.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(false);
+        });
+    </script>
+
+</body>
+</html>

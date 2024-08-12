@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Trash - (dense-)numericals</title>
+    <title>History - (dense-)numericals</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,8 +13,8 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Trash";
-        var mkdocs_page_input_path = "trash.md";
+        var mkdocs_page_name = "History";
+        var mkdocs_page_input_path = "history.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -79,7 +79,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Trash</li>
+      <li class="breadcrumb-item active">History</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -88,14 +88,19 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <p>Unfortunately, <a href="https://betterexplained.com/articles/logical-fallacy-popularity-is-not-quality/">quality doesn't dictate popularity</a>, but popularity would dictate the number of libraries, right?</p>
-<p>Numerical or scientific computing is one such domain where popularity of the ecosystem seems to be a big factor driving the tool availability. While Common Lisp does have</p>
+                <h1 id="history">History</h1>
+<p>Curiosity got the better of me one day, and I set out to explore the limits of numerical computing with Common Lisp. I mean - what does speed require? Just memory-locality and SIMD?
+SBCL has memory-locality. What about SIMD? Well, the functionality hasn't been "standardized" yet, and there are several attempts. Indeed,
+SBCL needs more documentation - think Emacs! But knowledge exists in people's heads. People are willing to share it. So, this was possible.</p>
+<p>PS: This library began as a <a href="https://www.reddit.com/r/lisp/comments/fkfgjn/sbcl_with_simd_how_to_optimize_sseavx2_to_pointer/">reddit post</a>, that, in turn, was triggered by <a href="https://www.reddit.com/r/lisp/comments/fjmm6y/deep_learning_with_gpus/">this reddit post</a>.</p>
+<p>You should probably use the latest <a href="https://github.com/sbcl/sbcl">SBCL (get from git)</a>, at least SBCL-2.0.9. The build is fairly easy: <code>sh make.sh &amp;&amp; sh run-sbcl.sh # or install.sh</code> or pick a binary from <a href="http://www.sbcl.org/platform-table.html">here</a>.</p>
+<h2 id="project-predecessors">Project Predecessors</h2>
 <ul>
-<li><a href="https://github.com/melisgl/mgl-mat">mgl-mat</a></li>
-<li><a href="https://github.com/quil-lang/magicl">magicl</a></li>
+<li><a href="./sbcl-numericals">sbcl-numericals</a></li>
+<li><a href="https://github.com/digikar99/numericals/releases/tag/2020.08">numericals-2020.08</a></li>
 </ul>
-<p>and perhaps a few others, their functionality is still dwarfed by the more popular languages. So, without using projects like <a href="http://common-lisp.net/project/cffi">cffi</a>, <a href="https://github.com/rpav/cl-autowrap">cl-autowrap</a>, <a href="https://github.com/bendudson/py4cl/">py4cl</a>, <a href="https://github.com/digikar99/py4cl2-cffi">py4cl2-cffi</a>, it can be hard if not impossible to meet one's needs while staying in Common Lisp.</p>
-<p><code>numericals</code> or <code>dense-numericals</code> does not intend offer </p>
+<p>The project renaming reflects an attempt to separate the portable parts of the codebase
+from the SBCL-specific part, so that a portability attempt may be made in the future.</p>
               
             </div>
           </div><footer>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Writing Fast Code Fast - (dense-)numericals</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Writing Fast Code Fast";
+        var mkdocs_page_input_path = "common-lisp-and-numericals.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/lisp.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> (dense-)numericals
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Introduction</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Writing Fast Code Fast</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#common-lisp">Common Lisp</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#numericals">Numericals</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#1-inlining-with-generics">1. Inlining with generics</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#2-non-generic-fast-c-functions">2. Non-generic fast C functions</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#3-peltadot-and-cltl2">3. Peltadot and CLTL2</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../install/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../comparison/">Current State</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../manual/">Manual</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../old-index.html">Old Documentation</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">(dense-)numericals</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Writing Fast Code Fast</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="writing-fast-code-fast">Writing Fast Code Fast</h1>
+<h2 id="common-lisp">Common Lisp</h2>
+<p>Common Lisp is great for prototyping:</p>
+<ul>
+<li><a href="https://mikelevins.github.io/posts/2020-12-18-repl-driven/">REPL-based programming</a> means that you can write your program one function at a time. Type, structure, function, and class redefinitions are handled more gracefully compared to most other languages.</li>
+<li>Global variables in common lisp have dynamic scope, while local variables have default lexical scope. This means you can use global variables locally :). See <a href="TODO">this example</a>.</li>
+<li>Its <a href="https://lisper.in/restarts">condition system</a> builds upon this and goes beyond traditional exception handling, allowing one to provide restarts for resuming a "crashed" program.</li>
+</ul>
+<p>But it is also great in the longer run:</p>
+<ul>
+<li>Optional static typing with implementations like SBCL means you do not have to worry yourself with type declarations during prototyping. But as your code and types stabilize, you can add the type declarations to aid documentation as well as speed and safety, while also inlining the small functions whose call overhead exceeds the work they do.</li>
+<li>A 1994 ANSI standard coupled with several <a href="https://portability.cl/">portability libraries</a> means that it is possible to write code that works without changes even after decades.</li>
+<li>Common Lisp also allows for the deployment of binaries, and there are tools to distribute the shared libraries that the binary depends upon.</li>
+</ul>
+<p>Indeed, there are limitations:</p>
+<ul>
+<li>If you want to write fast code, then redefinitions, dynamic scoping, and condition systems can get in the way. So, to some extent, it is a tradeoff that you can work around as your program stabilizes.</li>
+<li>The type system is much limited than ML like systems and does not provide true parametric types. But see <a href="TODO">this example</a>. <a href="https://github.com/coalton-lang/coalton">Coalton</a> is an effort to work around this. It provides a ML like programming system built on top of Common Lisp.</li>
+</ul>
+<h2 id="numericals">Numericals</h2>
+<p>Like Julia, Common Lisp (SBCL) already offers a solution to the purported two-language problem. One can write high level code in Common Lisp. Coupled with the above mentioned facilities, this makes prototyping faster. However, in some cases, the same facilities, in particular the dynamic typing, can be prohibitive for performance.</p>
+<h3 id="1-inlining-with-generics">1. Inlining with generics</h3>
+<p>The particular aspect numericals / dense-numericals aim to solve concerns type declarations. Type declarations aids lisp compilers optimize code. It also aids documentation. However, while prototyping or for providing another number processing library unopinionated about the choice of types, one wants to leave the code untyped or atleast undertyped.</p>
+<p>To illustrate this, let us write our own <code>very-simple-numpy</code> package containing just one function. This will be a simple function <code>add-array</code> that takes in three arrays. It sums up the corresponding elements of the first two arrays and writes them to the third.</p>
+<p>We want <code>add-array</code> to be generic with respect to element types of the arrays. Thus, we declare that the three parameters <code>array1 array2 out</code> of a function <code>add-array</code> has type <code>(simple-array * 1)</code> rather than the more specific type <code>(simple-array single-float 1)</code>.</p>
+<pre><code class="language-lisp">(defpackage :very-simple-numpy
+  (:use :cl)
+  (:export #:add-array))
+
+(in-package :very-simple-numpy)
+
+(defun add-array (array1 array2 out)
+  (declare (type (simple-array * 1) array1 array2 out))
+  (loop :for i :below (array-total-size array1)
+        :do (setf (aref out i)
+                  (+ (aref array1 i)
+                     (aref array2 i))))
+  out)
+</code></pre>
+<p>This enables a user of <code>very-simple-numpy</code> to call <code>add-array</code> with any 1-dimensional arrays. Below, <code>add-array-caller/single-float</code> calls <code>add-array</code> with single-float arrays and <code>add-array-caller/double-float</code> calls <code>add-array</code> with double-float arrays.</p>
+<pre><code class="language-lisp">(defpackage :very-simple-numpy-user
+  (:documentation &quot;Demo package demonstrating the user of VERY-SIMPLE-NUMPY.&quot;)
+  (:use :cl)
+  (:local-nicknames (:nu :very-simple-numpy)))
+
+(in-package :very-simple-numpy-user)
+
+;;; Let's ignore how exactly we got the arrays A B and OUT
+
+(defun add-array-caller/single-float (a b out)
+  (declare (type (simple-array single-float 1) a b out))
+  (nu:add-array a b out))
+
+(defun add-array-caller/double-float (a b out)
+  (declare (type (simple-array double-float 1) a b out))
+  (nu:add-array a b out))
+</code></pre>
+<p>But what price are we paying for this generic-ness? What is the performance penalty compared to writing <code>add-array</code> directly for the specialized case of single-float?</p>
+<pre><code class="language-lisp">(defun add-array/single-float (a b out)
+  (declare (type (simple-array single-float 1) a b out)
+           (optimize speed))
+  (loop :for i :below (array-total-size a)
+        :do (setf (aref out i)
+                  (+ (aref a i)
+                     (aref b i))))
+  out)
+</code></pre>
+<pre><code class="language-lisp">VERY-SIMPLE-NUMPY-USER&gt; (asdf:load-system &quot;array-operations&quot;)
+T
+VERY-SIMPLE-NUMPY-USER&gt; (let ((a (aops:rand* 'single-float 1000))
+                              (b (aops:rand* 'single-float 1000))
+                              (o (aops:rand* 'single-float 1000)))
+                          (time (loop repeat 100000 do
+                            (add-array-caller/single-float a b o))))
+Evaluation took:
+  2.974 seconds of real time
+  2.973779 seconds of total run time (2.973779 user, 0.000000 system)
+  100.00% CPU
+  8,336,265,453 processor cycles
+  0 bytes consed
+
+NIL
+VERY-SIMPLE-NUMPY-USER&gt; (let ((a (aops:rand* 'single-float 1000))
+                              (b (aops:rand* 'single-float 1000))
+                              (o (aops:rand* 'single-float 1000)))
+                          (time (loop repeat 1000000 do
+                            (add-array/single-float a b o))))
+Evaluation took:
+  1.865 seconds of real time
+  1.864698 seconds of total run time (1.864698 user, 0.000000 system)
+  100.00% CPU
+  5,227,236,485 processor cycles
+  0 bytes consed
+
+NIL
+</code></pre>
+<p>One notes that using <code>add-array/single-float</code>, one can perform ten times as many operations in about 2/3rd of the time. Thus, <code>add-array/single-float</code> is about 15 times faster than its generic counterpart <code>add-array</code>.</p>
+<p>It turns out that on SBCL, this problem can be easily overcome by declaring <code>add-array</code> to be inline and then recompiling <code>add-array-caller/single-float</code> again:</p>
+<pre><code class="language-lisp">(in-package :very-simple-numpy)
+
+(declaim (inline add-array))
+(defun add-array (array1 array2 out)
+  (declare (type (simple-array * 1) array1 array2 out))
+  (loop :for i :below (array-total-size array1)
+        :do (setf (aref out i)
+                  (+ (aref array1 i)
+                     (aref array2 i))))
+  out)
+
+(in-package :very-simple-numpy-user)
+
+;;; Let's ignore how exactly we got the arrays A B and OUT
+
+(defun add-array-caller/single-float (a b out)
+  (declare (type (simple-array single-float 1) a b out))
+  (nu:add-array a b out))
+</code></pre>
+<p>If you evaluate the performance again, both <code>add-array-caller/single-float</code> and <code>add-array/single-float</code> would come out to be equivalent:</p>
+<pre><code class="language-lisp">VERY-SIMPLE-NUMPY-USER&gt; (let ((a (aops:rand* 'single-float 1000))
+                              (b (aops:rand* 'single-float 1000))
+                              (o (aops:rand* 'single-float 1000)))
+                          (time (loop repeat 1000000 do
+                            (add-array-caller/single-float a b o))))
+Evaluation took:
+  1.870 seconds of real time
+  1.870364 seconds of total run time (1.870364 user, 0.000000 system)
+  100.00% CPU
+  5,243,342,790 processor cycles
+  0 bytes consed
+
+NIL
+</code></pre>
+<p>The problem seems solved.</p>
+<h3 id="2-non-generic-fast-c-functions">2. Non-generic fast C functions</h3>
+<p>Over the past few decades, excellent C libraries have been written for performant numerical computation. <a href="https://www.netlib.org/blas/">BLAS</a> and <a href="https://www.netlib.org/lapack/">LAPACK</a> being the prime ones. Un/Fortunately, these are non-generic: <code>CBLAS_sdot</code> computes a dot product of two single-float vectors, while to compute a dot product of two double-float vectors, one needs to use <code>CBLAS_ddot</code>. Plus ultimately, hardware instructions are non-generic.</p>
+<p>Does that matter? Isn't SBCL fast enough? Fast <em>enough</em> is a tricky notion. It depends on your task. If your computations run for a few minutes, it doesn't matter if they take 10 minutes or 1 minute. But, if they run for hours or days, perhaps, it would be great if they could run in 1 hour instead of 10 hours?</p>
+<p><em>Are we as fast as we could be?</em> For instance, the equivalent <code>numericals/basic-math:add</code> (or <code>numericals:add</code>) ultimately calls out such non-generic C functions. And coupled with inlining, this gets us about another 10x performance boost.</p>
+<pre><code class="language-lisp">VERY-SIMPLE-NUMPY-USER&gt; (let ((a (aops:rand* 'single-float 1000))
+                              (b (aops:rand* 'single-float 1000))
+                              (o (aops:rand* 'single-float 1000)))
+                          (declare (type (simple-array single-float 1) a b o)
+                                   (optimize speed))
+                          ;; You can throw in a (safety 0) declaration if you are confident
+                          ;; and don't want consing.
+                          (time (loop repeat 10000000 do
+                            (numericals:add a b :out o :broadcast nil))))
+Evaluation took:
+  2.651 seconds of real time
+  2.650522 seconds of total run time (2.646750 user, 0.003772 system)
+  [ Real times consist of 0.040 seconds GC time, and 2.611 seconds non-GC time. ]
+  [ Run times consist of 0.040 seconds GC time, and 2.611 seconds non-GC time. ]
+  100.00% CPU
+  7,429,671,871 processor cycles
+  640,002,160 bytes consed
+
+NIL
+</code></pre>
+<p>There isn't really anything mystic about the performance of code generated using C compilers vs SBCL. <em>If we put in enough developer hours</em>, we can get SBCL to produce code that is as fast as C compilers. What C compilers and the ecosystem currently has are</p>
+<ol>
+<li>A wide support for SIMD instructions across different platforms. SBCL only recently gained support for SIMD on x86-64, and even then AVX512 is missing.</li>
+<li>Optimized libraries for lots of different numerical computing tasks. It isn't merely about hardware support, the algorithms that do the computations need to be optimized too. And the C ecosystem just excels the Common Lisp ecosystem by miles.</li>
+</ol>
+<p>So, let's give credit where it's due! With Common Lisp and SBCL, you don't need to worry about memory management, you can develop your code one lisp form at a time, you have global-variables-done-right and the excellent condition system that allows you to inspect the stack without unwinding it, and lots. But when it comes to performance across a wide variety of platforms, the C ecosystem marches ahead.</p>
+<p>Thus, we want to provide generic lisp functions that ultimately call specialized C functions, and which can also be static dispatched and inlined if we want them to. We have two problems to solve:</p>
+<ol>
+<li>Dispatch on specialized lisp arrays</li>
+<li>Provide users the option to static-dispatch and inline the individual specializations</li>
+</ol>
+<p>Standard Common Lisp generic functions are unsuitable for both. They dispatch on classes, while specialized lisp arrays are not necessarily classes. Enabling this using meta-object protocol seems non-trivial. (But someone may prove me wrong!) Generic functions are also designed with dynamic dispatch in mind. However, <a href="https://github.com/alex-gutev/static-dispatch">static-dispatch</a> can enable static dispatch. </p>
+<p>In addition, Common Lisp's ANSI standard offers compiler macros that allows one to control what specialized form a particular call site compiles to (see <a href="https://stackoverflow.com/questions/61094156/macro-expanding-to-same-operator">this</a> or <a href="http://www.lispworks.com/documentation/HyperSpec/Body/m_define.htm">this</a>). However, compiler macros are of limited use without access to the type information of the arguments. Unfortunately, <a href="https://stackoverflow.com/questions/67149358/portable-type-propagation-in-common-lisp-inlined-functions-without-compiler-macr">this type information is not available trivially</a>. To access it, one requires a somewhat sophisticated machinery of CLTL2. And even then it is limited, because even on SBCL, type propagation happen in later stages of compilation after (compiler) macro expansions take place.</p>
+<h3 id="3-peltadot-and-cltl2">3. Peltadot and CLTL2</h3>
+<p>Portable CLTL2 is available in the form of <a href="https://github.com/alex-gutev/cl-environments">cl-environments</a>. <a href="https://gitlab.com/digikar/peltadot">peltadot</a> builds over this and provides <a href="https://gitlab.com/digikar/peltadot/-/blob/main/docs/tutorial-polymorphic-functions.org">polymorphic-functions</a> which overcome all of the above disadvantages of generic functions. These also perform type propagation using compiler macros, and also allows dispatching over optional or keyword arguments. An attempt to dispatch statically is only made if the call site is compiled with <code>(optimize speed)</code> with <code>safety&lt;speed</code> and <code>debug&lt;speed</code>.</p>
+<pre><code class="language-lisp">(defpackage :numericals-user
+  (:use :peltadot)
+  (:local-nicknames (:nu :numericals)))
+
+(in-package :numericals-user)
+</code></pre>
+<p>Overall, this allows compiling the following code:</p>
+<pre><code class="language-lisp">(disassemble
+ (lambda (x)
+   (declare (optimize speed)
+            (type (simple-array single-float 1) x))
+   (nu:sin! x)))
+</code></pre>
+<p>into code containing no high level function calls but only:</p>
+<pre><code>...
+; BFA:       4D8B55F0         MOV R10, [R13-16]               ; thread.alien-linkage-table-base
+; BFE:       41FF92082E0000   CALL [R10+11784]                ; &amp;BMAS_ssin
+; C05:       488BE3           MOV RSP, RBX
+...
+</code></pre>
+<p>and the following slight variant (using <code>double-float</code> instead of <code>single-float</code>)</p>
+<pre><code class="language-lisp">(disassemble
+ (lambda (x)
+   (declare (optimize speed)
+            (type (simple-array double-float 1) x))
+   (nu:sin! x)))
+</code></pre>
+<p>into the following:</p>
+<pre><code>...
+; 672:       4D8B55F0         MOV R10, [R13-16]               ; thread.alien-linkage-table-base
+; 676:       41FF92C82E0000   CALL [R10+11976]                ; &amp;BMAS_dsin
+; 67D:       488BE3           MOV RSP, RBX
+...
+</code></pre>
+<p>What this aggressive inlining means is that the performance is minimally impacted with increasing loop lengths. Below, notice that the overall number of <code>sin</code> operations calculated are the same in each of the three cases, although the loop lengths are different.</p>
+<pre><code class="language-lisp">NUMERICALS-USER&gt; (let ((a (nu:rand 100000 :type 'single-float))
+                       (b (nu:rand 100000 :type 'single-float)))
+                   (declare (optimize speed)
+                            (type (simple-array single-float) a b))
+                   (time (loop repeat 1000 do
+                     (nu:sin a :out b :broadcast nil))))
+Evaluation took:
+  0.100 seconds of real time
+  0.101061 seconds of total run time (0.101059 user, 0.000002 system)
+  101.00% CPU
+  283,283,628 processor cycles
+  32,752 bytes consed
+
+NIL
+NUMERICALS-USER&gt; (let ((a (nu:rand 1000 :type 'single-float))
+                       (b (nu:rand 1000 :type 'single-float)))
+                   (declare (optimize speed)
+                            (type (simple-array single-float) a b))
+                   (time (loop repeat 100000 do
+                     (nu:sin a :out b :broadcast nil))))
+Evaluation took:
+  0.103 seconds of real time
+  0.104586 seconds of total run time (0.104558 user, 0.000028 system)
+  101.94% CPU
+  293,246,978 processor cycles
+  3,176,944 bytes consed
+
+NIL
+NUMERICALS-USER&gt; (let ((a (nu:rand 10 :type 'single-float))
+                       (b (nu:rand 10 :type 'single-float)))
+                   (declare (optimize speed)
+                            (type (simple-array single-float 1) a b))
+                   (time (loop repeat 10000000 do
+                     (nu:sin a :out b :broadcast nil))))
+Evaluation took:
+  0.720 seconds of real time
+  0.722276 seconds of total run time (0.720217 user, 0.002059 system)
+  [ Real times consist of 0.032 seconds GC time, and 0.688 seconds non-GC time. ]
+  [ Run times consist of 0.031 seconds GC time, and 0.692 seconds non-GC time. ]
+  100.28% CPU
+  2,021,508,676 processor cycles
+  320,001,568 bytes consed
+
+NIL
+NUMERICALS-USER&gt; (let ((a (nu:rand 10 :type 'single-float))
+                       (b (nu:rand 10 :type 'single-float)))
+                   (declare (optimize speed (safety 0))
+                            (type (simple-array single-float 1) a b))
+                   (time (loop repeat 10000000 do
+                     (nu:sin a :out b :broadcast nil))))
+Evaluation took:
+  0.365 seconds of real time
+  0.365534 seconds of total run time (0.365534 user, 0.000000 system)
+  100.27% CPU
+  1,025,879,135 processor cycles
+  0 bytes consed
+
+NIL
+</code></pre>
+<p>Again, this may not matter for most use cases. But when it does matter, a naive pure lisp implementation using generic functions stops being as useful. Then, one is either forced to reimplement the lisp code to suit their needs or move to a different language altogether which handles this.</p>
+<p>PS: The above <code>BMAS_ssin</code> foreign function is built over <a href="https://sleef.org/">SLEEF</a> and uses SIMD to compute the sine. The equivalent SBCL non-SIMD equivalent is about 40 times slower:</p>
+<pre><code class="language-lisp">NUMERICALS-USER&gt; (let ((a (nu:rand 100000 :type 'single-float :max 1.0))
+                       (b (nu:rand 100000 :type 'single-float)))
+                   (declare (type (simple-array single-float 1) a b)
+                            (optimize speed))
+                   (time (loop repeat 1000 do
+                     (loop for i below 100000 do
+                       (setf (row-major-aref b i) (sin (row-major-aref a i)))))))
+Evaluation took:
+  4.044 seconds of real time
+  4.039446 seconds of total run time (4.039446 user, 0.000000 system)
+  99.88% CPU
+  11,334,909,278 processor cycles
+  0 bytes consed
+
+NIL
+</code></pre>
+<p>Some overhead of the computation indeed stems from the conversion of single-float to double-float and back again; however, even if we stick to double-float, there is a difference of about 10x.</p>
+<h3 id="summary">Summary</h3>
+<p>Thus, "write fast code fast" can be broken down into two parts:</p>
+<ul>
+<li>"write code fast": get a first implementation -- a prototype -- built quickly without worrying about type declarations</li>
+<li>"write fast code": once the prototype is ready, optimize and document it by sprinkling it using type declarations</li>
+</ul>
+<p>This isn't much different from the standard ways of writing Common Lisp. However, as discussed above, there are limitations of standard Common Lisp, which the extension layer <a href="https://gitlab.com/digikar/peltadot">peltadot</a> underneath <code>numericals</code> and <code>dense-numericals</code> tries to solve. In the future, this may be replaced or augmented by <a href="https://github.com/coalton-lang/coalton">coalton</a>.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../install/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(false);
+        });
+    </script>
+
+</body>
+</html>
