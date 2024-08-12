@@ -2,16 +2,6 @@
   (:use :peltadot :dense-numericals/utils/impl)
   (:shadowing-import-exported-symbols :dense-numericals/utils)
   (:export #:vdot
-           #:inner
-           #:outer
-           #:copy-matrix
-           #:lower
-           #:upper
-           #:rotate-2d
-           #:minimize-lls
-
-           #:multidot
-           #:matrix-power
 
            #:cholesky
            #:svd
@@ -23,7 +13,6 @@
 
 
            #:norm2
-           #:cond
            #:det
            #:rank
            ;; #:slogdet ; unimplemented by eigen
@@ -34,8 +23,7 @@
            #:inv
            #:pinv
            ;; #:tensorinv
-
-           #:axpy))
+           ))
 
 (numericals/common:export-all-external-symbols :dense-numericals/linalg :dense-numericals)
 
