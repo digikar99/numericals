@@ -1,7 +1,7 @@
 (uiop:define-package :dense-numericals/utils
-  (:mix :dense-arrays-plus-lite :iterate :peltadot :alexandria)
+  (:mix :dense-arrays-plus-lite :peltadot)
   (:use :dense-numericals/common :abstract-arrays)
-  (:reexport :dense-arrays-plus-lite :dense-numericals/common)
+  (:reexport :dense-arrays-plus-lite)
   (:shadow #:fill
            #:zeros
            #:ones
@@ -13,43 +13,13 @@
            #:full-like
            #:rand-like
            #:empty-like)
-  (:import-from #:alexandria
-                #:lastcar
-                #:with-gensyms
-                #:make-gensym-list
-                #:switch
-                #:eswitch
-                #:mappend
-                #:non-negative-fixnum-p
-                #:iota)
-  (:import-from :peltadot/form-types
-                #:constant-form-value)
   (:import-from :dense-arrays
-                #:dimensions->strides
-                #:lm
                 #:array-strides
                 #:array-offsets
-                #:size
-                #:the-size
-                #:int-index
-                #:the-int-index
                 #:broadcast-arrays
-                #:%broadcast-compatible-p
                 #:broadcast-compatible-p
                 #:default-element-type)
-  (:import-from :dense-arrays-plus-lite
-                #:max-type
-                #:split-at-keywords
-                #:define-splice-list-fn
-                #:dimensions
-                #:element-type)
-  (:export #:size
-           #:the-size
-           #:int-index
-           #:the-int-index
-           #:lm
-
-           #:*default-float-format*
+  (:export #:*default-float-format*
            #:*broadcast-automatically*
            #:*array-layout*
            #:*array-element-type*
@@ -111,26 +81,73 @@
 
            #:aref*
 
-           #:%broadcast-compatible-p
            #:broadcast-compatible-p
            #:incompatible-broadcast-dimensions
-           #:do-with-broadcasting
            #:broadcast-array
 
            #:transpose
 
+           #:runtime-array-allocation))
+
+(uiop:define-package :dense-numericals/utils/impl
+  (:mix :dense-numericals/utils :iterate :peltadot :dense-numericals/common)
+  (:use)
+  (:reexport :dense-numericals/common)
+  (:import-from #:alexandria
+                #:lastcar
+                #:with-gensyms
+                #:make-gensym-list
+                #:switch
+                #:eswitch
+                #:mappend
+                #:non-negative-fixnum-p
+                #:iota)
+  (:import-from :peltadot/form-types
+                #:constant-form-value)
+  (:import-from :dense-arrays-plus-lite
+                #:max-type
+                #:split-at-keywords
+                #:define-splice-list-fn
+                #:dimensions
+                #:element-type)
+  (:import-from :dense-arrays
+                #:dimensions->strides
+                #:lm
+                #:size
+                #:the-size
+                #:int-index
+                #:the-int-index
+                #:%broadcast-compatible-p)
+  (:export #:size
+           #:the-size
+           #:int-index
+           #:the-int-index
+           #:lm
+
+           #:defun*
+
+           #:define-c-translation
+           #:pushnew-c-translations
+           #:c-name
+           #:single-float-c-name
+           #:double-float-c-name
+           #:cl-name
+           #:c-size
+           #:c-type
+
+           #:%broadcast-compatible-p
+           #:broadcast-compatible-p
+           #:do-with-broadcasting
            #:ptr-iterate-but-inner
            #:with-simple-array-broadcast
            #:with-thresholded-multithreading/cl
-
-           #:runtime-array-allocation
 
            #:out-shape-compatible-p
            #:out-shape))
 
 (5am:def-suite :dense-numericals)
 
-(in-package :dense-numericals/utils)
+(in-package :dense-numericals/utils/impl)
 
 (trivial-package-local-nicknames:add-package-local-nickname
  :cl-form-types :peltadot/form-types)

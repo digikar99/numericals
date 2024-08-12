@@ -1,4 +1,4 @@
-(in-package :numericals/utils)
+(in-package :numericals/utils/impl)
 
 (defun strides-for-broadcast (original-dimensions broadcast-dimensions)
   (flet ((incompatible ()

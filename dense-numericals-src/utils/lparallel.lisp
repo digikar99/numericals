@@ -1,4 +1,4 @@
-(in-package :dense-numericals/utils)
+(in-package :dense-numericals/utils/impl)
 
 (defparameter *inline-with-multithreading* nil
   "Inlining is usually necessary for smaller arrays; for such arrays multithreading

@@ -1,5 +1,5 @@
 (peltadot/utils:defpackage :numericals/random
-  (:use :peltadot)
+  (:use :peltadot :numericals/utils/impl)
   (:shadowing-import-exported-symbols :numericals/utils)
   (:documentation "Contains functions that provide arrays of random numbers sampled from various distributions")
   (:export ;; real / float types

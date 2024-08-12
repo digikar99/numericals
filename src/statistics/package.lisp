@@ -1,5 +1,5 @@
 (peltadot/utils:defpackage :numericals/statistics
-  (:use :peltadot)
+  (:use :peltadot :numericals/utils/impl)
   (:shadowing-import-exported-symbols :numericals/utils)
   (:export #:mean
            #:variance

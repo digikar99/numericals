@@ -1,4 +1,4 @@
-(in-package :dense-numericals/utils)
+(in-package :dense-numericals/utils/impl)
 
 (declaim (inline fast-empty))
 (defun fast-empty (shape &key (type default-element-type)

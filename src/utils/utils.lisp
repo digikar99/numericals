@@ -1,7 +1,19 @@
-(in-package :numericals/utils)
+(in-package :numericals/utils/impl)
 
-(define-type size () `(unsigned-byte 62))
-(define-type int-index () `(signed-byte 62))
+(deftype size () `(unsigned-byte 62))
+(defmacro the-size (form)
+  #+sbcl `(sb-ext:truly-the size ,form)
+  #-sbcl `(the size ,form))
+
+(deftype int-index () `(signed-byte 62))
+(defmacro the-int-index (form)
+  `(#+sbcl sb-ext:truly-the
+    #-sbcl the
+    int-index ,form))
+
+(defmacro lm (&rest var-body)
+  `(lambda ,(butlast var-body)
+     ,@(last var-body)))
 
 (deftype uint32 () `(unsigned-byte 32))
 (deftype int64 () '(signed-byte 64))

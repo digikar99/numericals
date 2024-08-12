@@ -1,12 +1,6 @@
 (defpackage :numericals/basic-utils
   (:use :cl :alexandria)
-  (:export #:size
-           #:the-size
-           #:int-index
-           #:the-int-index
-           #:lm
-
-           #:*default-float-format*
+  (:export #:*default-float-format*
            #:*broadcast-automatically*
            #:*array-layout*
            #:*array-element-type*
@@ -31,19 +25,6 @@
 (in-package :numericals/basic-utils)
 
 (deftype size () `(unsigned-byte 62))
-(defmacro the-size (form)
-  #+sbcl `(sb-ext:truly-the size ,form)
-  #-sbcl `(the size ,form))
-
-(deftype int-index () `(signed-byte 62))
-(defmacro the-int-index (form)
-  `(#+sbcl sb-ext:truly-the
-    #-sbcl the
-    int-index ,form))
-
-(defmacro lm (&rest var-body)
-  `(lambda ,(butlast var-body)
-     ,@(last var-body)))
 
 (defvar *default-float-format* 'single-float
   "Used for converting non-float arrays to float arrays for floating-point
@@ -90,7 +71,11 @@ would be emitted; otherwise, the code would be skipped.
 
 This is only relevant for transcendental functions which uses lparallel for multithreading.")
 
-(defparameter *multithreaded-threshold* 80000)
+(defparameter *multithreaded-threshold* 80000
+  "The lower bound of the array size beyond which LPARALLEL is used for distributing
+[transcendental] operations across multiple threads.
+
+NOTE: It is not defined if this bound is inclusive or exclusive.")
 (declaim (type fixnum *multithreaded-threshold*))
 
 

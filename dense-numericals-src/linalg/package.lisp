@@ -1,5 +1,5 @@
 (peltadot/utils:defpackage :dense-numericals/linalg
-  (:use :peltadot)
+  (:use :peltadot :dense-numericals/utils/impl)
   (:shadowing-import-exported-symbols :dense-numericals/utils)
   (:export #:vdot
            #:inner

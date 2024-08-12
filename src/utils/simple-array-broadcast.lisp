@@ -1,4 +1,4 @@
-(in-package :numericals/utils)
+(in-package :numericals/utils/impl)
 
 ;; We can't get rid of PTR-ITERATE-BUT-INNER because each axis may have different strides :D
 ;; However, in cases when the array is simple, we can certainly have J-like broadcasting

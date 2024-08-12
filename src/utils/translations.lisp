@@ -1,4 +1,4 @@
-(in-package :numericals/utils)
+(in-package :numericals/utils/impl)
 
 (declaim (type hash-table *translation-table*))
 (defvar *translation-table* (make-hash-table))

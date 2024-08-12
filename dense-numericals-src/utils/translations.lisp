@@ -1,4 +1,4 @@
-(in-package :dense-numericals/utils)
+(in-package :dense-numericals/utils/impl)
 
 (declaim (type hash-table *translation-table*))
 (defvar *translation-table* (make-hash-table))

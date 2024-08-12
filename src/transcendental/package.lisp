@@ -44,15 +44,15 @@
 (numericals/common:export-all-external-symbols :numericals/transcendental :numericals)
 
 (peltadot/utils:defpackage :numericals/transcendental/impl
-  (:shadowing-import-exported-symbols :numericals/utils)
-  (:use
-   :peltadot
-   :numericals/basic-math/impl)
+  (:use #:peltadot
+        #:numericals/utils/impl
+        #:numericals/basic-math/impl)
   (:import-from #:alexandria
                 #:lastcar
                 #:with-gensyms
                 #:make-gensym-list)
   (:shadowing-import-from #:numericals/basic-math #:copy)
+  (:shadowing-import-exported-symbols #:numericals/utils)
   (:local-nicknames (:nu :numericals/transcendental)
                     (:form-types :peltadot/form-types)
                     (:polymorphic-functions :peltadot/polymorphic-functions)))

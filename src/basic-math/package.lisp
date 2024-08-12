@@ -86,13 +86,13 @@
 (numericals/common:export-all-external-symbols :numericals/basic-math :numericals)
 
 (peltadot/utils:defpackage :numericals/basic-math/impl
-  (:use :peltadot)
+  (:use :peltadot :numericals/utils/impl)
   (:shadowing-import-exported-symbols :numericals/utils)
   (:import-from #:alexandria
                 #:define-constant
                 #:with-gensyms
                 #:make-gensym-list)
-  (:import-from #:numericals/utils
+  (:import-from #:numericals/utils/impl
                 #:split-at-keywords)
   (:import-from #:introspect-environment
                 #:constant-form-value)

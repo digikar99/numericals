@@ -1,19 +1,27 @@
 (peltadot/utils:defpackage :numericals/utils
-  (:use :peltadot :numericals/basic-utils :numericals/common)
-  (:import-from #:alexandria
-                #:lastcar
-                #:with-gensyms
-                #:make-gensym-list
-                #:switch
-                #:eswitch
-                #:mappend
-                #:non-negative-fixnum-p
-                #:iota)
-  (:import-from #:peltadot-traits-library
-                #:element-type)
-  (:shadowing-import-exported-symbols #:iterate)
+  (:use :peltadot :numericals/basic-utils)
   (:shadow #:fill)
-  (:reexport #:numericals/basic-utils #:numericals/common)
+  (:export #:*default-float-format*
+           #:*broadcast-automatically*
+           #:*array-layout*
+           #:*array-element-type*
+           #:*array-element-type-alist*
+           #:default-element-type
+           #:*multithreaded-threshold*
+           #:*inline-with-multithreading*
+
+           #:array
+           #:simple-array
+           #:array-rank
+           #:array-dimensions
+           #:narray-dimensions
+           #:array-element-type
+           #:array-total-size
+           #:array-stride
+           #:array-layout
+           #:cl-array-offset
+           #:array-storage
+           #:array-type-element-type)
   (:export #:uint32
            #:int64
            #:int16
@@ -42,8 +50,38 @@
            #:do-arrays
            #:macro-map-array
 
-           #:defun*
+           #:aref*
 
+           #:incompatible-broadcast-dimensions
+           #:broadcast-array
+
+           #:transpose
+
+           #:runtime-array-allocation))
+
+(peltadot/utils:defpackage #:numericals/utils/impl
+  (:use :peltadot :numericals/common :numericals/basic-utils :numericals/utils)
+  (:import-from #:alexandria
+                #:lastcar
+                #:with-gensyms
+                #:make-gensym-list
+                #:switch
+                #:eswitch
+                #:mappend
+                #:non-negative-fixnum-p
+                #:iota)
+  (:import-from #:peltadot-traits-library
+                #:element-type)
+  (:shadowing-import-from #:numericals/utils #:fill)
+  (:shadowing-import-exported-symbols #:iterate)
+  (:reexport #:numericals/basic-utils #:numericals/common)
+  (:export #:size
+           #:the-size
+           #:int-index
+           #:the-int-index
+           #:lm
+
+           #:defun*
            #:define-c-translation
            #:pushnew-c-translations
            #:c-name
@@ -53,20 +91,12 @@
            #:c-size
            #:c-type
 
-           #:aref*
-
            #:%broadcast-compatible-p
            #:broadcast-compatible-p
-           #:incompatible-broadcast-dimensions
            #:do-with-broadcasting
-           #:broadcast-array
-
-           #:transpose
 
            #:ptr-iterate-but-inner
            #:with-simple-array-broadcast
-
-           #:runtime-array-allocation
 
            #:out-shape-compatible-p
            #:out-shape))
