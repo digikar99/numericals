@@ -7,7 +7,8 @@ would be emitted; otherwise, the code would be skipped.")
 
 (defparameter *multithreaded-threshold* 80000
   "The lower bound of the array size beyond which LPARALLEL is used for distributing
-operations across multiple threads.
+[transcendental] operations across multiple threads.
+
 NOTE: It is not defined if this bound is inclusive or exclusive.")
 (declaim (cl:type size *multithreaded-threshold*))
 

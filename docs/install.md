@@ -1,11 +1,25 @@
 # Installation
 
-Recall that two main asdf systems are provided:
+Two main asdf systems are provided:
 
-- `numericals`, which works with `cl:array`,
-- and `dense-numericals`, which works with [dense-arrays](https://github.com/digikar99/dense-arrays)
+- `numericals` which works with `cl:array`,
+- and `dense-numericals` which works with [dense-arrays](https://github.com/digikar99/dense-arrays)
 
 Load either or both of them according to your needs.
+
+## Without quicklisp client: ocicl
+
+Install ocicl as per the instructions [here](https://github.com/ocicl/ocicl).
+
+Once ocicl is installed, setup, and the runtime loaded into the lisp image, simply:
+
+```lisp
+(asdf:load-system "numericals")
+;;; OR
+(asdf:load-system "dense-numericals")
+```
+
+## Using quicklisp client
 
 [quicklisp](https://www.quicklisp.org/beta/) is a defacto package manager for Common Lisp. All the below methods rely on the availability of the quicklisp client. The instructions to install it can be found [here](https://www.quicklisp.org/beta/#installation). Other useful resources to get started with quicklisp include:
 
@@ -14,7 +28,7 @@ Load either or both of them according to your needs.
 
 Once the quicklisp client is installed, proceed with one of the below methods to install `numericals` or `dense-numericals` or both.
 
-## Using quicklisp
+### Through quicklisp dist alone
 
 Simply quickload the required asdf system. 
 
@@ -24,9 +38,26 @@ Simply quickload the required asdf system.
 (ql:quickload "dense-numericals")
 ```
 
-Depending on when you are reading this, the quicklisp versions could be a bit older than what you might wish for. If you want to use recent feature updates or bug fixes, you might want to use download-dependencies or ultralisp.
+Depending on when you are reading this, the quicklisp versions could be a bit older than what you might wish for. If you want to use recent feature updates or bug fixes, you might want to use ultralisp or download-dependencies.
 
-## The latest from github and download-dependencies
+### Using ultralisp dist
+
+If you are trying [Ultralisp](https://ultralisp.org/) for the first time:
+
+```lisp
+(ql-dist:install-dist "http://dist.ultralisp.org/"
+                      :prompt nil)
+```
+
+If you have been using ultralisp, simply update its dist:
+
+```lisp
+(ql:update-dist "ultralisp")
+```
+
+Once `(ql:quickload "numericals")` or `(ql:quickload "dense-numericals")` is successful; use inside your own package using `:mix` option of `uiop:define-package`, or [package-local-nicknames](https://common-lisp-libraries.readthedocs.io/#libraries).
+
+### Using download-dependencies
 
 First clone the [github repository of numericals](https://github.com/digikar99/numericals) to where quicklisp can find.
 
@@ -64,23 +95,6 @@ Finally, you will need to instruct the quicklisp client to look into this path. 
 (ql:quickload "dense-numericals")
 ```
 
-## Using ultralisp
-
-If you are trying [Ultralisp](https://ultralisp.org/) for the first time:
-
-```lisp
-(ql-dist:install-dist "http://dist.ultralisp.org/"
-                      :prompt nil)
-```
-
-If you have been using ultralisp, simply update its dist:
-
-```lisp
-(ql:update-dist "ultralisp")
-```
-
-Once `(ql:quickload "numericals")` or `(ql:quickload "dense-numericals")` is successful; use inside your own package using `:mix` option of `uiop:define-package`, or [package-local-nicknames](https://common-lisp-libraries.readthedocs.io/#libraries).
-
 ## Using clpm
 
 TODO
@@ -88,3 +102,5 @@ TODO
 ## Using ros
 
 TODO
+
+- Needs a way to install packages outside github.

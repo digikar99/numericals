@@ -11,9 +11,10 @@ theme:
 include_search_page: true
 nav:
     - Introduction: index.md
+    - Writing Fast Code Fast: common-lisp-and-numericals.md
     - Installation: install.md
-    - Current State: current-state.md
-    - API Reference: api.md
+    - Current State: comparison.md
+    - Manual: manual.md
     - Old Documentation: old-index.html
 plugins:
     - search

@@ -7,10 +7,12 @@
 		color:black;
 }
 
-
-
 /* .toctree-l1 .current > a.reference.internal.current{ */
 /* 		background:#2980B9; */
+/* } */
+
+/* .wy-menu-vertical li.current, .wy-menu-vertical li.toctree-l2.current > a, li.toctree-l3>a{ */
+    /* background: #202020; */
 /* } */
 
 .rst-versions .rst-current-version{
@@ -39,4 +41,9 @@ p{
 
 .hljs-comment{
     font-style:normal;
+}
+
+.rst-content .section li>ul{
+    margin-top:0;
+    margin-bottom:0;
 }
