@@ -40,7 +40,7 @@ can be helpful to locate bugs.")
 (defvar *array-element-type*)
 
 (setf (documentation '*array-element-type* 'variable)
-      "If BOUND, this is the default value of the ELEMENT-TYPE or TYPE argument.
+      "If bound, this is the default value of the ELEMENT-TYPE or TYPE argument.
 Overrides *ARRAY-ELEMENT-TYPE-ALIST*.
 Is overriden by explicitly passing an ELEMENT-TYPE or TYPE argument.")
 

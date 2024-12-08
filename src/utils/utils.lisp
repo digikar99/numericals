@@ -148,6 +148,7 @@ Examples:
 
 (declaim (inline fill))
 (defun fill (array value)
+  "Fill each location in ARRAY with VALUE"
   (let* ((type  (array-element-type array))
          (value (coerce value type))
          (size  (array-total-size array))

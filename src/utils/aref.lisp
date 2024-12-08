@@ -35,8 +35,49 @@
                 index)))
 
 (defun aref* (&rest args)
-  "ARGS: (array &rest subscripts &key out)
-See tests for examples."
+  "Accessor function for arrays with semantics similar to numpy's indexing semantics.
+See https://numpy.org/doc/stable/user/basics.indexing.html
+
+[Enhanced] Lambda List: (array &rest subscripts &key out)
+
+Each element of SUBSCRIPTS can be
+- either an integer denoting the position within the axis which is to be indexed
+- or a list of the form (&OPTIONAL START &KEY END STEP) with each of START END
+  STEP being integers if supplied. START denotes the start position within the
+  axis, END denotes the ending position within the axis, STEP denotes at what
+  distance within the axis the next element should come after the previous,
+  starting from START
+
+Each of the SUBSCRIPTS, START, END, STEP can also be negative integers, in which
+case the last element along the axis is given the index -1, the second last is
+given the index -2 and so on. Thus, `(aref ... '(-1 :step -1))` can reverse a one
+dimensional array.
+
+Like, CL:AREF or ABSTRACT-ARRAYS:AREF, returns the element corresponding to SUBSCRIPTS
+if all the subscripts are integers and there as many subscripts
+as the rank of the array.
+
+The performance of this function is slightly different for `cl:array` compared
+to `dense-arrays:array`. In particular, numpy-like indexing requires
+multidimensional offsets. `cl:array` only have a single dimensional offset,
+thus, when using `aref*` a copy of the `cl:array` is created. The copy may be
+made into a preallocated array supplied using the `:out` keyword argument. In
+contrast, because `dense-arrays:array` support multidimensional offsets and
+strides, merely a wrapper object (a \"view\") is created. A view is a window
+into the original array and thus avoids copying the elements of the original
+array. This occurs when the number (aka length) of SUBSCRIPTS were less than the
+array's rank, or if some of the SUBSCRIPTS were lists described above.
+
+Examples illustrating the numpy-equivalent indexes:
+
+    a[::]       (aref a nil)
+    a[::2]      (aref a '(0 :step 2))
+    a[3, ::-1]  (aref a 3 '(-1 :step -1))
+    a[3::, -1]  (aref a '(3) -1)
+
+The SUBSCRIPTS can also be integer or boolean arrays, denoting which elements
+to select from each of the axes. But in this case the corresponding elements
+of the array are copied over into a new array."
   ;; TODO: Optimize for speed
   (declare (optimize (debug 3)))
   ;; TODO: Implement &KEY OUT for DENSE-ARRAYS:AREF

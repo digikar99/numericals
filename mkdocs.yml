@@ -18,4 +18,6 @@ nav:
     - Old Documentation: old-index.html
 plugins:
     - search
-extra_css: [extra.css]
+extra_css:
+    - extra.css
+    - https://pvinis.github.io/iosevka-webfont/3.4.1/iosevka.css

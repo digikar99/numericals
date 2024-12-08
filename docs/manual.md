@@ -2,7 +2,7 @@
 
 There are two main asdf systems:
 
-- `numericals` is designed to work with `cl:array` so that interfacing with the rest of the lisp ecosystem is trivial.
+- `numericals` is designed to work with `cl:array` so that interfacing with the rest of the lisp ecosystem is trivial
 - `dense-numericals` is designed to work with [dense-arrays:array](https://github.com/digikar99/dense-arrays)
 
 Each of these has a number of systems and corresponding packages:
@@ -14,32 +14,59 @@ Each of these has a number of systems and corresponding packages:
 - linalg
 - random
 
-These can be loaded individually. For example `(asdf:load-system "numericals/random")`.
+These can be loaded individually. For example `(asdf:load-system "numericals/random")`. Except `utils` all the others depend on C foreign libraries.
+
+See [Installation](./install.md) to get started.
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
 
-- [Utilities](#utilities)
-    - [Configuration](#configuration)
-    - [Generating arrays](#generating-arrays)
-    - [Modifying arrays](#modifying-arrays)
-    - [Transforming arrays](#transforming-arrays)
-    - [Element-wise operators](#element-wise-operators)
-    - [Array reduction operators](#array-reduction-operators)
-- [Basic Math](#basic-math)
-    - [Utilities and array operations](#utilities-and-array-operations)
-    - [Standard arithmetic operations](#standard-arithmetic-operations)
-    - [Comparison operations](#comparison-operations)
-    - [Rounding operations](#rounding-operations)
-    - [arg-maximum](#arg-maximum)
-    - [arg-minimum](#arg-minimum)
-    - [Other basic operations](#other-basic-operations)
-- [Transcendental Operations](#transcendental-operations)
-- [Linear Algebra](#linear-algebra)
-- [Random](#random)
-- [Statistics](#statistics)
-- [magicl](#magicl)
-- [tests](#tests)
+- [Manual](#manual)
+    - [Utilities](#utilities)
+        - [Configuration](#configuration)
+        - [Generating arrays](#generating-arrays)
+        - [Modifying arrays](#modifying-arrays)
+        - [Transforming arrays](#transforming-arrays)
+    - [Basic Math](#basic-math)
+        - [Standard arithmetic operations](#standard-arithmetic-operations)
+        - [Comparison operations](#comparison-operations)
+        - [Rounding operations](#rounding-operations)
+        - [Bitwise Operators](#bitwise-operators)
+        - [abs](#abs)
+        - [arg-maximum/arg-minimum](#arg-maximumarg-minimum)
+        - [maximum/minimum](#maximumminimum)
+        - [sum](#sum)
+    - [Transcendental Operations](#transcendental-operations)
+        - [Trigonometric Operations](#trigonometric-operations)
+        - [Exponentiation](#exponentiation)
+        - [Natural Logarithm](#natural-logarithm)
+        - [In-place Operations](#in-place-operations)
+    - [Linear Algebra](#linear-algebra)
+        - [cholesky](#cholesky)
+        - [det](#det)
+        - [eigvals](#eigvals)
+        - [eigvecs](#eigvecs)
+        - [inv](#inv)
+        - [lu](#lu)
+        - [norm2](#norm2)
+        - [outer](#outer)
+        - [pinv](#pinv)
+        - [qr](#qr)
+        - [rank](#rank)
+        - [solve](#solve)
+        - [svd](#svd)
+        - [vdot](#vdot)
+    - [Random](#random)
+        - [seed](#seed)
+        - [gaussian](#gaussian)
+        - [chisquare](#chisquare)
+        - [beta](#beta)
+    - [Statistics](#statistics)
+        -  [mean](#mean)
+        -  [variance](#variance)
+        -  [std](#std)
+    - [magicl](#magicl)
+    - [tests](#tests)
 
 <!-- markdown-toc end -->
 
@@ -188,54 +215,86 @@ In addition to these, arrays with uniform random numbers can be generated using 
 
 All of these have a XXX`-like` counterpart which takes in an existing array and generates an array with shape and element-type similar to the input array.
 
+#### Transposing existing arrays
+
+```lisp
+Function: (transpose array &key axes)
+```
+
+Transposes an array along one or more `axes`. See [numpy's tranpose documentation](See https://numpy.org/doc/stable/reference/generated/numpy.transpose.html) for more details. 
+
+#### Reshaping existing arrays
+
+```lisp
+Function: (reshape array new-shape)
+```
+
+See [numpy's reshape documentation](https://numpy.org/doc/stable/reference/generated/numpy.reshape.html).
+
+#### Copying existing arrays
+
+This functionality depends on C foreign libraries and is made available after loading `numericals/basic-math` or `dense-numericals/basic-math`. An alternative is to use `alexandria:copy-array` or `dense-arrays:copy-array`.
+
+#### Type-casting existing arrays
+
+ astype
+
 ### Modifying arrays
 
 #### fill
 
+```lisp
+Lambda List: (fill array value)
+```
+
+Fill each location in `array` with `value`.
+
 #### aref*
+
+Accessor function for arrays with semantics similar to numpy's indexing semantics.
+See https://numpy.org/doc/stable/user/basics.indexing.html
+
+```lisp
+[Enhanced] Lambda List: (aref* array &rest subscripts &key out)
+```
+
+Each element of SUBSCRIPTS can be
+- either an integer denoting the position within the axis which is to be indexed
+- or a list of the form (&OPTIONAL START &KEY END STEP) with each of START END
+  STEP being integers if supplied. START denotes the start position within the
+  axis, END denotes the ending position within the axis, STEP denotes at what
+  distance within the axis the next element should come after the previous,
+  starting from START
+
+Each of the SUBSCRIPTS, START, END, STEP can also be negative integers, in which
+case the last element along the axis is given the index -1, the second last is
+given the index -2 and so on. Thus, `(aref ... '(-1 :step -1))` can reverse a one
+dimensional array.
+
+Like, `cl:aref` or `abstract-arrays:aref`, returns the element corresponding to SUBSCRIPTS
+if all the subscripts are integers and there as many subscripts as the rank of the array.
+
+The performance of this function is slightly different for `cl:array` compared to
+`dense-arrays:array`. In particular, numpy-like indexing requires multidimensional offsets. `cl:array` only have a single dimensional offset, thus, when using `aref*` a copy of the `cl:array` is created. The copy may be made into a preallocated array supplied using the `:out` keyword argument. In contrast, because `dense-arrays:array` support multidimensional offsets and strides, merely a wrapper object (a "view") is created. A view is a window into the original array and thus avoids copying the elements of the original array. This occurs when the number (aka length) of SUBSCRIPTS were less than the array's rank, or if some of the SUBSCRIPTS were lists described above.
+
+Examples illustrating the numpy-equivalent indexes:
+
+    a[::]       (aref a nil)
+    a[::2]      (aref a '(0 :step 2))
+    a[3, ::-1]  (aref a 3 '(-1 :step -1))
+    a[3::, -1]  (aref a '(3) -1)
+
+The SUBSCRIPTS can also be integer or boolean arrays, denoting which elements
+to select from each of the axes. But in this case the corresponding elements
+of the array are copied over into a new array.
 
 ### Transforming arrays
 
 `numericals/utils` and `dense-numericals/utils` only provides `transpose` and `reshape`. The other tranformation function `concat` is provided by [basic-math].
 
-#### transpose
-
-Transposes an array along one or more axes. 
-
-#### reshape
-
-### Element-wise operators
-
-- abs 
-
-Miscellaneous:
-
-- two-arg-max
-- two-arg-min
-
-### Array reduction operators
-
-Package: `numericals` or `dense-numericals`
-
-- sum
-- vdot
-- maximum
-- minimum
-- arg-maximum
-- arg-minimum
-
 ## Basic Math
 
 This functionality is provided by the `numericals/basic-math` or `dense-numericals/basic-math` systems and packages. Broadly, These can be divided into the following groups.
-
-### Utilities and array operations
-
-- copy
-- coerce
-- astype
-- concat
-- shape
-- reshape
 
 ### Standard arithmetic operations
 
@@ -381,61 +440,181 @@ Similar to the [arithmetic functions](#standard-arithmetic-operations), these al
 - fround!
 - ftruncate!
 
-### arg-maximum
+### Bitwise Operators
 
-```lisp
-Polymorphic Function: (arg-maximum array-like &rest args923 &key
-                       (axis NIL axis924) (keep-dims NIL keep-dims925)
-                       (out NIL out926))
-```
-
-Find the index of the maximum element along the `axis`.
-
-### arg-minimum
-
-```lisp
-Polymorphic Function: (arg-minimum array-like &rest args932 &key
-                       (axis NIL axis933) (keep-dims NIL keep-dims934)
-                       (out NIL out935))
-```
-
-Find the index of the minimum element along the `axis`.
-
-
-### Other basic operations
-
-- abs!
-- matmul
-- two-arg-matmul
-- dot
-- max
-- two-arg-max
-- min
-- two-arg-min
-- sum
-- maximum
-- minimum
-
-- logand
-- two-arg-logand
-- logior
-- two-arg-logior
-- logxor
-- two-arg-logxor
+Currently, only the following bitwise operators are implemented:
 
 - lognot
-- logandc1
-- logandc2
-- lognand
-- lognor
-- logorc1
-- logorc2
-   ;; #:logtest
-   ;; #:logbitp
-   ;; #:logcount
+- two-arg-logand
+- two-arg-logior
+- two-arg-logxor
 
+These employ integer arrays as both input and output. 
+
+### abs
+
+```lisp
+Polymorphic Function: (abs x &key out broadcast)
+Polymorphic Function: (abs! x)
+```
+
+Takes a number or array as an input and computes their absolute value.
+
+`abs!` computes the absolute value in place and necessarily requires that the input is an array.
+
+### arg-maximum/arg-minimum
+
+```lisp
+Polymorphic Function: (arg-maximum array-like &key axis keep-dims out)
+Polymorphic Function: (arg-minimum array-like &key axis keep-dims out)
+```
+
+Find the index of the maximum/minimum element along the `axis`.
+
+### maximum/minimum
+
+```lisp
+Polymorphic Function: (maximum array-like &key axes keep-dims out)
+Polymorphic Function: (minimum array-like &key axes keep-dims out)
+```
+
+Find the maximum/minimum elements along one or multiple `axes` of `array-like` into `out`.
+
+If `out` is unsupplied, allocates a new array of appropriate dimensions.
+
+If `keep-dims` is non-NIL, the rank of `out` will be the same as `array-like`, otherwise it will be reduced for each `axes`.
+
+```lisp
+CL-USER> (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3)
+                                 (-1 4 -1))
+                               :axes 0))
+#(1.0 4.0 3.0)
+CL-USER> (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3)
+                                 (-1 4 -1))
+                               :axes 1))
+#(3.0 4.0)
+CL-USER> (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3)
+                                 (-1 4 -1))
+                               :axes '(0 1)))
+4.0
+CL-USER> (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3) 
+                                 (-1 4 -1))))
+4.0
+CL-USER> (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3)
+                                 (-1 4 -1)) 
+                               :axes '(0 1) :keep-dims t))
+#2A((4.0))
+```
+
+### sum
+
+```lisp
+Polymorphic Function: (sum array-like &key axes keep-dims out)
+```
+
+Find the sum of elements along one or multiple `axes` of `array-like` into `out`.
+
+If `out` is unsupplied, allocates a new array of appropriate dimensions.
+
+If `keep-dims` is non-NIL, the rank of `out` will be the same as `array-like`, otherwise it will be reduced for each `axes`.
+
+```lisp
+CL-USER> (let ((numericals:*array-element-type* 'single-float))
+           (numericals:sum '((1 2 3)
+                             (-1 4 -1))
+                           :axes 0))
+#(0.0 6.0 2.0)
+CL-USER> (let ((numericals:*array-element-type* 'single-float))
+           (numericals:sum '((1 2 3)
+                             (-1 4 -1))
+                           :axes 1))
+#(6.0 2.0)
+CL-USER> (let ((numericals:*array-element-type* 'single-float))
+           (numericals:sum '((1 2 3)
+                             (-1 4 -1))
+                           :axes '(0 1)))
+8.0
+CL-USER> (let ((numericals:*array-element-type* 'single-float))
+           (numericals:sum '((1 2 3)
+                             (-1 4 -1))
+                           :keep-dims t))
+#2A((8.0))
+```
 
 ## Transcendental Operations
+
+Package: `numericals/transcendental` or `dense-numericals/transcendental`
+
+The following operations have been implemented that use SIMD powered by [SLEEF](https://sleef.org/).
+
+### Trigonometric Operations
+
+```
+| Standard           | sin   | cos   | tan   |
+| Inverse            | asin  | acos  | atan  |
+| Hyperbolic         | sinh  | cosh  | tanh  |
+| Inverse Hyperbolic | asinh | acosh | atanh |
+```
+
+All have the following signature:
+
+```lisp
+Function: (<fn> x &key out broadcast)
+```
+
+`atan` additionally has the following signature,  mimicking the optional `x` argument of `cl:atan`:
+
+```lisp
+Function: (<fn> y x &key out broadcast)
+```
+
+### Exponentiation
+
+```lisp
+Function: (expt base power &key broadcast out)
+Function: (exp x &key broadcast out) # base e exponentiation
+```
+
+### Natural Logarithm
+
+This has two signatures, mimicking the optional `base` argument of `cl:log`:
+
+```lisp
+Function: (log x &key broadcast out)
+Function: (log x y &key broadcast out)
+```
+
+The first signature computes the natural logarithm of `x`, while the second signature uses `y` 
+
+### In-place Operations
+
+All of the above have in-place equivalents obtained by appending a '!' to the function name. These do not require supplying the `out` or `broadcast` argument. Instead, the first argument is treated as `out` and modified in-place; `broadcast` is taken as `nil`.
+
+```lisp
+CL-USER> (let ((a (numericals:rand 3 :type 'single-float)))
+           (print a)
+           (print (numericals:sin a))
+           (print a))
+
+#(0.46031213 0.51501644 0.61946905)
+#(0.44422776 0.49254915 0.58060294)
+#(0.46031213 0.51501644 0.61946905)
+#(0.46031213 0.51501644 0.61946905)
+CL-USER> (let ((a (numericals:rand 3 :type 'single-float)))
+           (print a)
+           (print (numericals:sin! a))
+           (print a))
+
+#(0.6814344 0.97704315 0.50856435)
+#(0.6299077 0.8288467 0.48692378)
+#(0.6299077 0.8288467 0.48692378)
+#(0.6299077 0.8288467 0.48692378)
+```
 
 ## Linear Algebra
 
@@ -652,7 +831,104 @@ Treat the two input arrays as 1D vectors and calculate their dot product.
  
 ## Random
 
+Package: `numericals/random` or `dense-numericals/random`
+
+Like Linear Algebrain, the functions in these packages too use the [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) library of C++. In actuality, a [lite C interface](https://github.com/digikar99/ceigen_lite/) is used.
+
+Each of the random number generator can return either a scalar floating point number, or an array of floating point numbers with the given `shape` or `size`.
+
+### seed
+
+To make random number generation reproducible, the `seed` function is provided:
+
+```
+Function: (seed unsigned-byte-64)
+```
+
+This allows the following piece of code to always generate the same results:
+
+```lisp
+(progn
+  (numericals/random:seed 42)
+  (numericals/random:gaussian))
+```
+
+Users may then average the performance of their algorithms against a variety of seeds.
+
+### gaussian
+
+```lisp
+Function: (gaussian &key loc mean scale std shape size type out)
+```
+
+Returns a scalar or an array of shape `shape` (or `size`) filled with random numbers drawn from a gaussian/normal distribution centered at `loc` (or `mean`) and standard deviation `scale` (or `std`).
+
+If `shape` (or `size`) is `nil` (default) and `out` is `nil`, then only a scalar is returned.
+
+The following are analogous pairs of arguments. Supply only one of these.
+
+- `loc` and `mean`
+- `scale` and `std`
+- `size` and `shape`
+
+For more information and examples, see: https://numpy.org/doc/stable/reference/random/generated/numpy.random.normal.html
+
+### chisquare
+
+```lisp
+Function: (chisquare &key size shape out type (ndof 1))
+```
+
+Returns a scalar or an array of shape `shape` (or `size`) filled with random numbers drawn from a chisquare distribution with `ndof` as the degrees of freedom.
+
+If `shape` (or `size`) is `nil` (default) and `out` is `nil`, then only a scalar is returned.
+
+Exactly one of `size` or `shape` must be supplied; both mean the same thing.
+
+For more information and examples, see:
+https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.chisquare.html
+
+### beta
+
+```lisp
+Function: (beta a b &key size shape out type)
+```
+
+Returns a scalar or an array of shape `shape` (or `size`) filled with random numbers drawn from a beta distribution with parameters A (alpha) and B (beta).
+
+If `shape` (or `size`) is `nil` (default) and `out` is `nil`, then only a scalar is returned.
+
+Exactly one of `size` or `shape` must be supplied; both mean the same thing.
+
+For more information and examples, see: https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.beta.html
+
 ## Statistics
+
+Package: `numericals/statistics` or `dense-numericals/statistics`
+
+### mean
+
+```lisp
+Function: (mean array-like &key out axes keep-dims)
+```
+
+See https://numpy.org/doc/stable/reference/generated/numpy.mean.html
+
+### variance
+
+```lisp
+Function: (variance array-like &key out axes keep-dims (ddof 0))
+```
+
+See https://numpy.org/doc/stable/reference/generated/numpy.var.html
+
+### std
+
+```lisp
+Function: (std array-like &key out axes keep-dims (ddof 0))
+```
+
+See https://numpy.org/doc/stable/reference/generated/numpy.std.html
 
 ## magicl
 

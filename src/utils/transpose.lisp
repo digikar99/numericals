@@ -12,6 +12,7 @@
 
 (defun transpose (array &key (out nil out-supplied-p) axes)
   ;; Quite a bit slower than TORCH, also thanks to multithreading
+  "See https://numpy.org/doc/stable/reference/generated/numpy.transpose.html"
   (declare (type cl:array array))
   (let ((ndim (array-rank array)))
     (declare (type uint32 ndim))

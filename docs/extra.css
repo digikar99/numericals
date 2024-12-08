@@ -1,10 +1,10 @@
 .wy-side-scroll {
-		/* background-color:#b3d9ff; */
-		background:white;
+    /* background-color:#b3d9ff; */
+    background:white;
 }
 
 .wy-menu-vertical a{
-		color:black;
+    color:black;
 }
 
 /* .toctree-l1 .current > a.reference.internal.current{ */
@@ -12,15 +12,11 @@
 /* } */
 
 /* .wy-menu-vertical li.current, .wy-menu-vertical li.toctree-l2.current > a, li.toctree-l3>a{ */
-    /* background: #202020; */
+/* background: #202020; */
 /* } */
 
 .rst-versions .rst-current-version{
-		background-color:#2980B9;
-}
-
-body{
-    font-family: Noto Sans;
+    background-color:#2980B9;
 }
 
 p{
@@ -29,12 +25,12 @@ p{
 
 .rst-content pre, .rst-content pre code{
     font-size:90%;
-    font-family: Noto Sans Mono;
+    font-family: Iosevka Web;
 }
 
 .rst-content code{
     font-size:100%;
-    font-family: Noto Sans;
+    font-family: Iosevka Web;
     border:none;
     padding:0;
 }
