@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="../extra.css" rel="stylesheet" />
+        <link href="https://pvinis.github.io/iosevka-webfont/3.4.1/iosevka.css" rel="stylesheet" />
     
       <script>
         // Current page data
@@ -86,6 +87,14 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#direct-ways-avoid-list-allocation">Direct ways (avoid list allocation)</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#transposing-existing-arrays">Transposing existing arrays</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#reshaping-existing-arrays">Reshaping existing arrays</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#copying-existing-arrays">Copying existing arrays</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#type-casting-existing-arrays">Type-casting existing arrays</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#modifying-arrays">Modifying arrays</a>
@@ -97,38 +106,40 @@
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#transforming-arrays">Transforming arrays</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#transpose">transpose</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#reshape">reshape</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#element-wise-operators">Element-wise operators</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#array-reduction-operators">Array reduction operators</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#basic-math">Basic Math</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#utilities-and-array-operations">Utilities and array operations</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="#standard-arithmetic-operations">Standard arithmetic operations</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#comparison-operations">Comparison operations</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#rounding-operations">Rounding operations</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#arg-maximum">arg-maximum</a>
+    <li class="toctree-l3"><a class="reference internal" href="#bitwise-operators">Bitwise Operators</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#arg-minimum">arg-minimum</a>
+    <li class="toctree-l3"><a class="reference internal" href="#abs">abs</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#other-basic-operations">Other basic operations</a>
+    <li class="toctree-l3"><a class="reference internal" href="#arg-maximumarg-minimum">arg-maximum/arg-minimum</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#maximumminimum">maximum/minimum</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sum">sum</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transcendental-operations">Transcendental Operations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#trigonometric-operations">Trigonometric Operations</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#exponentiation">Exponentiation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#natural-logarithm">Natural Logarithm</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#in-place-operations">In-place Operations</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#linear-algebra">Linear Algebra</a>
         <ul>
@@ -163,8 +174,26 @@
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#random">Random</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#seed">seed</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#gaussian">gaussian</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#chisquare">chisquare</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#beta">beta</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#statistics">Statistics</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#mean">mean</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#variance">variance</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#std">std</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#magicl">magicl</a>
     </li>
@@ -203,7 +232,7 @@
                 <h1 id="manual">Manual</h1>
 <p>There are two main asdf systems:</p>
 <ul>
-<li><code>numericals</code> is designed to work with <code>cl:array</code> so that interfacing with the rest of the lisp ecosystem is trivial.</li>
+<li><code>numericals</code> is designed to work with <code>cl:array</code> so that interfacing with the rest of the lisp ecosystem is trivial</li>
 <li><code>dense-numericals</code> is designed to work with <a href="https://github.com/digikar99/dense-arrays">dense-arrays:array</a></li>
 </ul>
 <p>Each of these has a number of systems and corresponding packages:</p>
@@ -215,35 +244,71 @@
 <li>linalg</li>
 <li>random</li>
 </ul>
-<p>These can be loaded individually. For example <code>(asdf:load-system "numericals/random")</code>.</p>
+<p>These can be loaded individually. For example <code>(asdf:load-system "numericals/random")</code>. Except <code>utils</code> all the others depend on C foreign libraries.</p>
+<p>See <a href="../install/">Installation</a> to get started.</p>
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 <p><strong>Table of Contents</strong></p>
 <ul>
+<li><a href="#manual">Manual</a><ul>
 <li><a href="#utilities">Utilities</a><ul>
 <li><a href="#configuration">Configuration</a></li>
 <li><a href="#generating-arrays">Generating arrays</a></li>
 <li><a href="#modifying-arrays">Modifying arrays</a></li>
 <li><a href="#transforming-arrays">Transforming arrays</a></li>
-<li><a href="#element-wise-operators">Element-wise operators</a></li>
-<li><a href="#array-reduction-operators">Array reduction operators</a></li>
 </ul>
 </li>
 <li><a href="#basic-math">Basic Math</a><ul>
-<li><a href="#utilities-and-array-operations">Utilities and array operations</a></li>
 <li><a href="#standard-arithmetic-operations">Standard arithmetic operations</a></li>
 <li><a href="#comparison-operations">Comparison operations</a></li>
 <li><a href="#rounding-operations">Rounding operations</a></li>
-<li><a href="#arg-maximum">arg-maximum</a></li>
-<li><a href="#arg-minimum">arg-minimum</a></li>
-<li><a href="#other-basic-operations">Other basic operations</a></li>
+<li><a href="#bitwise-operators">Bitwise Operators</a></li>
+<li><a href="#abs">abs</a></li>
+<li><a href="#arg-maximumarg-minimum">arg-maximum/arg-minimum</a></li>
+<li><a href="#maximumminimum">maximum/minimum</a></li>
+<li><a href="#sum">sum</a></li>
 </ul>
 </li>
-<li><a href="#transcendental-operations">Transcendental Operations</a></li>
-<li><a href="#linear-algebra">Linear Algebra</a></li>
-<li><a href="#random">Random</a></li>
-<li><a href="#statistics">Statistics</a></li>
+<li><a href="#transcendental-operations">Transcendental Operations</a><ul>
+<li><a href="#trigonometric-operations">Trigonometric Operations</a></li>
+<li><a href="#exponentiation">Exponentiation</a></li>
+<li><a href="#natural-logarithm">Natural Logarithm</a></li>
+<li><a href="#in-place-operations">In-place Operations</a></li>
+</ul>
+</li>
+<li><a href="#linear-algebra">Linear Algebra</a><ul>
+<li><a href="#cholesky">cholesky</a></li>
+<li><a href="#det">det</a></li>
+<li><a href="#eigvals">eigvals</a></li>
+<li><a href="#eigvecs">eigvecs</a></li>
+<li><a href="#inv">inv</a></li>
+<li><a href="#lu">lu</a></li>
+<li><a href="#norm2">norm2</a></li>
+<li><a href="#outer">outer</a></li>
+<li><a href="#pinv">pinv</a></li>
+<li><a href="#qr">qr</a></li>
+<li><a href="#rank">rank</a></li>
+<li><a href="#solve">solve</a></li>
+<li><a href="#svd">svd</a></li>
+<li><a href="#vdot">vdot</a></li>
+</ul>
+</li>
+<li><a href="#random">Random</a><ul>
+<li><a href="#seed">seed</a></li>
+<li><a href="#gaussian">gaussian</a></li>
+<li><a href="#chisquare">chisquare</a></li>
+<li><a href="#beta">beta</a></li>
+</ul>
+</li>
+<li><a href="#statistics">Statistics</a><ul>
+<li><a href="#mean">mean</a></li>
+<li><a href="#variance">variance</a></li>
+<li><a href="#std">std</a></li>
+</ul>
+</li>
 <li><a href="#magicl">magicl</a></li>
 <li><a href="#tests">tests</a></li>
+</ul>
+</li>
 </ul>
 <!-- markdown-toc end -->
 
@@ -341,44 +406,56 @@ Default Value: 80000
 ;=&gt; #(8.339874 1.0285072 2.144558)
 </code></pre>
 <p>All of these have a XXX<code>-like</code> counterpart which takes in an existing array and generates an array with shape and element-type similar to the input array.</p>
+<h4 id="transposing-existing-arrays">Transposing existing arrays</h4>
+<pre><code class="language-lisp">Function: (transpose array &amp;key axes)
+</code></pre>
+<p>Transposes an array along one or more <code>axes</code>. See <a href="See https://numpy.org/doc/stable/reference/generated/numpy.transpose.html">numpy's tranpose documentation</a> for more details. </p>
+<h4 id="reshaping-existing-arrays">Reshaping existing arrays</h4>
+<pre><code class="language-lisp">Function: (reshape array new-shape)
+</code></pre>
+<p>See <a href="https://numpy.org/doc/stable/reference/generated/numpy.reshape.html">numpy's reshape documentation</a>.</p>
+<h4 id="copying-existing-arrays">Copying existing arrays</h4>
+<p>This functionality depends on C foreign libraries and is made available after loading <code>numericals/basic-math</code> or <code>dense-numericals/basic-math</code>. An alternative is to use <code>alexandria:copy-array</code> or <code>dense-arrays:copy-array</code>.</p>
+<h4 id="type-casting-existing-arrays">Type-casting existing arrays</h4>
+<p>astype</p>
 <h3 id="modifying-arrays">Modifying arrays</h3>
 <h4 id="fill">fill</h4>
+<pre><code class="language-lisp">Lambda List: (fill array value)
+</code></pre>
+<p>Fill each location in <code>array</code> with <code>value</code>.</p>
 <h4 id="aref">aref*</h4>
+<p>Accessor function for arrays with semantics similar to numpy's indexing semantics.
+See https://numpy.org/doc/stable/user/basics.indexing.html</p>
+<pre><code class="language-lisp">[Enhanced] Lambda List: (aref* array &amp;rest subscripts &amp;key out)
+</code></pre>
+<p>Each element of SUBSCRIPTS can be
+- either an integer denoting the position within the axis which is to be indexed
+- or a list of the form (&amp;OPTIONAL START &amp;KEY END STEP) with each of START END
+  STEP being integers if supplied. START denotes the start position within the
+  axis, END denotes the ending position within the axis, STEP denotes at what
+  distance within the axis the next element should come after the previous,
+  starting from START</p>
+<p>Each of the SUBSCRIPTS, START, END, STEP can also be negative integers, in which
+case the last element along the axis is given the index -1, the second last is
+given the index -2 and so on. Thus, <code>(aref ... '(-1 :step -1))</code> can reverse a one
+dimensional array.</p>
+<p>Like, <code>cl:aref</code> or <code>abstract-arrays:aref</code>, returns the element corresponding to SUBSCRIPTS
+if all the subscripts are integers and there as many subscripts as the rank of the array.</p>
+<p>The performance of this function is slightly different for <code>cl:array</code> compared to
+<code>dense-arrays:array</code>. In particular, numpy-like indexing requires multidimensional offsets. <code>cl:array</code> only have a single dimensional offset, thus, when using <code>aref*</code> a copy of the <code>cl:array</code> is created. The copy may be made into a preallocated array supplied using the <code>:out</code> keyword argument. In contrast, because <code>dense-arrays:array</code> support multidimensional offsets and strides, merely a wrapper object (a "view") is created. A view is a window into the original array and thus avoids copying the elements of the original array. This occurs when the number (aka length) of SUBSCRIPTS were less than the array's rank, or if some of the SUBSCRIPTS were lists described above.</p>
+<p>Examples illustrating the numpy-equivalent indexes:</p>
+<pre><code>a[::]       (aref a nil)
+a[::2]      (aref a '(0 :step 2))
+a[3, ::-1]  (aref a 3 '(-1 :step -1))
+a[3::, -1]  (aref a '(3) -1)
+</code></pre>
+<p>The SUBSCRIPTS can also be integer or boolean arrays, denoting which elements
+to select from each of the axes. But in this case the corresponding elements
+of the array are copied over into a new array.</p>
 <h3 id="transforming-arrays">Transforming arrays</h3>
 <p><code>numericals/utils</code> and <code>dense-numericals/utils</code> only provides <code>transpose</code> and <code>reshape</code>. The other tranformation function <code>concat</code> is provided by [basic-math].</p>
-<h4 id="transpose">transpose</h4>
-<p>Transposes an array along one or more axes. </p>
-<h4 id="reshape">reshape</h4>
-<h3 id="element-wise-operators">Element-wise operators</h3>
-<ul>
-<li>abs </li>
-</ul>
-<p>Miscellaneous:</p>
-<ul>
-<li>two-arg-max</li>
-<li>two-arg-min</li>
-</ul>
-<h3 id="array-reduction-operators">Array reduction operators</h3>
-<p>Package: <code>numericals</code> or <code>dense-numericals</code></p>
-<ul>
-<li>sum</li>
-<li>vdot</li>
-<li>maximum</li>
-<li>minimum</li>
-<li>arg-maximum</li>
-<li>arg-minimum</li>
-</ul>
 <h2 id="basic-math">Basic Math</h2>
 <p>This functionality is provided by the <code>numericals/basic-math</code> or <code>dense-numericals/basic-math</code> systems and packages. Broadly, These can be divided into the following groups.</p>
-<h3 id="utilities-and-array-operations">Utilities and array operations</h3>
-<ul>
-<li>copy</li>
-<li>coerce</li>
-<li>astype</li>
-<li>concat</li>
-<li>shape</li>
-<li>reshape</li>
-</ul>
 <h3 id="standard-arithmetic-operations">Standard arithmetic operations</h3>
 <p>Binary operations that take in two arguments and return a new result:</p>
 <pre><code>add subtract multiply divide
@@ -499,57 +576,131 @@ NIL
 <li>fround!</li>
 <li>ftruncate!</li>
 </ul>
-<h3 id="arg-maximum">arg-maximum</h3>
-<pre><code class="language-lisp">Polymorphic Function: (arg-maximum array-like &amp;rest args923 &amp;key
-                       (axis NIL axis924) (keep-dims NIL keep-dims925)
-                       (out NIL out926))
-</code></pre>
-<p>Find the index of the maximum element along the <code>axis</code>.</p>
-<h3 id="arg-minimum">arg-minimum</h3>
-<pre><code class="language-lisp">Polymorphic Function: (arg-minimum array-like &amp;rest args932 &amp;key
-                       (axis NIL axis933) (keep-dims NIL keep-dims934)
-                       (out NIL out935))
-</code></pre>
-<p>Find the index of the minimum element along the <code>axis</code>.</p>
-<h3 id="other-basic-operations">Other basic operations</h3>
+<h3 id="bitwise-operators">Bitwise Operators</h3>
+<p>Currently, only the following bitwise operators are implemented:</p>
 <ul>
-<li>abs!</li>
-<li>matmul</li>
-<li>two-arg-matmul</li>
-<li>dot</li>
-<li>max</li>
-<li>two-arg-max</li>
-<li>min</li>
-<li>two-arg-min</li>
-<li>sum</li>
-<li>maximum</li>
-<li>
-<p>minimum</p>
-</li>
-<li>
-<p>logand</p>
-</li>
+<li>lognot</li>
 <li>two-arg-logand</li>
-<li>logior</li>
 <li>two-arg-logior</li>
-<li>logxor</li>
-<li>
-<p>two-arg-logxor</p>
-</li>
-<li>
-<p>lognot</p>
-</li>
-<li>logandc1</li>
-<li>logandc2</li>
-<li>lognand</li>
-<li>lognor</li>
-<li>logorc1</li>
-<li>logorc2
-   ;; #:logtest
-   ;; #:logbitp
-   ;; #:logcount</li>
+<li>two-arg-logxor</li>
 </ul>
+<p>These employ integer arrays as both input and output. </p>
+<h3 id="abs">abs</h3>
+<pre><code class="language-lisp">Polymorphic Function: (abs x &amp;key out broadcast)
+Polymorphic Function: (abs! x)
+</code></pre>
+<p>Takes a number or array as an input and computes their absolute value.</p>
+<p><code>abs!</code> computes the absolute value in place and necessarily requires that the input is an array.</p>
+<h3 id="arg-maximumarg-minimum">arg-maximum/arg-minimum</h3>
+<pre><code class="language-lisp">Polymorphic Function: (arg-maximum array-like &amp;key axis keep-dims out)
+Polymorphic Function: (arg-minimum array-like &amp;key axis keep-dims out)
+</code></pre>
+<p>Find the index of the maximum/minimum element along the <code>axis</code>.</p>
+<h3 id="maximumminimum">maximum/minimum</h3>
+<pre><code class="language-lisp">Polymorphic Function: (maximum array-like &amp;key axes keep-dims out)
+Polymorphic Function: (minimum array-like &amp;key axes keep-dims out)
+</code></pre>
+<p>Find the maximum/minimum elements along one or multiple <code>axes</code> of <code>array-like</code> into <code>out</code>.</p>
+<p>If <code>out</code> is unsupplied, allocates a new array of appropriate dimensions.</p>
+<p>If <code>keep-dims</code> is non-NIL, the rank of <code>out</code> will be the same as <code>array-like</code>, otherwise it will be reduced for each <code>axes</code>.</p>
+<pre><code class="language-lisp">CL-USER&gt; (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3)
+                                 (-1 4 -1))
+                               :axes 0))
+#(1.0 4.0 3.0)
+CL-USER&gt; (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3)
+                                 (-1 4 -1))
+                               :axes 1))
+#(3.0 4.0)
+CL-USER&gt; (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3)
+                                 (-1 4 -1))
+                               :axes '(0 1)))
+4.0
+CL-USER&gt; (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3) 
+                                 (-1 4 -1))))
+4.0
+CL-USER&gt; (let ((numericals:*array-element-type* 'single-float))
+           (numericals:maximum '((1 2 3)
+                                 (-1 4 -1)) 
+                               :axes '(0 1) :keep-dims t))
+#2A((4.0))
+</code></pre>
+<h3 id="sum">sum</h3>
+<pre><code class="language-lisp">Polymorphic Function: (sum array-like &amp;key axes keep-dims out)
+</code></pre>
+<p>Find the sum of elements along one or multiple <code>axes</code> of <code>array-like</code> into <code>out</code>.</p>
+<p>If <code>out</code> is unsupplied, allocates a new array of appropriate dimensions.</p>
+<p>If <code>keep-dims</code> is non-NIL, the rank of <code>out</code> will be the same as <code>array-like</code>, otherwise it will be reduced for each <code>axes</code>.</p>
+<pre><code class="language-lisp">CL-USER&gt; (let ((numericals:*array-element-type* 'single-float))
+           (numericals:sum '((1 2 3)
+                             (-1 4 -1))
+                           :axes 0))
+#(0.0 6.0 2.0)
+CL-USER&gt; (let ((numericals:*array-element-type* 'single-float))
+           (numericals:sum '((1 2 3)
+                             (-1 4 -1))
+                           :axes 1))
+#(6.0 2.0)
+CL-USER&gt; (let ((numericals:*array-element-type* 'single-float))
+           (numericals:sum '((1 2 3)
+                             (-1 4 -1))
+                           :axes '(0 1)))
+8.0
+CL-USER&gt; (let ((numericals:*array-element-type* 'single-float))
+           (numericals:sum '((1 2 3)
+                             (-1 4 -1))
+                           :keep-dims t))
+#2A((8.0))
+</code></pre>
 <h2 id="transcendental-operations">Transcendental Operations</h2>
+<p>Package: <code>numericals/transcendental</code> or <code>dense-numericals/transcendental</code></p>
+<p>The following operations have been implemented that use SIMD powered by <a href="https://sleef.org/">SLEEF</a>.</p>
+<h3 id="trigonometric-operations">Trigonometric Operations</h3>
+<pre><code>| Standard           | sin   | cos   | tan   |
+| Inverse            | asin  | acos  | atan  |
+| Hyperbolic         | sinh  | cosh  | tanh  |
+| Inverse Hyperbolic | asinh | acosh | atanh |
+</code></pre>
+<p>All have the following signature:</p>
+<pre><code class="language-lisp">Function: (&lt;fn&gt; x &amp;key out broadcast)
+</code></pre>
+<p><code>atan</code> additionally has the following signature,  mimicking the optional <code>x</code> argument of <code>cl:atan</code>:</p>
+<pre><code class="language-lisp">Function: (&lt;fn&gt; y x &amp;key out broadcast)
+</code></pre>
+<h3 id="exponentiation">Exponentiation</h3>
+<pre><code class="language-lisp">Function: (expt base power &amp;key broadcast out)
+Function: (exp x &amp;key broadcast out) # base e exponentiation
+</code></pre>
+<h3 id="natural-logarithm">Natural Logarithm</h3>
+<p>This has two signatures, mimicking the optional <code>base</code> argument of <code>cl:log</code>:</p>
+<pre><code class="language-lisp">Function: (log x &amp;key broadcast out)
+Function: (log x y &amp;key broadcast out)
+</code></pre>
+<p>The first signature computes the natural logarithm of <code>x</code>, while the second signature uses <code>y</code> </p>
+<h3 id="in-place-operations">In-place Operations</h3>
+<p>All of the above have in-place equivalents obtained by appending a '!' to the function name. These do not require supplying the <code>out</code> or <code>broadcast</code> argument. Instead, the first argument is treated as <code>out</code> and modified in-place; <code>broadcast</code> is taken as <code>nil</code>.</p>
+<pre><code class="language-lisp">CL-USER&gt; (let ((a (numericals:rand 3 :type 'single-float)))
+           (print a)
+           (print (numericals:sin a))
+           (print a))
+
+#(0.46031213 0.51501644 0.61946905)
+#(0.44422776 0.49254915 0.58060294)
+#(0.46031213 0.51501644 0.61946905)
+#(0.46031213 0.51501644 0.61946905)
+CL-USER&gt; (let ((a (numericals:rand 3 :type 'single-float)))
+           (print a)
+           (print (numericals:sin! a))
+           (print a))
+
+#(0.6814344 0.97704315 0.50856435)
+#(0.6299077 0.8288467 0.48692378)
+#(0.6299077 0.8288467 0.48692378)
+#(0.6299077 0.8288467 0.48692378)
+</code></pre>
 <h2 id="linear-algebra">Linear Algebra</h2>
 <p>Package: <code>numericals/linalg</code> or <code>dense-numericals/linalg</code></p>
 <p>The functions in these packages use the <a href="https://eigen.tuxfamily.org/index.php?title=Main_Page">Eigen</a> library of C++. In actuality, a <a href="https://github.com/digikar99/ceigen_lite/">lite C interface</a> is used. </p>
@@ -698,7 +849,60 @@ For input m-by-n input A, it returns <code>u</code>, <code>s</code>, and <code>v
 </code></pre>
 <p>Treat the two input arrays as 1D vectors and calculate their dot product.</p>
 <h2 id="random">Random</h2>
+<p>Package: <code>numericals/random</code> or <code>dense-numericals/random</code></p>
+<p>Like Linear Algebrain, the functions in these packages too use the <a href="https://eigen.tuxfamily.org/index.php?title=Main_Page">Eigen</a> library of C++. In actuality, a <a href="https://github.com/digikar99/ceigen_lite/">lite C interface</a> is used.</p>
+<p>Each of the random number generator can return either a scalar floating point number, or an array of floating point numbers with the given <code>shape</code> or <code>size</code>.</p>
+<h3 id="seed">seed</h3>
+<p>To make random number generation reproducible, the <code>seed</code> function is provided:</p>
+<pre><code>Function: (seed unsigned-byte-64)
+</code></pre>
+<p>This allows the following piece of code to always generate the same results:</p>
+<pre><code class="language-lisp">(progn
+  (numericals/random:seed 42)
+  (numericals/random:gaussian))
+</code></pre>
+<p>Users may then average the performance of their algorithms against a variety of seeds.</p>
+<h3 id="gaussian">gaussian</h3>
+<pre><code class="language-lisp">Function: (gaussian &amp;key loc mean scale std shape size type out)
+</code></pre>
+<p>Returns a scalar or an array of shape <code>shape</code> (or <code>size</code>) filled with random numbers drawn from a gaussian/normal distribution centered at <code>loc</code> (or <code>mean</code>) and standard deviation <code>scale</code> (or <code>std</code>).</p>
+<p>If <code>shape</code> (or <code>size</code>) is <code>nil</code> (default) and <code>out</code> is <code>nil</code>, then only a scalar is returned.</p>
+<p>The following are analogous pairs of arguments. Supply only one of these.</p>
+<ul>
+<li><code>loc</code> and <code>mean</code></li>
+<li><code>scale</code> and <code>std</code></li>
+<li><code>size</code> and <code>shape</code></li>
+</ul>
+<p>For more information and examples, see: https://numpy.org/doc/stable/reference/random/generated/numpy.random.normal.html</p>
+<h3 id="chisquare">chisquare</h3>
+<pre><code class="language-lisp">Function: (chisquare &amp;key size shape out type (ndof 1))
+</code></pre>
+<p>Returns a scalar or an array of shape <code>shape</code> (or <code>size</code>) filled with random numbers drawn from a chisquare distribution with <code>ndof</code> as the degrees of freedom.</p>
+<p>If <code>shape</code> (or <code>size</code>) is <code>nil</code> (default) and <code>out</code> is <code>nil</code>, then only a scalar is returned.</p>
+<p>Exactly one of <code>size</code> or <code>shape</code> must be supplied; both mean the same thing.</p>
+<p>For more information and examples, see:
+https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.chisquare.html</p>
+<h3 id="beta">beta</h3>
+<pre><code class="language-lisp">Function: (beta a b &amp;key size shape out type)
+</code></pre>
+<p>Returns a scalar or an array of shape <code>shape</code> (or <code>size</code>) filled with random numbers drawn from a beta distribution with parameters A (alpha) and B (beta).</p>
+<p>If <code>shape</code> (or <code>size</code>) is <code>nil</code> (default) and <code>out</code> is <code>nil</code>, then only a scalar is returned.</p>
+<p>Exactly one of <code>size</code> or <code>shape</code> must be supplied; both mean the same thing.</p>
+<p>For more information and examples, see: https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.beta.html</p>
 <h2 id="statistics">Statistics</h2>
+<p>Package: <code>numericals/statistics</code> or <code>dense-numericals/statistics</code></p>
+<h3 id="mean">mean</h3>
+<pre><code class="language-lisp">Function: (mean array-like &amp;key out axes keep-dims)
+</code></pre>
+<p>See https://numpy.org/doc/stable/reference/generated/numpy.mean.html</p>
+<h3 id="variance">variance</h3>
+<pre><code class="language-lisp">Function: (variance array-like &amp;key out axes keep-dims (ddof 0))
+</code></pre>
+<p>See https://numpy.org/doc/stable/reference/generated/numpy.var.html</p>
+<h3 id="std">std</h3>
+<pre><code class="language-lisp">Function: (std array-like &amp;key out axes keep-dims (ddof 0))
+</code></pre>
+<p>See https://numpy.org/doc/stable/reference/generated/numpy.std.html</p>
 <h2 id="magicl">magicl</h2>
 <p>The following two systems provide packages for using <code>magicl</code> functions:</p>
 <ul>
