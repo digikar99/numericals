@@ -53,13 +53,13 @@
                 #:with-blapack)
   (:reexport :magicl))
 
-(defpackage :dense-numericals/magicl/impl
-  (:use :cl :dense-numericals/basic-utils)
+(peltadot/utils:defpackage :dense-numericals/magicl/impl
+  (:shadowing-import-exported-symbols :dense-numericals/utils)
+  (:use :cl)
   (:local-nicknames (:nu/magicl :dense-numericals/magicl))
   (:import-from #:alexandria
                 #:make-gensym-list
-                #:parse-ordinary-lambda-list
-                #:copy-array))
+                #:parse-ordinary-lambda-list))
 
 (in-package :dense-numericals/magicl/impl)
 
