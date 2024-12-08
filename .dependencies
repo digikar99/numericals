@@ -2,3 +2,4 @@
 ("cl-bmas" :git "https://github.com/digikar99/cl-bmas")
 ("cl-ceigen-lite" :git "https://github.com/digikar99/cl-ceigen-lite")
 ("peltadot" :git "https://gitlab.com/digikar/peltadot")
+("magicl" :git "https://github.com/quil-lang/magicl")
