@@ -33,9 +33,9 @@
                (:file "aref")
                (:file "broadcast")
                (:File "transpose")
-               (:File "concat")
                (:file "ptr-iterate-but-inner")
-               (:file "simple-array-broadcast")))
+               (:file "simple-array-broadcast")
+               (:File "concat")))
 
 (defsystem "numericals/basic-math"
   :pathname "src/basic-math/"
