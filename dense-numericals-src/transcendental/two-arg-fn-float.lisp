@@ -531,7 +531,7 @@
 (defpolymorph nu:log (x y &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
   (declare (ignore out))
   (imlet ((out (one-arg-fn/float 'nu:log y :broadcast broadcast)))
-    (two-arg-fn/float 'numericals:divide
+    (two-arg-fn/float 'dense-numericals:divide
                       (one-arg-fn/float 'nu:log x :broadcast broadcast)
                       out
                       :out out
@@ -539,7 +539,7 @@
     out))
 (defpolymorph nu:log (x y &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
   (one-arg-fn/float 'nu:log y :broadcast broadcast :out out)
-  (two-arg-fn/float 'numericals:divide
+  (two-arg-fn/float 'dense-numericals:divide
                     (one-arg-fn/float 'nu:log x :broadcast broadcast)
                     out
                     :out out

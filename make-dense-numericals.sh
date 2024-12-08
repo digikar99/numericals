@@ -18,3 +18,6 @@ mv dense-numericals-src.bak/magicl/magicl-wrapper.lisp dense-numericals-src/magi
 
 # Replace ':numericals' with ':dense-numericals'
 find dense-numericals-src/*/*.lisp -maxdepth 1 -type f -exec sed -i 's/\:numericals/\:dense-numericals/g' {} \;
+
+# Replace 'numericals:' with 'dense-numericals:'
+find dense-numericals-src/*/*.lisp -maxdepth 1 -type f -exec sed -i 's/numericals\:/dense-numericals\:/g' {} \;
