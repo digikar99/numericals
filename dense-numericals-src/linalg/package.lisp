@@ -11,7 +11,6 @@
            #:eigvals
            #:eigvecs
 
-
            #:norm2
            #:det
            #:rank

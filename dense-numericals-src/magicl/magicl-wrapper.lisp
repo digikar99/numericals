@@ -1,5 +1,6 @@
 (uiop:define-package :dense-numericals/magicl
-  (:documentation "A DENSE-NUMERICALS wrapper around MAGICL.")
+  (:documentation "A NUMERICALS wrapper around MAGICL.")
+  ;; We cannot use :CL because MAGICL itself shadows certain CL symbols
   (:use)
   (:import-from :magicl
                 #:*default-allocator*
@@ -52,15 +53,13 @@
                 #:with-blapack)
   (:reexport :magicl))
 
-(peltadot/utils:defpackage :dense-numericals/magicl/impl
-  (:use :peltadot)
-  (:shadowing-import-exported-symbols :dense-numericals/utils)
+(defpackage :dense-numericals/magicl/impl
+  (:use :cl :dense-numericals/basic-utils)
   (:local-nicknames (:nu/magicl :dense-numericals/magicl))
   (:import-from #:alexandria
                 #:make-gensym-list
-                #:parse-ordinary-lambda-list)
-  (:import-from #:dense-arrays
-                #:dimensions->strides))
+                #:parse-ordinary-lambda-list
+                #:copy-array))
 
 (in-package :dense-numericals/magicl/impl)
 
@@ -79,19 +78,19 @@
     (find-symbol (concatenate 'string abstract-tensor-type "/" tensor-element-type)
                  :magicl)))
 
-(defun to-magicl-tensor (standard-dense-array &key (copy nil))
-  "Converts STANDARD-DENSE-ARRAY to an appropriate subtype of MAGICL:ABSTRACT-TENSOR
+(defun to-magicl-tensor (array &key (copy nil))
+  "Converts ARRAY to an appropriate subtype of MAGICL:ABSTRACT-TENSOR
 
-If COPY is non-NIL then avoids making a copy of the storage of STANDARD-DENSE-ARRAY
-only if the STANDARD-DENSE-ARRAY is a non-view. In other words, a copy will be created
-if STANDARD-DENSE-ARRAY is a view (see ARRAY-VIEW-P) regardless of the value of COPY."
+If COPY is non-NIL then avoids making a copy of the storage of ARRAY
+only if the ARRAY is a non-view. In other words, a copy will be created
+if ARRAY is a view (see ARRAY-VIEW-P) regardless of the value of COPY."
   (declare (optimize speed))
-  (let* ((a standard-dense-array)
-         (a (if (or copy (array-layout a))
+  (let* ((a array)
+         (a (if (or copy (not (typep array 'simple-array)))
                 (copy-array a)
                 a)))
     (declare (optimize speed)
-             (type standard-dense-array standard-dense-array a))
+             (type array array a))
     (magicl:make-tensor (magicl-tensor-type
                          (array-rank a)
                          (array-element-type a))
@@ -100,33 +99,24 @@ if STANDARD-DENSE-ARRAY is a view (see ARRAY-VIEW-P) regardless of the value of 
                         :layout (array-layout a))))
 
 (defun from-magicl-tensor (magicl-tensor &key (copy nil))
-  "Converts MAGICL:ABSTRACT-TENSOR to a STANDARD-DENSE-ARRAY
+  "Converts MAGICL:ABSTRACT-TENSOR to a ARRAY
 
 If COPY is non-NIL, this copies over the underlying MAGICL::STORAGE"
   (declare (optimize speed))
-  (let* ((rank         (magicl:order magicl-tensor))
-         (storage      (slot-value magicl-tensor 'magicl::storage))
-         (storage      (if copy (alexandria:copy-array storage) storage))
-         (element-type (magicl:element-type magicl-tensor))
-         (layout       (magicl:layout magicl-tensor))
-         (dimensions   (magicl:shape magicl-tensor))
-         (strides      (dimensions->strides dimensions layout))
-         (offsets      (make-list rank :initial-element 0))
-         (total-size   (magicl:size magicl-tensor)))
-    (make-instance 'standard-dense-array
-                   :layout layout
-                   :element-type element-type
-                   :rank rank
-                   :dimensions dimensions
-                   :strides strides
-                   :offsets offsets
-                   :total-size total-size
-                   :storage storage
-                   :root-array nil)))
+  (if (eq :row-major (magicl:layout magicl-tensor))
+      (let* ((storage      (slot-value magicl-tensor 'magicl::storage))
+             (storage      (if copy (alexandria:copy-array storage) storage))
+             (element-type (magicl:element-type magicl-tensor))
+             (dimensions   (magicl:shape magicl-tensor)))
+        (cl:make-array dimensions
+                       :element-type element-type
+                       :displaced-to storage
+                       :displaced-index-offset 0))
+      (magicl:lisp-array magicl-tensor)))
 
 (defun magicl-funcall (function &rest arguments)
-  "Converts STANDARD-DENSE-ARRAY in ARGUMENTS to appropriate MAGICL TENSOR / MATRIX / VECTOR.
-Converts the results back to STANDARD-DENSE-ARRAY"
+  "Converts ARRAY in ARGUMENTS to appropriate MAGICL TENSOR / MATRIX / VECTOR.
+Converts the results back to ARRAY"
   (declare (optimize speed))
   (multiple-value-call
       (lambda (&rest values)
@@ -139,7 +129,7 @@ Converts the results back to STANDARD-DENSE-ARRAY"
     (apply function
            (loop :for rem-arguments :on arguments
                  :for (arg . rest) := rem-arguments
-                 :if (cl:typep arg 'standard-dense-array)
+                 :if (cl:typep arg 'array)
                    :do (setf (first rem-arguments)
                              (to-magicl-tensor arg :copy nil))
                  :finally (return arguments)))))

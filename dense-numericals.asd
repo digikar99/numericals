@@ -27,7 +27,8 @@
                (:file "translations")
                (:file "lparallel")
                (:file "ptr-iterate-but-inner")
-               (:file "simple-array-broadcast")))
+               (:file "simple-array-broadcast")
+               (:file "concat")))
 
 (defsystem "dense-numericals/basic-math"
   :pathname "dense-numericals-src/basic-math/"

@@ -33,6 +33,7 @@
                (:file "aref")
                (:file "broadcast")
                (:File "transpose")
+               (:File "concat")
                (:file "ptr-iterate-but-inner")
                (:file "simple-array-broadcast")))
 

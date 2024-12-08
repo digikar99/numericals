@@ -112,13 +112,15 @@
                                       ((out null)))
     t
   (declare (ignore out))
-  (let ((axes (sort (copy-list axes) #'cl:<)))
-    (loop :with axis-diff :of-type size := 0
-          :for axis :of-type size :in axes
-          :do (setq array (nu:minimum array :axes (the-size (- axis axis-diff))
-                                            :keep-dims keep-dims))
-              (unless keep-dims (incf axis-diff))
-          :finally (return array))))
+  (if (= (length axes) (array-rank array))
+      (nu:minimum array :axes nil :keep-dims keep-dims)
+      (let ((axes (sort (copy-list axes) #'cl:<)))
+        (loop :with axis-diff :of-type size := 0
+              :for axis :of-type size :in axes
+              :do (setq array (nu:minimum array :axes (the-size (- axis axis-diff))
+                                                :keep-dims keep-dims))
+                  (unless keep-dims (incf axis-diff))
+              :finally (return array)))))
 
 (defpolymorph (nu:minimum :inline t) ((array (nu:simple-array <type>))
                                       &key ((axes null))

@@ -77,7 +77,7 @@
    (nu:atanh bmas:satanh bmas:datanh cl:atanh)
 
    (nu:exp bmas:sexp bmas:dexp cl:exp)
-   (nu:log       bmas:slog   bmas:dlog   cl:log)
+   (nu:log bmas:slog bmas:dlog cl:log)
 
    (nu::atan2 bmas:satan2 bmas::datan2 cl:atan)
    (nu:expt   bmas:spow   bmas:dpow    cl:expt)

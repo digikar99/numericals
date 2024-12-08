@@ -528,6 +528,27 @@
 (defpolymorph nu::atan2 (x y &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
   (two-arg-fn/float 'nu::atan2 x y :out out :broadcast broadcast))
 
+(defpolymorph nu:log (x y &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
+  (declare (ignore out))
+  (imlet ((out (one-arg-fn/float 'nu:log y :broadcast broadcast)))
+    (two-arg-fn/float 'numericals:divide
+                      (one-arg-fn/float 'nu:log x :broadcast broadcast)
+                      out
+                      :out out
+                      :broadcast broadcast)
+    out))
+(defpolymorph nu:log (x y &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
+  (one-arg-fn/float 'nu:log y :broadcast broadcast :out out)
+  (two-arg-fn/float 'numericals:divide
+                    (one-arg-fn/float 'nu:log x :broadcast broadcast)
+                    out
+                    :out out
+                    :broadcast broadcast)
+  out)
+(defpolymorph nu:log ((x number) (y number) &key ((out null)) ((broadcast null))) t
+  (declare (ignore out))
+  (cl:log x y))
+
 ;;; We should rather change TWO-ARG-FN to allow for integer arguments
 ;; (define-polymorphic-function nu::ash-right (x y &key out) :overwrite t)
 ;; (defpolymorph nu::ash-right (x y &key ((out null))) t

@@ -65,6 +65,7 @@
 
            #:shape
            #:reshape
+           #:concat
            #:do-arrays
            #:macro-map-array
 
@@ -155,3 +156,9 @@
  :polymorphic-functions :peltadot/polymorphic-functions)
 
 (numericals/common:export-all-external-symbols :dense-numericals/utils :dense-numericals)
+
+(in-package :dense-numericals/utils/impl)
+
+(defun parametric-type-symbol-p (s)
+  (member s '(<type>)))
+(pushnew 'parametric-type-symbol-p *parametric-type-symbol-predicates*)

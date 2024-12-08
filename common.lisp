@@ -28,7 +28,7 @@
 
            #:export-all-external-symbols))
 
-(uiop:define-package :dense-numericals/common
+(peltadot/utils:defpackage :dense-numericals/common
   (:use :numericals/common)
   (:reexport :numericals/common))
 

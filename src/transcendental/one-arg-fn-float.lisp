@@ -31,7 +31,7 @@
   (def nu:sqrt)
   )
 
-;; Handle atan case specially
+;; Handle atan and log case specially, because they can take one or two args
 (define-polymorphic-function nu:atan (x &rest args)
   :overwrite t :documentation +one-arg-fn-float-doc+)
 (defpolymorph nu:atan (x &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
@@ -39,3 +39,11 @@
   (one-arg-fn/float 'nu:atan x :broadcast broadcast))
 (defpolymorph nu:atan (x &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
   (one-arg-fn/float 'nu:atan x :out out :broadcast broadcast))
+
+(define-polymorphic-function nu:log (x &rest args)
+  :overwrite t :documentation +one-arg-fn-float-doc+)
+(defpolymorph nu:log (x &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
+  (declare (ignore out))
+  (one-arg-fn/float 'nu:log x :broadcast broadcast))
+(defpolymorph nu:log (x &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
+  (one-arg-fn/float 'nu:log x :out out :broadcast broadcast))

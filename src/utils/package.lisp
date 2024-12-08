@@ -47,6 +47,7 @@
 
            #:shape
            #:reshape
+           #:concat
            #:do-arrays
            #:macro-map-array
 
@@ -104,3 +105,9 @@
 (5am:def-suite :numericals)
 
 (numericals/common:export-all-external-symbols :numericals/utils :numericals)
+
+(in-package :numericals/utils/impl)
+
+(defun parametric-type-symbol-p (s)
+  (member s '(<type>)))
+(pushnew 'parametric-type-symbol-p *parametric-type-symbol-predicates*)

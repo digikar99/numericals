@@ -20,7 +20,6 @@
    #:copy
    #:coerce
    #:astype
-   #:concat
    #:matmul
    #:two-arg-matmul
    #:dot
