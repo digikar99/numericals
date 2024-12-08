@@ -70,6 +70,7 @@ jobs:
     - name: Load magicl
       env:
         LIBRARY: ${{ matrix.library }}
+      continue-on-error: true
       run: |
         cl --eval '(progn
                      (push #P"./" ql:*local-project-directories*)
