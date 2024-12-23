@@ -191,12 +191,26 @@ Examples:
         (elt dimensions axis)
         dimensions)))
 
+(declaim (inline array-size-from-dimensions))
+(defun array-size-from-dimensions (dimensions)
+  (declare (optimize speed))
+  (loop :with product :of-type (integer 0 #.array-total-size-limit) := 1
+        :for dim :of-type (integer 0 #.array-dimension-limit) :in dimensions
+        :do (setf product (* product dim))
+        :finally (return product)))
+
 (declaim (inline reshape))
 (defun reshape (array new-dimensions)
-  (make-array new-dimensions
-              :element-type (array-element-type array)
-              :displaced-to (array-storage array)
-              :displaced-index-offset (cl-array-offset array)))
+  (policy-cond:with-expectations (cl:= 0 safety)
+      ((assertion (= (array-total-size array)
+                     (array-size-from-dimensions new-dimensions))
+                  (array new-dimensions)
+                  "Array~%  ~A~%of size ~A must be reshaped into an array with same size.~%But the given dimensions ~S are of size ~A"
+                  array (array-total-size array) new-dimensions (array-size-from-dimensions new-dimensions)))
+    (make-array new-dimensions
+                :element-type (array-element-type array)
+                :displaced-to (array-storage array)
+                :displaced-index-offset (cl-array-offset array))))
 
 (defpolymorph array= ((array1 cl:array) (array2 cl:array) &key (test #'cl:=)) boolean
   (and (equalp (array-dimensions array1)
