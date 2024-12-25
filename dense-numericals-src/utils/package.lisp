@@ -144,7 +144,9 @@
            #:with-thresholded-multithreading/cl
 
            #:out-shape-compatible-p
-           #:out-shape))
+           #:out-shape
+
+           #:normalize-axis))
 
 (5am:def-suite :dense-numericals)
 

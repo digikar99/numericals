@@ -31,6 +31,7 @@
                       ((out (nu:simple-array <type>))))
     (nu:simple-array <type>)
   (declare (ignorable keep-dims))
+  (setq axes (normalize-axis axes array))
   (policy-cond:with-expectations (= safety 0)
       ((assertion (out-shape-compatible-p 'sum out array axes keep-dims)
                   (array out)
@@ -101,6 +102,7 @@
      ((out null)))
     t
   (declare (ignore out))
+  (setq axes (normalize-axis axes array))
   (pflet* ((out (nu:zeros (out-shape 'sum array axes keep-dims) :type <type>)))
     (declare (type (simple-array <type>) out))
     (nu:sum array :out out :keep-dims keep-dims :axes axes)))
@@ -113,7 +115,8 @@
   (declare (ignore out))
   (if (= (length axes) (array-rank array))
       (nu:sum array :axes nil :keep-dims keep-dims)
-      (let ((axes (sort (copy-list axes) #'cl:<)))
+      (let ((axes (sort (mapcar (lambda (a) (normalize-axis a array)) axes)
+                        #'cl:<)))
         (loop :with axis-diff :of-type size := 0
               :for axis :of-type size :in axes
               :do (setq array (nu:sum array :axes (the-size (- axis axis-diff))

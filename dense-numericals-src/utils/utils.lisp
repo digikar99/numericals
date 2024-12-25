@@ -75,3 +75,8 @@ or MAGICL:TENSOR for arrays with :COLUMN-MAJOR or other layouts."))
 
 (define-polymorphic-function out-shape (function-name &rest args)
   :overwrite t)
+
+(declaim (inline normalize-axis))
+
+(defun normalize-axis (axis array)
+  (if (< axis 0) (+ axis (array-rank array)) axis))
