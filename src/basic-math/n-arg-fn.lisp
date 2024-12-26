@@ -2,6 +2,15 @@
 
 (5am:in-suite :numericals)
 
+(defun ensure-array-with-type (array-like type)
+  ;; FIXME: Signal a condition when the conversion is unsafe
+  ;; TODO: Enable different upgrade-rules
+  (if (arrayp array-like)
+      (if (type= type (array-element-type array-like))
+          array-like
+          (nu:astype array-like type))
+      (nu:asarray array-like :type type)))
+
 (defun normalize-arguments/dmas (array-likes out)
   (if (every #'numberp array-likes)
       (values array-likes out)
@@ -27,13 +36,8 @@
              (out-type (upgraded-c-array-element-type out-type))
              (arrays
                (loop :for array-like :on array-likes
-                     :do (unless (and (arrayp (first array-like))
-                                      (type= out-type (array-element-type (first array-like))))
-                           (setf (first array-like)
-                                 ;; TODO: Use TRIVIAL-COERCE:COERCE and simd based backends
-                                 ;; FIXME: Signal a condition when the conversion is unsafe
-                                 ;; TODO: Enable different upgrade-rules
-                                 (nu:asarray (first array-like) :type out-type)))
+                     :do (setf (first array-like)
+                               (ensure-array-with-type (first array-like) out-type))
                      :finally (return array-likes))))
         (multiple-value-bind (broadcast-compatible-p dimensions)
             (if out
@@ -106,13 +110,8 @@
              (common-type (upgraded-c-array-element-type common-type))
              (arrays
                (loop :for array-like :on array-likes
-                     :do (unless (and (arrayp (first array-like))
-                                      (type= common-type (array-element-type (first array-like))))
-                           (setf (first array-like)
-                                 ;; TODO: Use TRIVIAL-COERCE:COERCE and simd based backends
-                                 ;; FIXME: Signal a condition when the conversion is unsafe
-                                 ;; TODO: Enable different upgrade-rules
-                                 (nu:asarray (first array-like) :type common-type)))
+                     :do (setf (first array-like)
+                               (ensure-array-with-type (first array-like) common-type))
                      :finally (return array-likes))))
         (multiple-value-bind (broadcast-compatible-p dimensions)
             (if out
@@ -200,13 +199,8 @@
                  common-type))
              (arrays
                (loop :for array-like :on array-likes
-                     :do (unless (and (arrayp (first array-like))
-                                      (type= common-type (array-element-type (first array-like))))
-                           (setf (first array-like)
-                                 ;; TODO: Use TRIVIAL-COERCE:COERCE and simd based backends
-                                 ;; FIXME: Signal a condition when the conversion is unsafe
-                                 ;; TODO: Enable different upgrade-rules
-                                 (nu:asarray (first array-like) :type common-type)))
+                     :do (setf (first array-like)
+                               (ensure-array-with-type (first array-like) common-type))
                      :finally (return array-likes))))
         (multiple-value-bind (broadcast-compatible-p dimensions)
             (if out
