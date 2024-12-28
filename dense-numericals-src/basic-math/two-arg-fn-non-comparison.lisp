@@ -102,7 +102,7 @@
                   y
                   (nu:copy y :out (nu:empty (array-dimensions y) :type otype)))))
       ;; TODO: Add type declarations?
-      (two-arg-fn/non-comparison name x y :broadcast broadcast :out nil))))
+      (two-arg-fn/non-comparison name x y :broadcast broadcast :out out))))
 
 
 ;; 6 parametric polymorphs
