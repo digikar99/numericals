@@ -61,4 +61,6 @@
   (def nu:add      (single-float 1f-7) (double-float 1d-15))
   (def nu:subtract (single-float 1f-7) (double-float 1d-15))
   (def nu:multiply (single-float 1f-7) (double-float 1d-15))
-  (def nu:divide   (single-float 1f-7) (double-float 1d-15)))
+  (def nu:divide   (single-float 1f-7) (double-float 1d-15))
+  (def nu:two-arg-max (single-float 1f-7) (double-float 1d-15))
+  (def nu:two-arg-min (single-float 1f-7) (double-float 1d-15)))
