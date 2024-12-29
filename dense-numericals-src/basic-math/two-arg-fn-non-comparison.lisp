@@ -297,7 +297,9 @@
   (def nu:add)
   (def nu:subtract)
   (def nu:multiply)
-  (def nu:divide))
+  (def nu:divide)
+  (def nu:two-arg-max)
+  (def nu:two-arg-min))
 
 (macrolet ((def (name)
              (eval `(define-polymorphic-function ,name (x y &key out broadcast)
