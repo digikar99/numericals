@@ -276,3 +276,8 @@ Examples:
 
 (define-polymorphic-function out-shape (function-name &rest args)
   :overwrite t)
+
+(declaim (inline ensure-array))
+(defun ensure-array (element &optional shape (element-type default-element-type))
+  (make-array shape :element-type element-type
+                    :initial-element (coerce element element-type)))

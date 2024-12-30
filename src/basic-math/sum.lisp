@@ -4,7 +4,13 @@
 
 (define-polymorphic-function nu:sum (array-like &key out axes keep-dims) :overwrite t)
 
-(defpolymorph out-shape-compatible-p ((name (eql sum)) out in axes keep-dims) boolean
+(defpolymorph (nu:sum :inline t :suboptimal-note runtime-array-allocation)
+    ((array list) &key axes keep-dims out)
+    nu:array
+  (declare (notinline nu:asarray))
+  (nu:sum (nu:asarray array) :axes axes :keep-dims keep-dims :out out))
+
+(defpolymorph out-shape-compatible-p ((name (eql nu:sum)) out in axes keep-dims) boolean
   (declare (optimize speed)
            (type nu:array out in)
            (type (integer 0 #.array-rank-limit) axes))
@@ -25,6 +31,131 @@
                           (cl:= d1 d2)))
             :do (unless (cl:= i axes) (setq out-dims rem-dims)))))
 
+(defpolymorph out-shape ((name (eql nu:sum)) (in-array nu:array) axes keep-dims) list
+  (declare (optimize speed)
+           (type (or list (integer 0 #.array-rank-limit)) axes))
+  (etypecase axes
+    (null
+     (if keep-dims
+         (make-list (array-rank in-array) :initial-element 1)
+         nil))
+    ((integer 0 #.array-rank-limit)
+     (if keep-dims
+         (loop :for i :of-type (integer 0 #.array-rank-limit)
+                 :below (nu:array-rank in-array)
+               :for d :of-type size :in (narray-dimensions in-array)
+               :collect (if (cl:= i axes) 1 d))
+         (loop :for i :of-type (integer 0 #.array-rank-limit)
+                 :below (nu:array-rank in-array)
+               :for d :of-type size :in (narray-dimensions in-array)
+               :if (cl:/= i axes)
+                 :collect d)))
+    (cons
+     (if keep-dims
+         (loop :for i :of-type (integer 0 #.array-rank-limit)
+                 :below (nu:array-rank in-array)
+               :for d :of-type size :in (narray-dimensions in-array)
+               :collect (if (member i axes :test #'cl:=) 1 d))
+         (loop :for i :of-type (integer 0 #.array-rank-limit)
+                 :below (nu:array-rank in-array)
+               :for d :of-type size :in (narray-dimensions in-array)
+               :if (not (member i axes :test #'cl:=))
+                 :collect d)))))
+
+(defpolymorph (nu:sum :inline t :suboptimal-note runtime-array-allocation)
+    ((array (nu:array <type>)) &key axes ((keep-dims boolean)) ((out null)))
+    (nu:simple-array <type>)
+  (declare (ignore out))
+  (pflet* ((out (nu:zeros (out-shape 'nu:sum array axes keep-dims) :type <type>)))
+    (declare (type (simple-array <type>) out))
+    (nu:sum array :out out :keep-dims keep-dims :axes axes)))
+
+;;; CASE 1: NULL AXES
+
+(defpolymorph (nu:sum :inline t)
+    ((x (nu:simple-array <type>))
+     &key ((axes null))
+     ((keep-dims boolean))
+     ((out (nu:array <type>))))
+    (nu:array <type>)
+
+  (declare (ignore axes))
+  (policy-cond:with-expectations (= safety 0)
+      ((assertion (if keep-dims
+                      (and (= (array-rank x) (array-rank out))
+                           (= 1 (array-total-size out)))
+                      (equal () (narray-dimensions out)))
+                  (x out keep-dims)
+                  "To sum an array of dimensions ~A along all axes~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
+                  (narray-dimensions x)
+                  (if keep-dims
+                      (make-list (array-rank x) :initial-element 1)
+                      nil)
+                  keep-dims
+                  (narray-dimensions out)))
+    (pflet ((c-name (c-name <type> 'nu:sum))
+            (c-type (c-type <type>))
+            (c-size (c-type <type>))
+            (array-storage (array-storage x))
+            (out-storage   (array-storage out)))
+      (declare (type (cl:simple-array <type> 1) array-storage))
+      (with-pointers-to-vectors-data ((ptr array-storage)
+                                      (optr out-storage))
+        (unless (array-layout out)        ; non-null for simple arrays
+          (cffi:incf-pointer optr (* c-size (array-total-offset out))))
+        (funcall #'(setf fref)
+                 (funcall c-name (array-total-size x) ptr 1)
+                 optr
+                 c-type))
+      out)))
+
+(defpolymorph (nu:sum :inline t)
+    ((x (array <type>))
+     &key ((axes null))
+     ((out (array <type>)))
+     ((keep-dims boolean)))
+    (array <type>)
+  (declare (ignore axes))
+
+  (policy-cond:with-expectations (= safety 0)
+      ((assertion (if keep-dims
+                      (and (= (array-rank x) (array-rank out))
+                           (= 1 (array-total-size out)))
+                      (equal () (narray-dimensions out)))
+                  (x out keep-dims)
+                  "To sum an array of dimensions ~A along all axes~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
+                  (narray-dimensions x)
+                  (if keep-dims
+                      (make-list (array-rank x) :initial-element 1)
+                      nil)
+                  keep-dims
+                  (narray-dimensions out)))
+    (let ((acc     (type-zero <type>))
+          (c-name  (c-name <type> 'nu:sum))
+          (c-size  (c-size <type>))
+          (c-type  (c-type <type>)))
+      (declare (type real acc))
+      (ptr-iterate-but-inner (narray-dimensions x)
+          n
+        ((ptr-x c-size inc-x x))
+        (setq acc
+              (cl:+ acc (inline-or-funcall c-name n ptr-x inc-x))))
+      (let ((result (if (typep acc <type>)
+                        acc
+                        (locally (declare (notinline nu:coerce))
+                          (nu:coerce acc <type>))))
+            (out-storage   (array-storage out)))
+        (with-pointers-to-vectors-data ((optr out-storage))
+          (unless (array-layout out)      ; non-null for simple arrays
+            (cffi:incf-pointer optr (* c-size (array-total-offset out))))
+          (funcall #'(setf fref)
+                   result
+                   optr
+                   c-type))
+        out))))
+
+;;; CASE 2: INTEGER AXES
+
 (defpolymorph nu:sum ((array (nu:simple-array <type>))
                       &key ((axes integer))
                       ((keep-dims boolean))
@@ -32,19 +163,12 @@
     (nu:simple-array <type>)
   (declare (ignorable keep-dims))
   (policy-cond:with-expectations (= safety 0)
-      ((assertion (out-shape-compatible-p 'sum out array axes keep-dims)
+      ((assertion (out-shape-compatible-p 'nu:sum out array axes keep-dims)
                   (array out)
                   "To sum an array of dimensions ~A on axes ~D~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
                   (narray-dimensions array)
                   axes
-                  (if keep-dims
-                      (loop :for i :below (nu:array-rank array)
-                            :for d :of-type size :in (narray-dimensions array)
-                            :collect (if (cl:= i axes) 1 d))
-                      (loop :for i :below (nu:array-rank array)
-                            :for d :of-type size :in (narray-dimensions array)
-                            :if (cl:/= i axes)
-                              :collect d))
+                  (out-shape 'nu:sum array axes keep-dims)
                   keep-dims
                   (narray-dimensions out)))
     (pflet* ((c-name-add (c-name <type> 'nu:add))
@@ -80,96 +204,17 @@
           (array c-size) (out c-size))
         out))))
 
-(defpolymorph out-shape ((name (eql sum)) in-array axes keep-dims) list
-  (declare (optimize speed)
-           (type nu:array in-array)
-           (type (integer 0 #.array-rank-limit) axes))
-  (if keep-dims
-      (loop :for i :below (nu:array-rank in-array)
-            :for d :of-type size :in (narray-dimensions in-array)
-            :collect (if (cl:= i axes) 1 d))
-      (loop :for i :below (nu:array-rank in-array)
-            :for d :of-type size :in (narray-dimensions in-array)
-            :if (cl:/= i axes)
-              :collect d)))
-
-(defpolymorph (nu:sum :inline t
-                      :suboptimal-note runtime-array-allocation)
-    ((array (nu:simple-array <type>))
-     &key ((axes integer))
-     ((keep-dims boolean))
-     ((out null)))
-    t
+(defpolymorph nu:sum ((array (nu:simple-array <type>))
+                      &key ((axes integer))
+                      ((keep-dims boolean))
+                      ((out null)))
+    (nu:simple-array <type>)
   (declare (ignore out))
-  (pflet* ((out (nu:zeros (out-shape 'sum array axes keep-dims) :type <type>)))
-    (declare (type (simple-array <type>) out))
-    (nu:sum array :out out :keep-dims keep-dims :axes axes)))
+  (pflet ((out (nu:empty (out-shape 'nu:sum array axes keep-dims)
+                         :type <type>)))
+    (declare (type (nu:simple-array <type>) out))
+    (nu:sum array :axes axes :keep-dims keep-dims :out out)))
 
-(defpolymorph (nu:sum :inline t) ((array (nu:simple-array <type>))
-                                  &key ((axes cons))
-                                  ((keep-dims boolean))
-                                  ((out null)))
-    t
-  (declare (ignore out))
-  (if (= (length axes) (array-rank array))
-      (nu:sum array :axes nil :keep-dims keep-dims)
-      (let ((axes (sort (copy-list axes) #'cl:<)))
-        (loop :with axis-diff :of-type size := 0
-              :for axis :of-type size :in axes
-              :do (setq array (nu:sum array :axes (the-size (- axis axis-diff))
-                                            :keep-dims keep-dims))
-                  (unless keep-dims (incf axis-diff))
-              :finally (return array)))))
-
-(defpolymorph (nu:sum :inline t) ((array (nu:simple-array <type>))
-                                  &key ((axes null))
-                                  ((keep-dims null))
-                                  ((out null)))
-    t
-  (declare (ignore out keep-dims axes))
-  (pflet ((c-name (c-name <type> 'nu:sum))
-          (array-storage (array-storage array)))
-    (declare (type (cl:simple-array <type> 1) array-storage))
-    (with-pointers-to-vectors-data ((ptr array-storage))
-      (funcall c-name (array-total-size array) ptr 1))))
-
-(defpolymorph (nu:sum :inline t :suboptimal-note runtime-array-allocation)
-    ((array list) &key axes keep-dims out)
-    t
-  (declare (notinline nu:asarray))
-  (nu:sum (nu:asarray array) :axes axes :keep-dims keep-dims :out out))
-
-(defpolymorph (nu:sum :inline t) ((x (array <type>))
-                                  &key ((axes null))
-                                  ((out null))
-                                  ((keep-dims null)))
-    real
-  (declare (ignore axes out keep-dims))
-  0
-  (let ((acc     (type-zero <type>))
-        (c-name  (c-name <type> 'nu:sum))
-        (c-size  (c-size <type>)))
-    (declare (type real acc))
-    (ptr-iterate-but-inner (narray-dimensions x)
-        n
-      ((ptr-x c-size inc-x x))
-      (setq acc
-            (cl:+ acc (inline-or-funcall c-name n ptr-x inc-x))))
-    (let ((result (if (typep acc <type>)
-                      acc
-                      (locally (declare (notinline nu:coerce))
-                        (nu:coerce acc <type>)))))
-      result)))
-
-(defpolymorph (nu:sum :inline t) ((x (array <type>))
-                                  &key ((axes null))
-                                  ((out null))
-                                  ((keep-dims (not null))))
-    (array <type>)
-  (declare (ignore axes out keep-dims))
-  (let ((result (nu:sum x :axes nil :out nil :keep-dims nil)))
-    (make-array (make-list (array-rank x) :initial-element 1)
-                :initial-element result :element-type (nu:array-element-type x))))
 
 
 (defpolymorph (nu:sum :inline t)
@@ -177,46 +222,73 @@
     ((x (array <type>))
      &key ((axes integer))
      keep-dims
-     ((out (array <type>))
-      (nu:full
-       (let ((dim (narray-dimensions x)))
-         (append (subseq dim 0 axes)
-                 (if keep-dims (list 1) ())
-                 (nthcdr (+ 1 axes) dim)))
-       :type (array-element-type x)
-       :value (type-zero (array-element-type x)))))
+     ((out null)))
 
-    t
+    (nu:simple-array <type>)
 
   (assert (< axes (array-rank x)))
   (pflet* ((rank (array-rank x))
+           ;; (redims
+           ;;  (loop :for i :below rank
+           ;;        :for d :in (narray-dimensions x)
+           ;;        :collect (cond ((= i (1- rank)) (array-dimension x axes))
+           ;;                       ((= i axes) 1)
+           ;;                       (t d))))
+           ;; (perm-out (nu:empty redims :type <type>))
            (perm
             (loop :for i :below rank
                   :collect (cond ((= i (1- rank)) axes)
                                  ((= i axes) (1- rank))
                                  (t i))))
-           (out
-            (nu:transpose
-             (nu:reshape out
-                         (let ((dim
-                                 (array-dimensions (the array x))))
-                           (setf (nth axes dim) 1)
-                           dim))
-             :axes perm))
+           (out (nu:empty (let ((dims (array-dimensions x)))
+                            (setf (nth axes dims) 1)
+                            dims)
+                          :type <type>))
+           (perm-out (nu:transpose out :axes perm))
            (x (nu:transpose x :axes perm))
            (c-fn (c-name <type> 'nu:sum))
            (c-size (c-size <type>))
            (c-type (c-type <type>)))
-    (declare (type (array <type>) x out))
+    (declare (type (array <type>) x perm-out))
     (ptr-iterate-but-inner (narray-dimensions x)
         n
       ((ptr-x c-size inc-x x)
-       (ptr-out c-size inc-out out))
+       (ptr-out c-size inc-out perm-out))
       (setf (cffi:mem-ref ptr-out c-type)
-            (funcall c-fn n ptr-x inc-x))))
-  (if (zerop (array-rank out))
-      (row-major-aref out 0)
-      out))
+            (funcall c-fn n ptr-x inc-x)))
+    #.(if (eq 'nu:array 'cl:array)
+          `(nu:transpose perm-out :axes perm)
+          `out)))
+
+
+
+(defpolymorph (nu:sum :inline t)
+    ((x (array <type>))
+     &key ((axes integer))
+     keep-dims
+     ((out (array <type>))))
+    (nu:array <type>)
+  (let ((result (nu:sum x :axes axes :keep-dims keep-dims :out nil)))
+    (nu:copy result :out out)))
+
+;; CASE 3: CONS AXES
+
+(defpolymorph (nu:sum :inline t :suboptimal-note runtime-array-allocation)
+    ((array (nu:array <type>))
+     &key ((axes cons))
+     ((keep-dims boolean))
+     ((out (nu:array <type>))))
+    (nu:array <type>)
+  (let ((axes (remove-duplicates axes)))
+    (if (= (length axes) (array-rank array))
+        (nu:sum array :axes nil :keep-dims keep-dims :out out)
+        (loop :with intermediate := array
+              :for axis :of-type size :in axes
+              :do (setq intermediate (nu:sum intermediate :axes axis :keep-dims t))
+              :finally (setq intermediate (nu:reshape intermediate (array-dimensions out)))
+                       (nu:copy intermediate :out out)
+                       (return out)))))
+
 
 ;; FIXME: These tests are not exhaustive.
 (5am:def-test nu:sum ()
@@ -240,9 +312,11 @@
                                           ;; fixnum
                                           )
           :do
-             (5am:is (= 06 (nu:sum (nu:asarray '(1 2 3)))))
-             (5am:is (= 21 (nu:sum (nu:asarray '((1 2 3)
-                                                 (4 5 6))))))
+             (5am:is (nu:array= (ensure-array 06)
+                                (nu:sum (nu:asarray '(1 2 3)))))
+             (5am:is (nu:array= (ensure-array 21)
+                                (nu:sum (nu:asarray '((1 2 3)
+                                                      (4 5 6))))))
              (5am:is (nu:array= (nu:asarray '(5 7 9))
                                 (nu:sum (nu:asarray '((1 2 3)
                                                       (4 5 6)))
@@ -290,7 +364,7 @@
                                         :keep-dims t)))
 
              (let ((array (nu:rand 100)))
-               (5am:is (float-close-p (nu:sum array)
+               (5am:is (float-close-p (row-major-aref (nu:sum array) 0)
                                       (let ((sum 0))
                                         (nu:do-arrays ((x array))
                                           (incf sum x))
