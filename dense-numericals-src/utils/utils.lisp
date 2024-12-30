@@ -48,6 +48,15 @@ This is only relevant for transcendental functions which uses lparallel for mult
 the OUT argument, and/or ensuring all the appropriate arguments are
 arrays of appropriate types."))))
 
+(define-condition incompatible-broadcast-dimensions (error)
+  ((dimensions :initarg :dimensions :reader condition-dimensions)
+   (array-likes :initarg :array-likes :reader condition-array-likes))
+  (:report (lambda (c s)
+             (pprint-logical-block (s nil)
+               (format s "The following array-likes with dimensions~{~%  ~S~}~%cannot be broadcast together:~%" (condition-dimensions c))
+               (pprint-logical-block (s nil :per-line-prefix "  ")
+                 (format s "~S" (condition-array-likes c)))))))
+
 (defmacro defun* (name lambda-list &body body)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (defun ,name ,lambda-list ,@body)))

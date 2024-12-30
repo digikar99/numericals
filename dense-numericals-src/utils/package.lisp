@@ -139,6 +139,7 @@
            #:%broadcast-compatible-p
            #:broadcast-compatible-p
            #:do-with-broadcasting
+           #:array-total-offset
            #:ptr-iterate-but-inner
            #:with-simple-array-broadcast
            #:with-thresholded-multithreading/cl
