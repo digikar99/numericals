@@ -15,6 +15,9 @@
                              (error "Arrays of different ranks cannot be concatenated"))))
                  :finally (return rank)))
          (out-shape (make-list out-rank :initial-element nil)))
+    (unless (cl:< axis out-rank)
+      (error "Axis ~A out of range for arrays of rank ~A"
+             axis out-rank))
     (dolist (array-like array-likes)
       (loop :for array-axis :below out-rank
             :for dim := (array-dimension array-like array-axis)
@@ -34,6 +37,7 @@
                                   ((axis (integer 0 #.array-rank-limit))))
     (simple-array <type>)
   (declare (optimize speed))
+  ;; TODO: error recover restart for out of range AXIS
   (policy-cond:with-expectations (cl:= 0 safety)
       ((assertion (let ((out-shape (out-shape-for-concat axis array-likes)))
                     (equal out-shape (narray-dimensions out)))
@@ -70,6 +74,7 @@
                            :collect (if (typep array 'array)
                                         array
                                         (asarray array)))))
+    ;; TODO: error recover restart for out of range AXIS
     (concat array-likes
             :out (zeros (out-shape-for-concat axis array-likes)
                         :type (array-element-type (first array-likes)))
