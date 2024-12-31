@@ -31,7 +31,7 @@
 
 (defpolymorph (concat :inline t) (array-likes
                                   &key ((out (simple-array <type>)))
-                                  ((axis (integer 0 #.array-rank-limit))))
+                                  ((axis (integer 0 #.array-rank-limit)) 0))
     (simple-array <type>)
   (declare (optimize speed))
   (policy-cond:with-expectations (cl:= 0 safety)
@@ -63,7 +63,7 @@
               (setq out-offset (+ out-offset (the-size (* c-size last-in-size)))))))))
     out))
 
-(defpolymorph (concat :inline t) (array-likes &key ((out null)) ((axis integer)))
+(defpolymorph (concat :inline t) (array-likes &key ((out null)) ((axis integer) 0))
     t
   (declare (ignore out))
   (let ((array-likes (loop :for array :in array-likes
