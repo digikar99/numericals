@@ -24,7 +24,7 @@
                    :element-type (cl:array-element-type storage)
                    :dimensions shape
                    :strides (dimensions->strides shape layout)
-                   :offsets (make-list rank :initial-element 0)
+                   :offset 0
                    :total-size total-size
                    :root-array nil
                    :rank rank
@@ -50,7 +50,7 @@
                    :element-type (cl:array-element-type storage)
                    :dimensions shape
                    :strides (dimensions->strides shape layout)
-                   :offsets (make-list rank :initial-element 0)
+                   :offset 0
                    :total-size total-size
                    :root-array nil
                    :rank rank

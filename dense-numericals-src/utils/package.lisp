@@ -15,7 +15,7 @@
            #:empty-like)
   (:import-from :dense-arrays
                 #:array-strides
-                #:array-offsets
+                #:array-offset
                 #:broadcast-arrays
                 #:broadcast-compatible-p
                 #:default-element-type)
