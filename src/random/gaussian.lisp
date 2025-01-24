@@ -23,8 +23,7 @@
       (inline-or-funcall c-name 1 r mean std)
       (cffi:mem-ref r :double))))
 
-(define-polymorphic-function gaussian (&key (loc 0) (scale 1)
-                                                 size shape (mean 0) (std 1) out type)
+(define-polymorphic-function gaussian (&key loc scale size shape (mean 0) (std 1) out type)
   :documentation "Returns a scalar or an array of shape SHAPE (or SIZE) filled with random numbers drawn from a gaussian/normal distribution centered at LOC (or MEAN) and standard deviation SCALE (or STD).
 
 If SHAPE (or SIZE) is NIL (default) and OUT is NIL, then only a scalar is returned.
