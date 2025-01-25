@@ -102,7 +102,8 @@
                 #:eswitch
                 #:mappend
                 #:non-negative-fixnum-p
-                #:iota)
+                #:iota
+                #:if-let)
   (:import-from :peltadot/form-types
                 #:constant-form-value)
   (:import-from :dense-arrays-plus-lite
