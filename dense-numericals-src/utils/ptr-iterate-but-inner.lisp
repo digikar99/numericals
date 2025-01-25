@@ -77,8 +77,13 @@ the arrays were SIMPLE with same strides."
                                                               (- (the-int-index
                                                                   (* ,n-var ,s))))))))
                                                 pointers ss elt-sizes))))))
-                 (nest-loop (narray-dimensions ,(first array-vars))
-                            ,@strides)))))))))
+                 (if-let (,dimensions (narray-dimensions ,(first array-vars)))
+                   (nest-loop ,dimensions ,@strides)
+                   (let ((,n-var 1)
+                         ,@(mapcar (lm ss `(,ss 1)) ss))
+                     (declare (cl:type int-index ,@ss)
+                              (cl:type size ,n-var))
+                     ,@expression nil))))))))))
 
 (defmacro do-with-broadcasting
     (broadcast-dimensions-expr bindings &body body &environment env)
