@@ -144,22 +144,18 @@
                                   &key ((axes null))
                                   ((out null))
                                   ((keep-dims null)))
-    real
+    <type>
   (declare (ignore axes out keep-dims))
-  (let ((acc     (type-max <type>))
-        (c-name  (c-name <type> 'nu:minimum))
-        (c-size  (c-size <type>)))
-    (declare (type real acc))
+  (pflet ((acc     (type-max <type>))
+          (c-name  (c-name <type> 'nu:minimum))
+          (c-size  (c-size <type>)))
+    (declare (type <type> acc))
     (ptr-iterate-but-inner (narray-dimensions x)
         n
       ((ptr-x c-size inc-x x))
       (setq acc
             (cl:min acc (inline-or-funcall c-name n ptr-x inc-x))))
-    (let ((result (if (typep acc <type>)
-                      acc
-                      (locally (declare (notinline nu:coerce))
-                        (nu:coerce acc <type>)))))
-      result)))
+    acc))
 
 (defpolymorph (nu:minimum :inline t) ((x (array <type>))
                                   &key ((axes null))
