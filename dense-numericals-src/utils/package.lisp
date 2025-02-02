@@ -140,12 +140,15 @@
            #:%broadcast-compatible-p
            #:broadcast-compatible-p
            #:do-with-broadcasting
+           #:array-total-offset
            #:ptr-iterate-but-inner
            #:with-simple-array-broadcast
            #:with-thresholded-multithreading/cl
 
            #:out-shape-compatible-p
-           #:out-shape))
+           #:out-shape
+
+           #:ensure-array))
 
 (5am:def-suite :dense-numericals)
 

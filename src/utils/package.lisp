@@ -100,7 +100,9 @@
            #:with-simple-array-broadcast
 
            #:out-shape-compatible-p
-           #:out-shape))
+           #:out-shape
+
+           #:ensure-array))
 
 (5am:def-suite :numericals)
 
