@@ -144,11 +144,11 @@
                                           &key ((axis null))
                                           ((out null))
                                           ((keep-dims (not null))))
-    (array <type>)
+    (array (signed-byte 64))
   (declare (ignore axis out keep-dims))
   (let ((result (nu:arg-minimum x :axis nil :out nil :keep-dims nil)))
     (make-array (make-list (array-rank x) :initial-element 1)
-                :initial-element result :element-type (nu:array-element-type x))))
+                :initial-element result :element-type '(signed-byte 64))))
 
 
 ;; (defpolymorph (nu:arg-minimum :inline t)
@@ -263,6 +263,10 @@
                                                                (0 1 2))))
                                                 :axis 2
                                                 :out (nu:zeros 2 2 :type 'int64))))
+             (5am:is (nu:array= (nu:asarray '((0)))
+                                (nu:arg-minimum (nu:asarray '((1 2 3)
+                                                              (4 5 6)))
+                                                :keep-dims t)))
 
              (loop for size from 1000
                    repeat 32
