@@ -40,14 +40,7 @@
                   "To find arg-minimum of an array of dimensions ~A on axis ~D~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
                   (narray-dimensions array)
                   axis
-                  (if keep-dims
-                      (loop :for i :below (nu:array-rank array)
-                            :for d :of-type size :in (narray-dimensions array)
-                            :collect (if (cl:= i axis) 1 d))
-                      (loop :for i :below (nu:array-rank array)
-                            :for d :of-type size :in (narray-dimensions array)
-                            :if (cl:/= i axis)
-                              :collect d))
+                  (out-shape 'arg-minimum array axis keep-dims)
                   keep-dims
                   (narray-dimensions out)))
     (pflet* ((c-name-hmin (c-name <type> 'nu:arg-minimum))
