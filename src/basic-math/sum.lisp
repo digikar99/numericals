@@ -37,14 +37,7 @@
                   "To sum an array of dimensions ~A on axes ~D~%requires an array of dimension ~D with :KEEP-DIMS ~A,~%but an array of dimensions ~A was supplied"
                   (narray-dimensions array)
                   axes
-                  (if keep-dims
-                      (loop :for i :below (nu:array-rank array)
-                            :for d :of-type size :in (narray-dimensions array)
-                            :collect (if (cl:= i axes) 1 d))
-                      (loop :for i :below (nu:array-rank array)
-                            :for d :of-type size :in (narray-dimensions array)
-                            :if (cl:/= i axes)
-                              :collect d))
+                  (out-shape 'sum array axes keep-dims)
                   keep-dims
                   (narray-dimensions out)))
     (pflet* ((c-name-add (c-name <type> 'nu:add))
