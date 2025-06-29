@@ -10,16 +10,9 @@
                "peltadot-traits-library")
   :components ((:file "common")))
 
-(defsystem "numericals/basic-utils"
-  :pathname "src/basic-utils/"
-  :depends-on ("alexandria")
-  :description "A collection of minimal-dependency utilities for numericals. These do not require PELTADOT."
-  :components ((:file "basic-utils")))
-
 (defsystem "numericals/utils"
   :pathname "src/utils/"
   :depends-on ("numericals/common"
-               "numericals/basic-utils"
                "iterate"
                ;; This system does not require policy-cond itself,
                ;; but most of who depend on it do require it.
@@ -164,7 +157,7 @@
 
 (defsystem "numericals/magicl"
   :pathname "src/magicl/"
-  :depends-on ("numericals/basic-utils"
+  :depends-on ("numericals/utils"
                "magicl")
   :components ((:file "magicl-wrapper")
                (:file "magicl")))

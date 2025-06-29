@@ -6,10 +6,10 @@
              `(progn
                 (define-polymorphic-function ,name (x &key out broadcast)
                   :overwrite t :documentation +one-arg-fn-float-doc+)
-                (defpolymorph ,name (x &key ((out null)) (broadcast nu:*broadcast-automatically*)) t
+                (defpolymorph ,name (x &key ((out null)) (broadcast nu:broadcast-automatically)) t
                   (declare (ignore out))
                   (one-arg-fn/float ',name x :broadcast broadcast))
-                (defpolymorph ,name (x &key ((out (not null))) (broadcast nu:*broadcast-automatically*)) t
+                (defpolymorph ,name (x &key ((out (not null))) (broadcast nu:broadcast-automatically)) t
                   (one-arg-fn/float ',name x :out out :broadcast broadcast)))))
   (def nu:sin)
   (def nu:cos)

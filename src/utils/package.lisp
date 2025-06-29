@@ -1,14 +1,20 @@
 (peltadot/utils:defpackage :numericals/utils
-  (:use :peltadot :numericals/basic-utils)
-  (:shadow #:fill)
+  (:use :peltadot)
+  (:shadow #:fill #:array-element-type)
   (:export #:*default-float-format*
+           #:default-float-format
            #:*broadcast-automatically*
+           #:broadcast-automatically
            #:*array-layout*
+           #:array-layout
            #:*array-element-type*
+           #:array-element-type
            #:*array-element-type-alist*
            #:default-element-type
            #:*multithreaded-threshold*
+           #:multithreaded-threshold
            #:*inline-with-multithreading*
+           #:inline-with-multithreading
 
            #:array
            #:simple-array
@@ -61,7 +67,7 @@
            #:runtime-array-allocation))
 
 (peltadot/utils:defpackage #:numericals/utils/impl
-  (:use :peltadot :numericals/common :numericals/basic-utils :numericals/utils)
+  (:use :peltadot :numericals/common :numericals/utils)
   (:import-from #:alexandria
                 #:lastcar
                 #:with-gensyms
@@ -73,9 +79,9 @@
                 #:iota)
   (:import-from #:peltadot-traits-library
                 #:element-type)
-  (:shadowing-import-from #:numericals/utils #:fill)
+  (:shadowing-import-from #:numericals/utils #:fill #:array-element-type)
   (:shadowing-import-exported-symbols #:iterate)
-  (:reexport #:numericals/basic-utils #:numericals/common)
+  (:reexport #:numericals/common)
   (:export #:size
            #:the-size
            #:int-index

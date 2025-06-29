@@ -20,13 +20,19 @@
                 #:broadcast-compatible-p
                 #:default-element-type)
   (:export #:*default-float-format*
+           #:default-float-format
            #:*broadcast-automatically*
+           #:broadcast-automatically
            #:*array-layout*
+           #:array-layout
            #:*array-element-type*
+           #:array-element-type
            #:*array-element-type-alist*
            #:default-element-type
            #:*multithreaded-threshold*
+           #:multithreaded-threshold
            #:*inline-with-multithreading*
+           #:inline-with-multithreading
 
            #:array
            #:simple-array

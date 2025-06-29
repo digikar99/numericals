@@ -26,7 +26,9 @@
            #:max-type
            #:upgraded-c-array-element-type
 
-           #:export-all-external-symbols))
+           #:export-all-external-symbols
+
+           #:define-optimizable-variable))
 
 (peltadot/utils:defpackage :dense-numericals/common
   (:use :numericals/common)
@@ -311,3 +313,23 @@ TO - Package designator to which the existing symbols should be exported"
       (unless (member s exceptions :test #'string=)
         (push s external-symbols)))
     (export external-symbols to)))
+
+(defun specialify-symbol (symbol)
+  (let ((name (symbol-name symbol)))
+    (intern (format nil "*~A*" name)
+            (symbol-package symbol))))
+
+(defmacro define-optimizable-variable (var &optional (val nil valp) doc)
+  "Defines VAR as a symbol macro bound to a hidden variable.
+VAR can thus be set using symbol-macro, enabling the effect of a compile time constant.
+The hidden variable is simply VAR surrounded with asterisks.
+VAR defaults to the hidden variable unless overriden using a symbol macro."
+  (check-type var symbol)
+  (check-type doc (or string null))
+  (let ((svar (specialify-symbol var)))
+    `(progn
+       (define-symbol-macro ,var ,svar)
+       ,(if valp
+            `(defvar ,svar ,val ,doc)
+            `(defvar ,svar))
+       ',var)))
